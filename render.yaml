@@ -19,7 +19,7 @@ services:
     rootDir: 05-App
     buildCommand: pip install uv && uv sync --package nidhinetra-api --locked
     startCommand: uv run --package nidhinetra-api uvicorn nidhinetra_api.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /api/stats/summary
+    healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"

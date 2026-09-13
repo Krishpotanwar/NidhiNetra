@@ -55,6 +55,18 @@ app = FastAPI(
     lifespan=_lifespan,
 )
 
+
+@app.get("/health", include_in_schema=False)
+async def health() -> dict[str, str]:
+    """Liveness only: no query, no snapshot read. A host's health check must
+    answer in well under its timeout regardless of dataset size; /api/stats
+    /summary joins and scans all 79,068 rows on every call, which is fine
+    for a page load but was killing the free-tier instance under repeated
+    health-check load (Render events, 2026-09-13: HTTP health check timeout
+    -> OOM -> restart loop, exit 137)."""
+    return {"status": "ok"}
+
+
 # Demo-day failure this closes, found in the 2026-09-03 review: the
 # original single entry was exactly "http://localhost:3000", and three
 # realistic situations all fall outside it. `next dev` silently moves to
