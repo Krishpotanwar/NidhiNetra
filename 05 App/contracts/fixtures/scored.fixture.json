@@ -1,0 +1,225 @@
+[
+  {
+    "work_id": "MPLADS-FX-0001",
+    "inspection_rank": 1,
+    "risk_score": 75.0,
+    "flags": [
+      "cost_outlier"
+    ],
+    "why_flagged": {
+      "cost_outlier": "Cost is 3.3x the median for drinking water works in this state."
+    },
+    "peer_group": {
+      "label": "Drinking Water works, Jharkhand, 2023-24",
+      "n": 74
+    }
+  },
+  {
+    "work_id": "MPLADS-FX-0004",
+    "inspection_rank": 2,
+    "risk_score": 75.0,
+    "flags": [
+      "cost_outlier"
+    ],
+    "why_flagged": {
+      "cost_outlier": "Cost is 2.8x the median for road works in this state."
+    },
+    "peer_group": {
+      "label": "Road works, Uttar Pradesh, 2023-24",
+      "n": 289
+    }
+  },
+  {
+    "work_id": "MPLADS-FX-0007",
+    "inspection_rank": 3,
+    "risk_score": 75.0,
+    "flags": [
+      "cost_outlier"
+    ],
+    "why_flagged": {
+      "cost_outlier": "Cost is 3.1x the median for school works in this state."
+    },
+    "peer_group": {
+      "label": "School works, Jharkhand, 2023-24",
+      "n": 41
+    }
+  },
+  {
+    "work_id": "MPLADS-FX-0010",
+    "inspection_rank": 4,
+    "risk_score": 75.0,
+    "flags": [
+      "cost_outlier"
+    ],
+    "why_flagged": {
+      "cost_outlier": "Cost is 3.3x the median for health works in this state."
+    },
+    "peer_group": {
+      "label": "Health works, Madhya Pradesh, 2023-24",
+      "n": 41
+    }
+  },
+  {
+    "work_id": "MPLADS-FX-0011",
+    "inspection_rank": 5,
+    "risk_score": 75.0,
+    "flags": [
+      "cost_outlier"
+    ],
+    "why_flagged": {
+      "cost_outlier": "Cost is 3.3x the median for school works in this state."
+    },
+    "peer_group": {
+      "label": "School works, Rajasthan, 2023-24",
+      "n": 41
+    }
+  },
+  {
+    "work_id": "MPLADS-FX-0016",
+    "inspection_rank": 6,
+    "risk_score": 75.0,
+    "flags": [
+      "cost_outlier"
+    ],
+    "why_flagged": {
+      "cost_outlier": "Cost is 2.7x the median for electricity works in this state."
+    },
+    "peer_group": {
+      "label": "Electricity works, Odisha, 2023-24",
+      "n": 41
+    }
+  },
+  {
+    "work_id": "MPLADS-FX-0019",
+    "inspection_rank": 7,
+    "risk_score": 75.0,
+    "flags": [
+      "cost_outlier"
+    ],
+    "why_flagged": {
+      "cost_outlier": "Cost is 3.8x the median for community infrastructure works in this state."
+    },
+    "peer_group": {
+      "label": "Community Infrastructure works, Odisha, 2023-24",
+      "n": 41
+    }
+  },
+  {
+    "work_id": "MPLADS-FX-0008",
+    "inspection_rank": 8,
+    "risk_score": 60.0,
+    "flags": [
+      "stalled_work"
+    ],
+    "why_flagged": {
+      "stalled_work": "Sanctioned several months ago, zero expenditure recorded."
+    },
+    "peer_group": {
+      "label": "Electricity works, Jharkhand, 2023-24",
+      "n": 41
+    }
+  },
+  {
+    "work_id": "MPLADS-FX-0012",
+    "inspection_rank": 9,
+    "risk_score": 50.0,
+    "flags": [
+      "agency_concentration"
+    ],
+    "why_flagged": {
+      "agency_concentration": "This agency appears across an unusually high number of works in this filter."
+    },
+    "peer_group": {
+      "label": "Drinking Water works, Jharkhand, 2023-24",
+      "n": 74
+    }
+  },
+  {
+    "work_id": "MPLADS-FX-0002",
+    "inspection_rank": 10,
+    "risk_score": 20.0,
+    "flags": [],
+    "why_flagged": {},
+    "peer_group": null
+  },
+  {
+    "work_id": "MPLADS-FX-0003",
+    "inspection_rank": 11,
+    "risk_score": 20.0,
+    "flags": [],
+    "why_flagged": {},
+    "peer_group": null
+  },
+  {
+    "work_id": "MPLADS-FX-0005",
+    "inspection_rank": 12,
+    "risk_score": 20.0,
+    "flags": [],
+    "why_flagged": {},
+    "peer_group": null
+  },
+  {
+    "work_id": "MPLADS-FX-0006",
+    "inspection_rank": 13,
+    "risk_score": 20.0,
+    "flags": [],
+    "why_flagged": {},
+    "peer_group": null
+  },
+  {
+    "work_id": "MPLADS-FX-0009",
+    "inspection_rank": 14,
+    "risk_score": 20.0,
+    "flags": [],
+    "why_flagged": {},
+    "peer_group": null
+  },
+  {
+    "work_id": "MPLADS-FX-0013",
+    "inspection_rank": 15,
+    "risk_score": 20.0,
+    "flags": [],
+    "why_flagged": {},
+    "peer_group": null
+  },
+  {
+    "work_id": "MPLADS-FX-0014",
+    "inspection_rank": 16,
+    "risk_score": 20.0,
+    "flags": [],
+    "why_flagged": {},
+    "peer_group": null
+  },
+  {
+    "work_id": "MPLADS-FX-0015",
+    "inspection_rank": 17,
+    "risk_score": 20.0,
+    "flags": [],
+    "why_flagged": {},
+    "peer_group": null
+  },
+  {
+    "work_id": "MPLADS-FX-0017",
+    "inspection_rank": 18,
+    "risk_score": 20.0,
+    "flags": [],
+    "why_flagged": {},
+    "peer_group": null
+  },
+  {
+    "work_id": "MPLADS-FX-0018",
+    "inspection_rank": 19,
+    "risk_score": 20.0,
+    "flags": [],
+    "why_flagged": {},
+    "peer_group": null
+  },
+  {
+    "work_id": "MPLADS-FX-0020",
+    "inspection_rank": 20,
+    "risk_score": 20.0,
+    "flags": [],
+    "why_flagged": {},
+    "peer_group": null
+  }
+]

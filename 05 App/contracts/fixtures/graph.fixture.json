@@ -1,0 +1,349 @@
+{
+  "nodes": [
+    {
+      "id": "mp_rajesh_oraon",
+      "type": "MP",
+      "label": "Rajesh Oraon",
+      "risk_weight": 0.0
+    },
+    {
+      "id": "agency_zilla_parishad_works_dept",
+      "type": "Agency",
+      "label": "Zilla Parishad Works Dept",
+      "risk_weight": 3.0
+    },
+    {
+      "id": "vendor_rajdhani_civil_works",
+      "type": "Vendor",
+      "label": "Rajdhani Civil Works",
+      "risk_weight": 1.0
+    },
+    {
+      "id": "mp_meena_kumari_singh",
+      "type": "MP",
+      "label": "Meena Kumari Singh",
+      "risk_weight": 0.0
+    },
+    {
+      "id": "agency_municipal_corporation_works_cell",
+      "type": "Agency",
+      "label": "Municipal Corporation Works Cell",
+      "risk_weight": 2.0
+    },
+    {
+      "id": "vendor_ganesh_infra_pvt_ltd",
+      "type": "Vendor",
+      "label": "Ganesh Infra Pvt Ltd",
+      "risk_weight": 1.0
+    },
+    {
+      "id": "mp_anil_kumar_sharma",
+      "type": "MP",
+      "label": "Anil Kumar Sharma",
+      "risk_weight": 0.0
+    },
+    {
+      "id": "vendor_shree_balaji_construction",
+      "type": "Vendor",
+      "label": "Shree Balaji Construction",
+      "risk_weight": 2.0
+    },
+    {
+      "id": "mp_rekha_devi_mahato",
+      "type": "MP",
+      "label": "Rekha Devi Mahato",
+      "risk_weight": 0.0
+    },
+    {
+      "id": "agency_pwd_division_7",
+      "type": "Agency",
+      "label": "PWD Division 7",
+      "risk_weight": 2.0
+    },
+    {
+      "id": "agency_state_electricity_board_civil_wing",
+      "type": "Agency",
+      "label": "State Electricity Board Civil Wing",
+      "risk_weight": 1.0
+    },
+    {
+      "id": "mp_pramod_kumar_tiwari",
+      "type": "MP",
+      "label": "Pramod Kumar Tiwari",
+      "risk_weight": 0.0
+    },
+    {
+      "id": "mp_vijay_chandra_behera",
+      "type": "MP",
+      "label": "Vijay Chandra Behera",
+      "risk_weight": 0.0
+    },
+    {
+      "id": "vendor_om_builders",
+      "type": "Vendor",
+      "label": "Om Builders",
+      "risk_weight": 1.0
+    },
+    {
+      "id": "vendor_bharat_nirman_enterprises",
+      "type": "Vendor",
+      "label": "Bharat Nirman Enterprises",
+      "risk_weight": 2.0
+    },
+    {
+      "id": "mp_sunita_mishra",
+      "type": "MP",
+      "label": "Sunita Mishra",
+      "risk_weight": 0.0
+    },
+    {
+      "id": "vendor_national_roadways_contractors",
+      "type": "Vendor",
+      "label": "National Roadways Contractors",
+      "risk_weight": 0.0
+    },
+    {
+      "id": "agency_rural_engineering_services",
+      "type": "Agency",
+      "label": "Rural Engineering Services",
+      "risk_weight": 0.0
+    },
+    {
+      "id": "agency_phed_division_2",
+      "type": "Agency",
+      "label": "PHED Division 2",
+      "risk_weight": 1.0
+    },
+    {
+      "id": "mp_suresh_prasad_yadav",
+      "type": "MP",
+      "label": "Suresh Prasad Yadav",
+      "risk_weight": 0.0
+    },
+    {
+      "id": "agency_pwd_division_3",
+      "type": "Agency",
+      "label": "PWD Division 3",
+      "risk_weight": 0.0
+    }
+  ],
+  "edges": [
+    {
+      "source": "mp_rajesh_oraon",
+      "target": "agency_zilla_parishad_works_dept",
+      "work_count": 2,
+      "total_amount_inr": 4467348.16,
+      "flagged_work_count": 2
+    },
+    {
+      "source": "agency_zilla_parishad_works_dept",
+      "target": "vendor_rajdhani_civil_works",
+      "work_count": 2,
+      "total_amount_inr": 4948723.7,
+      "flagged_work_count": 1
+    },
+    {
+      "source": "mp_meena_kumari_singh",
+      "target": "agency_municipal_corporation_works_cell",
+      "work_count": 1,
+      "total_amount_inr": 2177947.3,
+      "flagged_work_count": 0
+    },
+    {
+      "source": "agency_municipal_corporation_works_cell",
+      "target": "vendor_ganesh_infra_pvt_ltd",
+      "work_count": 1,
+      "total_amount_inr": 2177947.3,
+      "flagged_work_count": 0
+    },
+    {
+      "source": "mp_anil_kumar_sharma",
+      "target": "agency_zilla_parishad_works_dept",
+      "work_count": 1,
+      "total_amount_inr": 907588.04,
+      "flagged_work_count": 0
+    },
+    {
+      "source": "agency_zilla_parishad_works_dept",
+      "target": "vendor_shree_balaji_construction",
+      "work_count": 1,
+      "total_amount_inr": 907588.04,
+      "flagged_work_count": 0
+    },
+    {
+      "source": "mp_rekha_devi_mahato",
+      "target": "agency_pwd_division_7",
+      "work_count": 1,
+      "total_amount_inr": 3216456.95,
+      "flagged_work_count": 1
+    },
+    {
+      "source": "agency_pwd_division_7",
+      "target": "vendor_shree_balaji_construction",
+      "work_count": 1,
+      "total_amount_inr": 3216456.95,
+      "flagged_work_count": 1
+    },
+    {
+      "source": "mp_rajesh_oraon",
+      "target": "agency_state_electricity_board_civil_wing",
+      "work_count": 3,
+      "total_amount_inr": 9261235.99,
+      "flagged_work_count": 1
+    },
+    {
+      "source": "agency_state_electricity_board_civil_wing",
+      "target": "vendor_ganesh_infra_pvt_ltd",
+      "work_count": 1,
+      "total_amount_inr": 2741938.0,
+      "flagged_work_count": 0
+    },
+    {
+      "source": "mp_pramod_kumar_tiwari",
+      "target": "agency_municipal_corporation_works_cell",
+      "work_count": 1,
+      "total_amount_inr": 2435299.43,
+      "flagged_work_count": 0
+    },
+    {
+      "source": "agency_municipal_corporation_works_cell",
+      "target": "vendor_shree_balaji_construction",
+      "work_count": 2,
+      "total_amount_inr": 3729951.31,
+      "flagged_work_count": 1
+    },
+    {
+      "source": "mp_vijay_chandra_behera",
+      "target": "agency_pwd_division_7",
+      "work_count": 2,
+      "total_amount_inr": 5136441.93,
+      "flagged_work_count": 1
+    },
+    {
+      "source": "agency_zilla_parishad_works_dept",
+      "target": "vendor_om_builders",
+      "work_count": 1,
+      "total_amount_inr": 700123.56,
+      "flagged_work_count": 1
+    },
+    {
+      "source": "agency_state_electricity_board_civil_wing",
+      "target": "vendor_shree_balaji_construction",
+      "work_count": 1,
+      "total_amount_inr": 2749406.36,
+      "flagged_work_count": 0
+    },
+    {
+      "source": "mp_rekha_devi_mahato",
+      "target": "agency_municipal_corporation_works_cell",
+      "work_count": 1,
+      "total_amount_inr": 3843867.9,
+      "flagged_work_count": 1
+    },
+    {
+      "source": "agency_state_electricity_board_civil_wing",
+      "target": "vendor_bharat_nirman_enterprises",
+      "work_count": 1,
+      "total_amount_inr": 3769891.63,
+      "flagged_work_count": 1
+    },
+    {
+      "source": "mp_sunita_mishra",
+      "target": "agency_municipal_corporation_works_cell",
+      "work_count": 1,
+      "total_amount_inr": 1294651.88,
+      "flagged_work_count": 1
+    },
+    {
+      "source": "agency_pwd_division_7",
+      "target": "vendor_national_roadways_contractors",
+      "work_count": 1,
+      "total_amount_inr": 1539140.44,
+      "flagged_work_count": 0
+    },
+    {
+      "source": "mp_meena_kumari_singh",
+      "target": "agency_zilla_parishad_works_dept",
+      "work_count": 1,
+      "total_amount_inr": 1122492.69,
+      "flagged_work_count": 0
+    },
+    {
+      "source": "agency_zilla_parishad_works_dept",
+      "target": "vendor_ganesh_infra_pvt_ltd",
+      "work_count": 2,
+      "total_amount_inr": 5439911.59,
+      "flagged_work_count": 1
+    },
+    {
+      "source": "mp_rajesh_oraon",
+      "target": "agency_rural_engineering_services",
+      "work_count": 1,
+      "total_amount_inr": 2117680.65,
+      "flagged_work_count": 0
+    },
+    {
+      "source": "agency_rural_engineering_services",
+      "target": "vendor_om_builders",
+      "work_count": 1,
+      "total_amount_inr": 2117680.65,
+      "flagged_work_count": 0
+    },
+    {
+      "source": "mp_sunita_mishra",
+      "target": "agency_phed_division_2",
+      "work_count": 1,
+      "total_amount_inr": 3085362.5,
+      "flagged_work_count": 1
+    },
+    {
+      "source": "agency_phed_division_2",
+      "target": "vendor_bharat_nirman_enterprises",
+      "work_count": 1,
+      "total_amount_inr": 3085362.5,
+      "flagged_work_count": 1
+    },
+    {
+      "source": "mp_suresh_prasad_yadav",
+      "target": "agency_zilla_parishad_works_dept",
+      "work_count": 1,
+      "total_amount_inr": 1181499.1,
+      "flagged_work_count": 0
+    },
+    {
+      "source": "mp_anil_kumar_sharma",
+      "target": "agency_pwd_division_3",
+      "work_count": 1,
+      "total_amount_inr": 2600136.62,
+      "flagged_work_count": 0
+    },
+    {
+      "source": "agency_pwd_division_3",
+      "target": "vendor_shree_balaji_construction",
+      "work_count": 1,
+      "total_amount_inr": 2600136.62,
+      "flagged_work_count": 0
+    },
+    {
+      "source": "mp_rekha_devi_mahato",
+      "target": "agency_zilla_parishad_works_dept",
+      "work_count": 1,
+      "total_amount_inr": 4317418.9,
+      "flagged_work_count": 1
+    },
+    {
+      "source": "mp_vijay_chandra_behera",
+      "target": "agency_zilla_parishad_works_dept",
+      "work_count": 1,
+      "total_amount_inr": 990881.71,
+      "flagged_work_count": 0
+    },
+    {
+      "source": "agency_zilla_parishad_works_dept",
+      "target": "vendor_national_roadways_contractors",
+      "work_count": 1,
+      "total_amount_inr": 990881.71,
+      "flagged_work_count": 0
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+openapi: 3.0.3
+info:
+  title: NidhiNetra API
+  version: 0.1.0
+  description: >
+    Execution Plan section 3.4. Authority note (eng review task T21): this
+    hand-written file is the authoritative contract until CP4 (API serving
+    real data). From CP4 onward, FastAPI's own generated openapi.json is
+    authoritative, because it is derived from the actual route code and
+    cannot drift from what the API really does. This file stops being edited
+    at that point and is kept only as the pre-implementation design record.
+
+paths:
+  /api/works:
+    get:
+      summary: Paginated risk-scored works, sorted by inspection_rank
+      parameters:
+        - name: state
+          in: query
+          schema: { type: string }
+        - name: year
+          in: query
+          schema: { type: string }
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: flag
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: Sorted by inspection_rank ascending, always. Filters narrow the set, never change the sort.
+
+  /api/works/{work_id}:
+    get:
+      summary: Full detail for one work
+      parameters:
+        - name: work_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: One normalized + scored record, merged }
+        "404": { description: work_id not found in the current snapshot }
+
+  /api/graph:
+    get:
+      summary: Fund-flow graph subset (conditional on M5 -- see Design Review - Data Spike First)
+      parameters:
+        - name: agency
+          in: query
+          schema: { type: string }
+        - name: vendor
+          in: query
+          schema: { type: string }
+      responses:
+        "200": { description: fund_flow_graph.schema.json subset }
+
+  /api/stats/summary:
+    get:
+      summary: The four summary-strip figures
+      responses:
+        "200":
+          description: >
+            works_under_implementation, flagged_count, total_flagged_amount_inr,
+            idle_beyond_12_months_amount_inr, plus data_as_of (ISO 8601 timestamp
+            of the last successful pull -- see plan section 3.1, the live-data diagram)
+
+  /api/refresh:
+    post:
+      summary: Manual "refresh now" trigger
+      description: >
+        Debounced client-side and rate-limited server-side (eng review task T12).
+        Times out into a stated refresh_failed state rather than hanging (task T13).
+      responses:
+        "202": { description: Refresh started }
+        "429": { description: Refresh already in progress or requested too recently }

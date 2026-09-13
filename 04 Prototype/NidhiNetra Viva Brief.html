@@ -1,0 +1,610 @@
+<title>NidhiNetra Viva Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap">
+
+<style>
+:root{
+  --paper:#FBFBFC;
+  --surface:#FFFFFF;
+  --ink:#22252E;
+  --ink-2:#4A4F5C;
+  --ink-3:#767C8B;
+  --rule:#E2E4EA;
+  --rule-strong:#C9CDD6;
+  --accent:#2F3E7A;
+  --accent-soft:#EEF0F8;
+  --warn:#9A6410;
+  --warn-soft:#FBF3E4;
+  --crit:#8C2A22;
+  --crit-soft:#FAEDEB;
+  --shadow:0 1px 2px rgba(34,37,46,.05), 0 8px 24px rgba(34,37,46,.06);
+  --measure:68ch;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#15171C;
+    --surface:#1C1F26;
+    --ink:#E8EAEF;
+    --ink-2:#B4BAC6;
+    --ink-3:#858C9B;
+    --rule:#2C3039;
+    --rule-strong:#3D424E;
+    --accent:#A9B6E8;
+    --accent-soft:#22273A;
+    --warn:#E0AC5C;
+    --warn-soft:#2A2318;
+    --crit:#E38A7E;
+    --crit-soft:#2E1D1A;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#15171C;
+  --surface:#1C1F26;
+  --ink:#E8EAEF;
+  --ink-2:#B4BAC6;
+  --ink-3:#858C9B;
+  --rule:#2C3039;
+  --rule-strong:#3D424E;
+  --accent:#A9B6E8;
+  --accent-soft:#22273A;
+  --warn:#E0AC5C;
+  --warn-soft:#2A2318;
+  --crit:#E38A7E;
+  --crit-soft:#2E1D1A;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--serif);
+  font-size:1.0625rem;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:var(--measure);margin:0 auto;padding:0 1.5rem 6rem}
+
+/* ---------- nav ---------- */
+nav{
+  position:sticky;top:0;z-index:20;
+  background:color-mix(in srgb,var(--paper) 88%,transparent);
+  backdrop-filter:blur(12px) saturate(180%);
+  -webkit-backdrop-filter:blur(12px) saturate(180%);
+  border-bottom:1px solid var(--rule);
+}
+.navin{
+  max-width:var(--measure);margin:0 auto;padding:.6rem 1.5rem;
+  display:flex;gap:.25rem;flex-wrap:wrap;align-items:center;
+  font-family:var(--sans);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;
+}
+nav a{
+  color:var(--ink-3);text-decoration:none;padding:.3rem .5rem;border-radius:4px;
+}
+nav a:hover,nav a:focus-visible{color:var(--accent);background:var(--accent-soft);outline:none}
+
+/* ---------- masthead ---------- */
+header{padding:4rem 0 2.5rem;border-bottom:2px solid var(--ink)}
+.eyebrow{
+  font-family:var(--sans);font-size:.72rem;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+  margin:0 0 1rem;
+}
+h1{
+  font-size:clamp(2.4rem,7vw,3.4rem);line-height:1.02;margin:0 0 1rem;
+  font-weight:700;letter-spacing:-.022em;text-wrap:balance;
+}
+.standfirst{font-size:1.2rem;color:var(--ink-2);margin:0;text-wrap:pretty}
+.meta{
+  font-family:var(--mono);font-size:.75rem;color:var(--ink-3);
+  margin-top:1.5rem;display:flex;gap:1.25rem;flex-wrap:wrap;
+}
+
+/* ---------- structure ---------- */
+section{padding-top:3.5rem}
+h2{
+  font-family:var(--sans);font-size:1.35rem;font-weight:600;letter-spacing:-.01em;
+  margin:0 0 .35rem;padding-bottom:.5rem;border-bottom:1px solid var(--rule-strong);
+  display:flex;align-items:baseline;gap:.75rem;text-wrap:balance;
+}
+h2 .num{
+  font-family:var(--mono);font-size:.8rem;color:var(--ink-3);font-weight:400;
+  flex:none;
+}
+.lede{color:var(--ink-2);margin:.9rem 0 0;font-size:1.05rem}
+h3{
+  font-family:var(--sans);font-size:.95rem;font-weight:600;
+  margin:2.25rem 0 .5rem;letter-spacing:-.005em;
+}
+p{margin:.9rem 0}
+strong{font-weight:600}
+a{color:var(--accent)}
+
+/* ---------- kid-level callout ---------- */
+/* marginal gloss, set as an aside rather than a card:
+   indent + hairline carry it, matching the audit-report direction */
+.plain{
+  margin:1.6rem 0 1.6rem 1.5rem;
+  padding-top:.7rem;
+  border-top:1px solid var(--rule-strong);
+}
+.plain p{margin:0;font-size:1rem;color:var(--ink-2)}
+.plain .tag{
+  display:block;font-family:var(--sans);font-size:.66rem;font-weight:600;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--accent);margin-bottom:.4rem;
+}
+
+/* ---------- Q & A ---------- */
+.qa{
+  background:var(--surface);border:1px solid var(--rule);border-radius:7px;
+  padding:1.25rem 1.35rem;margin:1.25rem 0;box-shadow:var(--shadow);
+}
+.qa.trap{border-color:var(--warn);background:var(--warn-soft)}
+.qa .q{
+  font-family:var(--sans);font-weight:600;font-size:1rem;line-height:1.4;
+  margin:0 0 .2rem;color:var(--ink);
+}
+.qa .lbl{
+  font-family:var(--sans);font-size:.64rem;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:.5rem;
+}
+.qa.trap .lbl{color:var(--warn)}
+.qa .a{margin:.75rem 0 0}
+.qa .a:first-of-type{margin-top:.85rem}
+.say{
+  font-family:var(--sans);font-size:.64rem;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);margin:1rem 0 .3rem;
+}
+
+/* ---------- data ---------- */
+.figs{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:1px;background:var(--rule);border:1px solid var(--rule);
+  border-radius:7px;overflow:hidden;margin:1.5rem 0;
+}
+.fig{background:var(--surface);padding:1rem 1.1rem}
+.fig .v{
+  font-family:var(--mono);font-size:1.35rem;font-variant-numeric:tabular-nums;
+  letter-spacing:-.02em;display:block;line-height:1.2;
+}
+.fig .k{
+  font-family:var(--sans);font-size:.7rem;color:var(--ink-3);
+  display:block;margin-top:.3rem;line-height:1.35;
+}
+.tablewrap{overflow-x:auto;margin:1.25rem 0}
+table{border-collapse:collapse;width:100%;font-size:.92rem;min-width:420px}
+th,td{text-align:left;padding:.55rem .7rem;border-bottom:1px solid var(--rule);vertical-align:top}
+th{
+  font-family:var(--sans);font-size:.68rem;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--rule-strong);
+}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+code{
+  font-family:var(--mono);font-size:.86em;background:var(--accent-soft);
+  padding:.1em .35em;border-radius:3px;
+}
+
+/* ---------- never / always ---------- */
+.words{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:7px;overflow:hidden;margin:1.25rem 0}
+@media(min-width:620px){.words{grid-template-columns:1fr 1fr}}
+.words > div{background:var(--surface);padding:1.1rem 1.2rem}
+.words h4{
+  font-family:var(--sans);font-size:.68rem;font-weight:600;letter-spacing:.11em;
+  text-transform:uppercase;margin:0 0 .6rem;
+}
+.words .no h4{color:var(--crit)}
+.words .yes h4{color:var(--accent)}
+.words ul{margin:0;padding-left:1.1rem;font-size:.95rem}
+.words li{margin:.3rem 0}
+.words .no li{color:var(--ink-2)}
+
+/* ---------- glossary ---------- */
+dl{margin:1.25rem 0}
+dt{
+  font-family:var(--sans);font-weight:600;font-size:.95rem;
+  margin-top:1.15rem;
+}
+dd{margin:.25rem 0 0;color:var(--ink-2)}
+
+.flag{
+  border:1px solid var(--crit);background:var(--crit-soft);
+  border-radius:7px;padding:1rem 1.2rem;margin:1.5rem 0;
+}
+.flag .tag{
+  display:block;font-family:var(--sans);font-size:.66rem;font-weight:600;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--crit);margin-bottom:.35rem;
+}
+.flag p{margin:0;font-size:1rem}
+
+footer{
+  margin-top:5rem;padding-top:1.5rem;border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:.72rem;color:var(--ink-3);
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<nav>
+  <div class="navin">
+    <a href="#scheme">1 Scheme</a>
+    <a href="#gap">2 The gap</a>
+    <a href="#what">3 What we built</a>
+    <a href="#how">4 How it works</a>
+    <a href="#ml">5 The ML</a>
+    <a href="#numbers">6 Numbers</a>
+    <a href="#hard">7 Hard questions</a>
+    <a href="#words">8 Words</a>
+    <a href="#limits">9 Limits</a>
+    <a href="#glossary">10 Glossary</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Smart India Hackathon 2026 · Problem statement SIH26102</p>
+  <h1>NidhiNetra Viva Brief</h1>
+  <p class="standfirst">Everything you need to answer, from what the scheme is to what the model cannot claim. Read parts 2, 7 and 8 twice.</p>
+  <div class="meta">
+    <span>Prepared 1 Sep 2026</span>
+    <span>Ministry of Statistics &amp; Programme Implementation</span>
+  </div>
+</header>
+
+<!-- ============ 1 ============ -->
+<section id="scheme">
+  <h2><span class="num">01</span> The scheme you are talking about</h2>
+  <p class="lede">Before anything technical, be able to say what MPLADS is in three sentences. Most questions start here.</p>
+
+  <p><strong>MPLADS</strong> is the Members of Parliament Local Area Development Scheme. Every Member of Parliament gets a yearly pot of money to spend on local public works in their constituency: roads, school buildings, drinking water systems, health centres. The MP does not spend it directly. They <em>recommend</em> works, and the district administration sanctions, tenders and pays for them.</p>
+
+  <div class="plain">
+    <span class="tag">In plain words</span>
+    <p>Every MP gets a budget to build useful things where they were elected. They point at what to build. Local officials actually build it and handle the money.</p>
+  </div>
+
+  <p>It launched on <strong>23 December 1993</strong>. The per-MP amount started at ₹5 lakh a year, rose to ₹1 crore in 1994-95, ₹2 crore in 1998-99, and has been <strong>₹5 crore a year since 2011-12</strong>. The scheme was suspended from 6 April 2020 to 9 November 2021 during COVID, with no allocation at all in FY 2020-21.</p>
+
+  <p>It is run by the <strong>Ministry of Statistics and Programme Implementation (MoSPI)</strong>, which writes the guidelines and monitors implementation. The current guidelines are from <strong>April 2023</strong>. Since April 2023 the whole scheme runs on a digital platform called <strong>eSAKSHI</strong>, replacing paper files. Since April 2025 money moves through a just-in-time system connecting PFMS, RBI and SBI.</p>
+
+  <h3>Who is who</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Actor</th><th>What they do</th></tr></thead>
+    <tbody>
+      <tr><td><strong>MP</strong></td><td>Recommends works. Does not touch the money.</td></tr>
+      <tr><td><strong>MoSPI</strong></td><td>The ministry. Writes rules, monitors nationally. <strong>Our user.</strong></td></tr>
+      <tr><td><strong>District Authority</strong></td><td>Sanctions works, releases funds, and is legally required to physically inspect them.</td></tr>
+      <tr><td><strong>Implementing agency</strong></td><td>The body that actually executes the work, e.g. a PWD division or a municipal body.</td></tr>
+      <tr><td><strong>Vendor</strong></td><td>The contractor who gets paid.</td></tr>
+      <tr><td><strong>CAG</strong></td><td>Comptroller and Auditor General. Audits after the fact, on a sample, years later.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="gap">
+  <h2><span class="num">02</span> The gap the whole project sits in</h2>
+  <p class="lede">This is the single most important idea in the project. If you can only explain one thing tomorrow, explain this.</p>
+
+  <p>Under the scheme's own guidelines, <strong>District Authorities must physically inspect at least 10 percent of works under implementation every year.</strong> That is not our idea. It is an existing legal obligation, already written down, already binding.</p>
+
+  <p><strong>Nothing tells them which 10 percent.</strong> There is no risk-based method, no ranking, no prioritisation. In practice the selection is arbitrary, and roughly 90 percent of works are never physically inspected at all.</p>
+
+  <div class="plain">
+    <span class="tag">In plain words</span>
+    <p>The rule says "go look at ten out of every hundred." It does not say which ten. So officials pick more or less at random, and ninety are never visited by anyone.</p>
+  </div>
+
+  <p>So the gap is not "there is no oversight." The gap is that <strong>mandated oversight is aimed randomly</strong>. That is a targeting problem, and targeting problems are exactly what data is good for.</p>
+
+  <p>One useful detail that proves the scheme already accepts risk-based differentiation: works implemented through <strong>societies and trusts get inspected in full</strong>, not on the 10 percent sample, because they are considered higher risk. The principle is already in the guidelines. We are extending it with evidence instead of category.</p>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="what">
+  <h2><span class="num">03</span> What NidhiNetra is, and what it is not</h2>
+
+  <p><strong>NidhiNetra ranks the inspection queue that already exists.</strong> It takes every work under implementation, scores how statistically unusual each one is, and hands the officer an ordered list: inspect these first, and here is exactly why each one is on the list.</p>
+
+  <p>The name means "eye on the fund." <em>Nidhi</em> is fund, <em>netra</em> is eye.</p>
+
+  <div class="flag">
+    <span class="tag">Say this exactly</span>
+    <p>It is an <strong>inspection-targeting system</strong>, not a fraud detector. It never accuses anyone. It says: these are the ones worth looking at first, and here is why.</p>
+  </div>
+
+  <h3>Why that distinction is the entire product</h3>
+  <p>There is no list anywhere of "these MPLADS works were fraudulent." No labelled data exists. That means any claim to <em>detect fraud</em> cannot be tested, cannot be measured, and cannot be defended when challenged. It would be a claim you could not back up.</p>
+  <p>By framing the output as risk flags for human review, three things become true at once:</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Because we target instead of accuse</th><th>What it buys us</th></tr></thead>
+    <tbody>
+      <tr><td>We slot into an existing legal duty</td><td>Zero adoption friction. Nobody has to do anything new.</td></tr>
+      <tr><td>We never make an unfalsifiable claim</td><td>Nothing to defend that we cannot evidence.</td></tr>
+      <tr><td>Inspection results come back as outcomes</td><td>The missing labels get created over time by the system's own use.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>That last row is worth memorising. The absence of ground truth looks like a fatal weakness. Under this framing it becomes a roadmap: every inspection our list triggers produces a real outcome, and those outcomes are the training labels nobody has today.</p>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="how">
+  <h2><span class="num">04</span> How it works, end to end</h2>
+  <p class="lede">Four stages. If asked to draw the architecture, draw this.</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Stage</th><th>What happens</th></tr></thead>
+    <tbody>
+      <tr><td><strong>1 Collect</strong></td><td>Pull work records from the public MPLADS portal on a schedule and on demand.</td></tr>
+      <tr><td><strong>2 Score</strong></td><td>Compare each work against its peer group, run outlier detection, produce a risk score and a plain-language reason.</td></tr>
+      <tr><td><strong>3 Connect</strong></td><td>Build a network of MP to agency to vendor, and look for unusual concentration.</td></tr>
+      <tr><td><strong>4 Show</strong></td><td>A ranked inspection list, with the 10 percent cut-off drawn on it, and a reason under every row.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Why the data is live but the list is frozen</h3>
+  <p>This trips people up, so be ready. <strong>The data refreshes continuously. The inspection list does not.</strong></p>
+  <p>An officer works a list over weeks. If the ranking silently reshuffled every few hours, the work that was number three on Monday might be number twenty by Thursday, and the list becomes impossible to act on. So the list is <em>generated</em> as a dated document, showing what changed since the last one, while the underlying data stays current.</p>
+
+  <div class="plain">
+    <span class="tag">In plain words</span>
+    <p>Think of a printed duty roster. The world keeps changing, but the roster you are working from today has a date on it and does not rewrite itself while you are holding it.</p>
+  </div>
+
+  <h3>What happens when the network fails</h3>
+  <p>The system keeps the last successful pull. If a refresh fails or times out, the screen shows that data with <strong>its true age stated on screen</strong>, never a blank page and never an error. A half-finished pull is never allowed to overwrite a complete one.</p>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="ml">
+  <h2><span class="num">05</span> The machine learning, explained properly</h2>
+  <p class="lede">Expect to be pushed here. Answer plainly. Do not inflate it.</p>
+
+  <h3>It is unsupervised. That matters.</h3>
+  <p>Most machine learning you hear about is <strong>supervised</strong>: you show the computer thousands of examples labelled "fraud" and "not fraud," and it learns the difference. <strong>We cannot do that, because those labels do not exist.</strong></p>
+  <p>So we use <strong>unsupervised</strong> methods, which do not need an answer key. They find things that do not fit the pattern of everything else. They can tell you "this is unusual." They cannot tell you "this is wrong." That is precisely why a human inspector remains in the loop.</p>
+
+  <h3>Peer groups: the idea that makes it defensible</h3>
+  <p>You never compare a work to all works. You compare it to <strong>works like it</strong>: same category, same state, same year. A road in Bihar is compared to other roads in Bihar in that year, not to a hospital in Kerala.</p>
+  <p>Every flag we show states its peer group on screen, including how many works are in it. If the group is smaller than <strong>30</strong>, we do not flag the work at all, because a comparison against a handful of examples is statistically meaningless. And we never widen the group to reach 30, because the specificity is the whole point.</p>
+
+  <h3>The three methods, in plain terms</h3>
+  <dl>
+    <dt>Peer-group z-score</dt>
+    <dd>Measures how far a value sits from the typical value in its group, counted in "normal-sized gaps." A z-score of 3 means it is three typical gaps away from average, which is rare. Simple, transparent, and easy to explain to an official, which is why it carries most of the weight.</dd>
+
+    <dt>Isolation Forest</dt>
+    <dd>Imagine repeatedly splitting the data with random cuts. Ordinary points sit in the crowd and take many cuts to separate. Odd points get cut off from everyone else almost immediately. The algorithm scores each record by how quickly it gets isolated. Fast to isolate means unusual.</dd>
+
+    <dt>Local Outlier Factor</dt>
+    <dd>Checks whether a record sits in a sparse neighbourhood while its neighbours sit in crowded ones. It catches things that are odd <em>relative to their local area</em>, even if they look normal against the national picture.</dd>
+  </dl>
+
+  <h3>The kinds of things that get flagged</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Flag</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr><td><code>cost_outlier</code></td><td>Cost is far above the median for that category, state and year.</td></tr>
+      <tr><td><code>stalled_work</code></td><td>Sanctioned long ago, little or no expenditure since. Money is sitting idle.</td></tr>
+      <tr><td><code>expenditure_mismatch</code></td><td>Money released and money spent do not line up.</td></tr>
+      <tr><td><code>agency_concentration</code></td><td>One agency or vendor appears across an unusual number of MPs or districts.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>The fund-flow graph</h3>
+  <p>A <strong>graph</strong> here means a network diagram: dots joined by lines. The dots are MPs, implementing agencies and vendors. The lines are money flowing between them. Drawing it lets you see structure that a table hides, such as one vendor quietly appearing across many districts and many MPs.</p>
+  <p>Be honest about one thing: this only carries meaning <strong>at national scale</strong>. Inside a single district there are too few agencies and vendors for concentration to mean anything. That is a real reason our user is the ministry rather than a district collector.</p>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="numbers">
+  <h2><span class="num">06</span> Numbers you should know cold</h2>
+  <p class="lede">All figures below were pulled live from the official MPLADS portal on 1 September 2026 and read directly from the response. Current tenure is the 18th Lok Sabha.</p>
+
+  <div class="figs">
+    <div class="fig"><span class="v">1,05,640</span><span class="k">Works recommended</span></div>
+    <div class="fig"><span class="v">78,547</span><span class="k">Works sanctioned</span></div>
+    <div class="fig"><span class="v">34,067</span><span class="k">Works completed</span></div>
+    <div class="fig"><span class="v">44,480</span><span class="k">Under implementation (sanctioned minus completed)</span></div>
+  </div>
+
+  <div class="figs">
+    <div class="fig"><span class="v">₹8,318 Cr</span><span class="k">Allocated limit for MPs</span></div>
+    <div class="fig"><span class="v">₹4,137 Cr</span><span class="k">Value of sanctioned works</span></div>
+    <div class="fig"><span class="v">₹2,748 Cr</span><span class="k">Expenditure to date</span></div>
+    <div class="fig"><span class="v">₹5 Cr</span><span class="k">Per MP per year since 2011-12</span></div>
+  </div>
+
+  <p><strong>The one derived number that matters most:</strong> 44,480 works are under implementation. The 10 percent rule therefore requires roughly <strong>4,448 physical inspections this year</strong>. That is the queue NidhiNetra ranks. Say that number out loud; it makes the problem concrete.</p>
+
+  <div class="flag">
+    <span class="tag">Do not quote these</span>
+    <p>Two figures used in earlier drafts, <strong>₹1,729.61 crore</strong> and <strong>₹5.93 crore</strong>, have not been re-confirmed against a primary source. Do not put them in an answer. Use the verified figures above instead.</p>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="hard">
+  <h2><span class="num">07</span> Hard questions, with prepared answers</h2>
+  <p class="lede">The amber ones are traps. A confident wrong answer there does more damage than saying "we cannot claim that."</p>
+
+  <div class="qa">
+    <span class="lbl">Question</span>
+    <p class="q">How is this different from a CAG audit?</p>
+    <p class="a">CAG audits look backwards, on a sample, often years after the money was spent. They tell you what already went wrong. We are not auditing at all. We are choosing which works get the physical inspection that is <em>already legally required this year</em>. Different timing, different purpose, and they complement each other: CAG findings can validate whether our ranking was pointing at the right things.</p>
+  </div>
+
+  <div class="qa">
+    <span class="lbl">Question</span>
+    <p class="q">What about a hill road that genuinely costs three times more?</p>
+    <p class="a">That objection is exactly why every flag states its peer group. We never compare a hill road to a plains road. We compare it against other road works in the same state, in the same year, and we print that comparison on screen: "compared against 1,72,961 road works in Bihar, 2023-24." The officer sees the basis and can overrule it. And if the peer group has fewer than 30 works, we do not flag it at all rather than flag it on weak evidence.</p>
+  </div>
+
+  <div class="qa trap">
+    <span class="lbl">Trap</span>
+    <p class="q">What is your model's accuracy? Precision, recall?</p>
+    <p class="a">There is no accuracy figure, and anyone who gives you one for MPLADS fraud is measuring against labels they invented. No labelled fraud data exists for this scheme. What we can measure is different and more honest: when inspectors visit the works we ranked highly, do they find more problems than in a random sample? That is the real evaluation, and it only exists once the system is in use.</p>
+    <p class="say">Do not</p>
+    <p class="a">Do not improvise a percentage to sound rigorous. It is the fastest way to lose a technical judge, because the follow-up question is "measured against what?" and there is no good answer.</p>
+  </div>
+
+  <div class="qa trap">
+    <span class="lbl">Trap</span>
+    <p class="q">Your submitted PPT says CAG audits and RTI cases already give you labeled fraud patterns to validate against. Everything you're showing us today says no labelled data exists. Which is true?</p>
+    <p class="a">Both, and the deck says so three lines further down the same slide: <em>"Lean on unsupervised detection first; save supervised classifiers for once confirmed cases pile up."</em> That is the strategy, and it is exactly what is running today. The deck also lists <em>"confirmed fraud is rare, so the data is heavily imbalanced"</em> as one of its own named risks, and commits to <em>"reviewers train the model, not the reverse."</em> Nothing there claims a trained classifier exists.</p>
+    <p class="a">What CAG reports and RTI case files give us is <strong>pattern knowledge, not labels</strong>: they document real confirmed instances of misuse, which is how we decided <em>what to detect</em> -- cost against a peer group, funds released with no progress, one agency or vendor spanning unusually many Members. Every detector in the system traces back to a documented case. What they are not is a table joined to live MPLADS work IDs, so there is no accuracy figure today and we do not quote one. The word "labeled" on that slide is doing more work than it should; the substance behind it is sound.</p>
+    <p class="say">Say this if pressed on the roadmap</p>
+    <p class="a">"Unsupervised now, because that is what the data supports. Every inspection this list triggers comes back as an outcome, and those outcomes are the labels nobody has today. The system builds its own training set by being used -- that is the roadmap, and it is on the slide."</p>
+    <p class="say">Do not</p>
+    <p class="a">Do not over-concede. An earlier version of this brief told you the PPT line "does not hold up" and to disown it -- that was wrong, and apologising for a defensible strategy on stage costs you more than the loose word ever would. Equally, do not claim a trained model or an accuracy number exists. The one genuine gap to concede if asked directly: DBSCAN, SHAP, Sentence-BERT and the geotag/CV cross-checks named on the technology slide are not in this build. Say they are staged for once a work-level dataset exists at scale, which is true and is the same "first, then" logic the strategy slide already sets out.</p>
+  </div>
+
+  <div class="qa trap">
+    <span class="lbl">Trap</span>
+    <p class="q">So it detects corruption?</p>
+    <p class="a">No. It detects statistical unusualness and puts it in front of a human being. Unusual is not the same as wrong. A work can be three times the median for a perfectly good reason, and our own screen shows the officer the basis so they can see that. The output is a prioritised inspection list, not an allegation.</p>
+  </div>
+
+  <div class="qa">
+    <span class="lbl">Question</span>
+    <p class="q">Why would a government department actually adopt this?</p>
+    <p class="a">Because it asks nobody to do anything new. District Authorities are already required to inspect 10 percent of works annually and already do it. They currently choose that 10 percent with no method. We rank a queue they are already legally obliged to work through. There is no new process, no new mandate, and no new burden. That is the lowest adoption friction a govtech tool can have.</p>
+  </div>
+
+  <div class="qa">
+    <span class="lbl">Question</span>
+    <p class="q">What if you flag an honest official and damage their reputation?</p>
+    <p class="a">We never flag officials. We flag <em>works</em>. No person is named as a suspect anywhere in the interface, and the language is controlled at the code level: a fixed set of approved sentences, with a check that rejects accusatory wording before it can reach a screen. And consider the cost of a false positive here: it is one site visit that was going to happen to <em>some</em> work anyway. We are changing which 10 percent gets visited, not adding inspections.</p>
+  </div>
+
+  <div class="qa">
+    <span class="lbl">Question</span>
+    <p class="q">Isn't this just another dashboard?</p>
+    <p class="a">The existing MPLADS dashboard shows totals: how much was allocated, how much spent. It answers "how are we doing." Ours answers an operational question: of the 44,480 works under implementation, which 4,448 should be physically visited this year, in what order, and why each one. The dashboard is how it is delivered. The ranking and the stated reason are the product.</p>
+  </div>
+
+  <div class="qa">
+    <span class="lbl">Question</span>
+    <p class="q">Where does your data come from? Is it real?</p>
+    <p class="a">The public MPLADS portal run by MoSPI. We verified its dashboard API live and the national figures in part 6 came back from it directly. The work-level detail needed for per-work scoring is the piece we are still wiring up. Be straight about that if pushed: aggregates confirmed, work-level in progress.</p>
+  </div>
+
+  <div class="qa">
+    <span class="lbl">Question</span>
+    <p class="q">What is genuinely novel here?</p>
+    <p class="a">Two things. First, the reframe: everyone builds fraud detectors, which governments cannot deploy because an unproven accusation is a liability. We built a targeting tool for an obligation that already exists, which is deployable on day one. Second, the stated peer group on every single flag. Most anomaly tools give you a score. A score cannot be argued with, which means it cannot be trusted. Ours gives a reason and the exact basis of comparison, so a human can overrule it.</p>
+  </div>
+
+  <div class="qa">
+    <span class="lbl">Question</span>
+    <p class="q">Why the ministry as the user and not a district collector?</p>
+    <p class="a">The district collector has the sharper personal pain, so it is a fair question. But the fund-flow network is meaningless below national scale: one district has too few agencies and vendors for concentration patterns to exist. Choosing a district-level user would have forced us to throw away the differentiator. The ministry sees the whole country, which is the only level where the network analysis says anything.</p>
+  </div>
+
+  <div class="qa">
+    <span class="lbl">Question</span>
+    <p class="q">Could a corrupt actor game this once they know the rules?</p>
+    <p class="a">Partly, and we should say so. Anyone who knows costs are compared within a peer group could keep every project just under the threshold. Two things limit it. The flags are multiple and independent, so avoiding a cost flag can push you into a stalled-work or concentration flag. And gaming it requires staying close to the genuine median, which itself constrains the amount that can be diverted. Gaming a targeting system makes the underlying behaviour smaller, which is a partial win.</p>
+  </div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section id="words">
+  <h2><span class="num">08</span> Words to use, words to never use</h2>
+  <p class="lede">Under pressure people reach for dramatic language. One wrong word converts a defensible tool into an accusation you cannot support.</p>
+
+  <div class="words">
+    <div class="no">
+      <h4>Never say</h4>
+      <ul>
+        <li>Detected fraud</li>
+        <li>Corrupt / corruption</li>
+        <li>Guilty, culprit, suspect</li>
+        <li>Caught, exposed, busted</li>
+        <li>Proves, confirms</li>
+        <li>Verified clean</li>
+        <li>Our accuracy is X percent</li>
+      </ul>
+    </div>
+    <div class="yes">
+      <h4>Say instead</h4>
+      <ul>
+        <li>Flagged for inspection</li>
+        <li>Statistically unusual</li>
+        <li>Worth looking at first</li>
+        <li>Risk flags for human review</li>
+        <li>Suggests, indicates</li>
+        <li>Not yet flagged</li>
+        <li>No ground truth exists, here is what we can measure</li>
+      </ul>
+    </div>
+  </div>
+
+  <p><strong>One more rule, and it is visual.</strong> Nothing in the interface is ever shown in green. Green means "verified clean," and nothing here is verified clean. A work is either flagged or simply not yet flagged, which is not the same as being fine. If a judge notices the absence of green, that is a good moment: it shows the discipline runs all the way into the colour palette.</p>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="limits">
+  <h2><span class="num">09</span> What to admit, and how</h2>
+  <p class="lede">Judges test whether you know your own weaknesses. Naming them first is strength; being caught hiding one is fatal.</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>The limitation</th><th>How to say it</th></tr></thead>
+    <tbody>
+      <tr><td>No labelled fraud data</td><td>"None exists for this scheme. That is why we target inspections rather than claim detection, and why inspection outcomes are how the labels eventually get created."</td></tr>
+      <tr><td>Work-level data still being wired</td><td>"National aggregates are confirmed live from the portal. Work-level extraction is in progress. We are not going to pretend otherwise."</td></tr>
+      <tr><td>Unusual is not wrong</td><td>"Correct, and the design assumes it. That is why a human inspector makes every decision and why we show our reasoning."</td></tr>
+      <tr><td>Small peer groups are unreliable</td><td>"They are, so below 30 comparable works we decline to flag rather than flag on weak evidence."</td></tr>
+      <tr><td>The graph needs national scale</td><td>"It does. That is a deliberate constraint and it is why the ministry is our user."</td></tr>
+      <tr><td>Anomaly dashboards are a crowded space</td><td>"They are. The difference is that most of them accuse, so they cannot be deployed. Ours targets an obligation that already exists."</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>If you genuinely do not know an answer, the strongest available response is: <em>"I do not have that number in front of me and I would rather not guess at it."</em> In a project whose entire pitch is about not overclaiming, refusing to overclaim on stage is consistent, not weak.</p>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="glossary">
+  <h2><span class="num">10</span> Glossary</h2>
+
+  <dl>
+    <dt>MPLADS</dt><dd>Members of Parliament Local Area Development Scheme. The scheme itself.</dd>
+    <dt>MoSPI</dt><dd>Ministry of Statistics and Programme Implementation. Runs MPLADS. Our user works here.</dd>
+    <dt>eSAKSHI</dt><dd>The digital platform MPLADS has run on since April 2023. The system of record.</dd>
+    <dt>Work under implementation</dt><dd>A work that has been sanctioned but is not yet completed. This is the population the 10 percent rule applies to.</dd>
+    <dt>Anomaly detection</dt><dd>Finding records that do not fit the pattern of the rest, without being told in advance what a bad record looks like.</dd>
+    <dt>Unsupervised learning</dt><dd>Learning from data with no answer key. Used here because no labelled fraud data exists.</dd>
+    <dt>Ground truth</dt><dd>The verified correct answer you measure a model against. We do not have it, and saying so is part of the pitch.</dd>
+    <dt>Peer group</dt><dd>The set of comparable works a given work is judged against: same category, state and year. Always shown on screen with its size.</dd>
+    <dt>Z-score</dt><dd>How many typical gaps a value sits from its group's average. Higher means more unusual.</dd>
+    <dt>Isolation Forest</dt><dd>An algorithm that scores how quickly a record can be separated from the rest by random splits. Quick to isolate means unusual.</dd>
+    <dt>Local Outlier Factor</dt><dd>An algorithm that flags records sitting in a sparse neighbourhood while their neighbours sit in crowded ones.</dd>
+    <dt>False positive</dt><dd>Something flagged that turns out to be fine. Cheap here, because the cost is one site visit that was already going to happen somewhere.</dd>
+    <dt>Fund-flow graph</dt><dd>A network of MPs, agencies and vendors joined by money movements, used to spot unusual concentration.</dd>
+    <dt>API</dt><dd>A way for one program to request data from another directly, instead of a person reading a web page.</dd>
+    <dt>Snapshot</dt><dd>A saved copy of the data at a moment in time. Ours is what the screen falls back to when a live pull fails.</dd>
+    <dt>Inspection rank</dt><dd>The output. Position in the queue, where 1 means inspect first.</dd>
+  </dl>
+</section>
+
+<footer>
+  NidhiNetra · SIH26102 · Figures verified against the MPLADS portal on 1 September 2026.<br>
+  Nothing in this brief claims fraud detection. Every output is a risk flag for human review.
+</footer>
+
+</div>

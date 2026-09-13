@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<style>
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  body { margin: 0; background: oklch(99% 0.002 250); font-optical-sizing: auto; font-synthesis: none; }
+  a { color: oklch(52% 0.16 255); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: oklch(44% 0.17 255); }
+  ::selection { background: oklch(96% 0.03 255); }
+  button, input, select { font: inherit; color: inherit; }
+  @media (prefers-reduced-motion: reduce) { * { transition-duration: 120ms !important; animation: none !important; } }
+</style>
+</helmet>
+
+<div style="--font-base:1rem; --ratio:1.2; --space-unit:0.25rem; --font-2xs:calc(var(--font-base) / var(--ratio) / var(--ratio)); --font-xs:calc(var(--font-base) / var(--ratio)); --font-sm:var(--font-base); --font-md:calc(var(--font-base) * var(--ratio)); --font-lg:calc(var(--font-md) * var(--ratio)); --font-xl:calc(var(--font-lg) * var(--ratio)); --font-2xl:calc(var(--font-xl) * var(--ratio)); --leading-tight:1.1; --leading-snug:1.3; --leading-normal:1.55; --track-display:-0.022em; --track-heading:-0.012em; --track-body:0em; --track-micro:0.04em; --space-1:var(--space-unit); --space-2:calc(var(--space-unit)*2); --space-3:calc(var(--space-unit)*3); --space-4:calc(var(--space-unit)*4); --space-6:calc(var(--space-unit)*6); --space-8:calc(var(--space-unit)*8); --space-12:calc(var(--space-unit)*12); --space-16:calc(var(--space-unit)*16); --space-24:calc(var(--space-unit)*24); --row-pad:var(--space-3); --page-max:90rem; --page-gutter:var(--space-8); --panel-width:min(32rem,38vw); --measure-reason:46ch; --radius-control:calc(var(--space-unit)*1.5); --radius-panel:calc(var(--space-unit)*3); --paper:oklch(99% 0.002 250); --surface:oklch(100% 0 0); --sunken:oklch(97.5% 0.003 250); --hairline:oklch(92% 0.004 250); --hairline-strong:oklch(85% 0.005 250); --ink:oklch(21% 0.012 265); --ink-muted:oklch(48% 0.010 265); --ink-faint:oklch(64% 0.008 265); --accent:oklch(52% 0.16 255); --accent-wash:oklch(96% 0.03 255); --risk-0:oklch(64% 0.008 265); --risk-1:oklch(66% 0.11 75); --risk-2:oklch(60% 0.14 55); --risk-3:oklch(54% 0.16 38); --risk-4:oklch(46% 0.17 28); --shadow-raised:0 1px 2px oklch(21% 0.012 265 / .06), 0 4px 12px oklch(21% 0.012 265 / .06); --shadow-panel:0 2px 4px oklch(21% 0.012 265 / .05), 0 16px 48px oklch(21% 0.012 265 / .12); min-height:100vh; background:var(--paper); color:var(--ink); font-family:'Geist', ui-sans-serif, system-ui, sans-serif; font-size:var(--font-sm); line-height:var(--leading-snug); letter-spacing:var(--track-body); padding-bottom:var(--space-24);" ref="{{ rootRef }}">
+
+  <sc-if value="{{ showDots }}" hint-placeholder-val="{{ true }}">
+    <div ref="{{ dotsRef }}" style="{{ dotsBaseStyle }}"></div>
+    <div ref="{{ dotsRevealRef }}" style="{{ dotsRevealStyle }}"></div>
+  </sc-if>
+
+  <div style="position:relative; z-index:1; max-width:var(--page-max); margin:0 auto; padding:var(--space-6) var(--page-gutter) 0; display:flex; align-items:baseline; justify-content:space-between; gap:var(--space-8);">
+    <div style="font-size:var(--font-2xs); letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint); font-weight:600;">Ministry of Statistics and Programme Implementation</div>
+    <div style="display:flex; gap:var(--space-6); align-items:baseline;">
+      <sc-for list="{{ views }}" as="v" hint-placeholder-count="3">
+        <button type="button" onClick="{{ v.go }}" style="{{ v.style }}" style-hover="color:var(--ink);">{{ v.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+
+  <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+  <div style="position:relative; z-index:1; max-width:var(--page-max); margin:0 auto; padding:0 var(--page-gutter);">
+
+    <div style="padding-top:var(--space-12); display:grid; grid-template-columns:minmax(0,1fr) 22rem; gap:var(--space-16); align-items:last baseline;">
+      <div>
+        <h1 style="margin:0; font-size:var(--font-2xl); font-weight:600; letter-spacing:var(--track-display); line-height:var(--leading-tight);">NidhiNetra</h1>
+        <p style="margin:var(--space-4) 0 0; font-size:var(--font-md); font-weight:400; letter-spacing:var(--track-heading); line-height:var(--leading-snug); max-width:52ch; color:var(--ink); text-wrap:pretty;">District Authorities must physically inspect at least ten percent of works under implementation every year. This ranks the works by risk, so that ten percent is chosen rather than assumed.</p>
+      </div>
+      <p style="margin:0; font-size:var(--font-2xs); line-height:var(--leading-normal); color:var(--ink-faint); max-width:34ch; text-wrap:pretty;">MPLADS, eSAKSHI public dashboard. Local snapshot, 31 August 2026. Work level records are published on the portal from 2023-24 onward. Every flag is a recommendation to look, never a finding.</p>
+    </div>
+
+    <div ref="{{ stripRef }}" style="{{ stripStyle }}">
+      <sc-for list="{{ summary }}" as="s" hint-placeholder-count="4">
+        <div onMouseEnter="{{ s.enter }}" onMouseLeave="{{ s.leave }}" style="{{ s.cellStyle }}">
+          <div style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; font-size:var(--font-xl); font-weight:500; letter-spacing:var(--track-heading); line-height:var(--leading-tight); color:var(--ink);">{{ s.value }}</div>
+          <div style="margin-top:var(--space-3); font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint); line-height:var(--leading-snug); max-width:26ch; min-height:2.6em;">{{ s.label }}</div>
+          <div style="margin-top:var(--space-2); font-size:var(--font-2xs); color:var(--ink-muted); line-height:var(--leading-normal); max-width:30ch; text-wrap:pretty;">{{ s.context }}</div>
+          <div style="{{ s.computeStyle }}">{{ s.compute }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top:var(--space-8); background:var(--paper);">
+      <div ref="{{ meterRef }}" onPointerMove="{{ onMeterMove }}" onPointerLeave="{{ onMeterLeave }}" style="position:relative; height:calc(var(--space-unit) * 7); cursor:crosshair;">
+        <div style="{{ meterRestStyle }}"></div>
+        <div style="{{ meterFillStyle }}"></div>
+        <div style="{{ meterCutStyle }}"></div>
+        <div ref="{{ meterMarkRef }}" style="position:absolute; top:0; bottom:0; left:0; width:2px; background:var(--ink); opacity:0;"></div>
+      </div>
+      <div style="position:relative; margin-top:var(--space-3); height:1.4em;">
+        <div style="{{ meterCutLabelStyle }}">{{ meterCutLabel }}</div>
+        <div ref="{{ meterLabelRef }}" style="position:absolute; right:0; top:0; font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; font-size:var(--font-2xs); letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint);"></div>
+      </div>
+      <p style="margin:var(--space-3) 0 0; font-size:var(--font-xs); line-height:var(--leading-normal); color:var(--ink-muted); max-width:78ch; text-wrap:pretty;">{{ meterSentence }}</p>
+    </div>
+
+    <div ref="{{ sentinelRef }}" style="height:1px; margin-top:var(--space-8);"></div>
+
+    <div ref="{{ barRef }}" style="position:sticky; top:0; z-index:40; {{ filterBarStyle }}">
+      <div style="display:flex; align-items:center; gap:var(--space-6); flex-wrap:wrap;">
+        <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+          <button type="button" onClick="{{ f.cycle }}" style="display:flex; flex-direction:column; align-items:flex-start; gap:var(--space-1); background:none; border:0; padding:var(--space-1) 0; cursor:pointer; text-align:left; border-radius:var(--radius-control);" style-hover="opacity:.7;">
+            <span style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint);">{{ f.label }}</span>
+            <span style="display:flex; align-items:center; gap:var(--space-2); font-size:var(--font-sm); font-weight:500; color:var(--ink);">{{ f.value }}<i class="ph ph-caret-down" style="font-size:var(--font-xs); color:var(--ink-faint);"></i></span>
+          </button>
+        </sc-for>
+        <div style="flex:1 1 auto;"></div>
+        <div style="display:flex; flex-direction:column; align-items:flex-start; gap:var(--space-1);">
+          <span style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint);">Row treatment</span>
+          <div style="display:flex; gap:var(--space-4);">
+            <sc-for list="{{ treatments }}" as="t" hint-placeholder-count="2">
+              <button type="button" onClick="{{ t.go }}" style="{{ t.style }}">{{ t.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:flex-start; gap:var(--space-1);">
+          <span style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint);">Data state</span>
+          <div style="display:flex; gap:var(--space-4);">
+            <sc-for list="{{ dataStates }}" as="d" hint-placeholder-count="3">
+              <button type="button" onClick="{{ d.go }}" style="{{ d.style }}">{{ d.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin:var(--space-8) 0 0; font-size:var(--font-xs); line-height:var(--leading-normal); color:var(--ink-muted); max-width:88ch; text-wrap:pretty;">{{ scopeLine }}</p>
+
+    <div ref="{{ tableRef }}" tabIndex="0" onKeyDown="{{ onKeyDown }}" style="margin-top:var(--space-8); outline:none; background:var(--paper); min-width:74rem;">
+
+      <div style="position:sticky; top:{{ headTop }}; z-index:30; background:var(--paper);">
+        <div style="display:grid; grid-template-columns:3rem minmax(18rem,1fr) 7.5rem 11rem 8.5rem 8.5rem 5rem 5.5rem; min-width:74rem; gap:var(--space-4); padding:var(--space-3) 0; border-bottom:1px solid var(--hairline-strong);">
+          <sc-for list="{{ columns }}" as="c" hint-placeholder-count="8">
+            <button type="button" onClick="{{ c.sort }}" style="{{ c.style }}" style-hover="color:var(--ink);">{{ c.label }}{{ c.caret }}</button>
+          </sc-for>
+        </div>
+        <div style="height:var(--space-3); background:linear-gradient(to bottom, var(--paper), oklch(99% 0.002 250 / 0)); pointer-events:none;"></div>
+      </div>
+
+      <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <sc-for list="{{ skeletons }}" as="k" hint-placeholder-count="6">
+            <div style="display:grid; grid-template-columns:3rem minmax(18rem,1fr) 7.5rem 11rem 8.5rem 8.5rem 5rem 5.5rem; min-width:74rem; gap:var(--space-4); padding:var(--row-pad) 0; border-bottom:1px solid var(--hairline); align-items:start;">
+              <div style="height:.85em; border-radius:2px; background:var(--sunken); width:60%;"></div>
+              <div>
+                <div style="height:.85em; border-radius:2px; background:var(--sunken); width:{{ k.w1 }};"></div>
+                <div style="height:.72em; border-radius:2px; background:var(--sunken); width:{{ k.w2 }}; margin-top:var(--space-2); opacity:.6;"></div>
+              </div>
+              <div style="height:.85em; border-radius:2px; background:var(--sunken); width:70%;"></div>
+              <div style="height:.85em; border-radius:2px; background:var(--sunken); width:85%;"></div>
+              <div style="height:.85em; border-radius:2px; background:var(--sunken); width:80%; justify-self:end;"></div>
+              <div style="height:.85em; border-radius:2px; background:var(--sunken); width:70%; justify-self:end;"></div>
+              <div style="height:.85em; border-radius:2px; background:var(--sunken); width:60%; justify-self:end;"></div>
+              <div style="height:.85em; border-radius:2px; background:var(--sunken); width:75%; justify-self:end;"></div>
+            </div>
+          </sc-for>
+          <p style="margin:var(--space-6) 0 0; font-size:var(--font-xs); color:var(--ink-faint);">Ranking 168 works against their peer groups.</p>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:var(--space-24) 0; max-width:44ch;">
+          <div style="font-size:var(--font-md); font-weight:500; letter-spacing:var(--track-heading);">No works match this filter.</div>
+          <p style="margin:var(--space-4) 0 0; font-size:var(--font-sm); line-height:var(--leading-normal); color:var(--ink-muted); text-wrap:pretty;">Sanitation works in Jharkhand for 2025-26 returned nothing under the selected flag type. Nine works match if the flag type is set to all flags, and 41 match across all three states.</p>
+          <div style="display:flex; gap:var(--space-6); margin-top:var(--space-8);">
+            <button type="button" onClick="{{ clearFlag }}" style="background:none; border:0; padding:0; cursor:pointer; color:var(--accent); font-size:var(--font-sm); font-weight:500; text-decoration:underline; text-underline-offset:3px;" style-hover="color:oklch(44% 0.17 255);">Set flag type to all flags</button>
+            <button type="button" onClick="{{ clearAll }}" style="background:none; border:0; padding:0; cursor:pointer; color:var(--accent); font-size:var(--font-sm); font-weight:500; text-decoration:underline; text-underline-offset:3px;" style-hover="color:oklch(44% 0.17 255);">Clear all filters</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ hasRows }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+          <div>
+            <div onMouseEnter="{{ r.enter }}" onMouseLeave="{{ r.leave }}" onPointerDown="{{ r.press }}" onClick="{{ r.open }}" style="{{ r.rowStyle }}">
+              <sc-if value="{{ r.showTick }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ r.tickStyle }}"></div>
+              </sc-if>
+              <div style="display:grid; grid-template-columns:3rem minmax(18rem,1fr) 7.5rem 11rem 8.5rem 8.5rem 5rem 5.5rem; min-width:74rem; gap:var(--space-4); align-items:baseline;">
+                <div style="{{ r.rankStyle }}">{{ r.rank }}</div>
+                <div style="min-width:0;">
+                  <div style="font-size:var(--font-sm); font-weight:500; line-height:var(--leading-snug); text-wrap:pretty;">{{ r.name }}</div>
+                  <sc-if value="{{ r.showChip }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top:var(--space-1); font-size:var(--font-2xs); letter-spacing:var(--track-micro); text-transform:uppercase; font-weight:600; color:var(--ink-faint);">{{ r.chip }}</div>
+                  </sc-if>
+                </div>
+                <div style="font-size:var(--font-xs); color:var(--ink-muted); line-height:var(--leading-snug);">{{ r.district }}</div>
+                <div style="font-size:var(--font-xs); color:var(--ink-muted); line-height:var(--leading-snug); text-wrap:pretty;">{{ r.agency }}</div>
+                <div style="{{ r.numStyle }}">{{ r.sanc }}</div>
+                <div style="{{ r.spentStyle }}">{{ r.spent }}</div>
+                <div style="{{ r.staleStyle }}">{{ r.stale }}</div>
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:var(--space-1);">
+                  <div style="{{ r.scoreStyle }}">{{ r.score }}</div>
+                  <div style="font-size:var(--font-2xs); letter-spacing:var(--track-micro); text-transform:uppercase; font-weight:600; color:{{ r.bandColor }};">{{ r.band }}</div>
+                </div>
+              </div>
+
+              <sc-if value="{{ r.showReason }}" hint-placeholder-val="{{ true }}">
+                <div style="display:grid; grid-template-columns:3rem minmax(18rem,1fr) 7.5rem 11rem 8.5rem 8.5rem 5rem 5.5rem; min-width:74rem; gap:var(--space-4); margin-top:var(--space-2); align-items:baseline;">
+                  <div></div>
+                  <div style="font-size:var(--font-xs); font-weight:400; line-height:var(--leading-normal); color:var(--ink-muted); max-width:var(--measure-reason); text-wrap:pretty;">{{ r.reason }}</div>
+                  <div style="font-size:var(--font-2xs); color:var(--ink-faint); line-height:var(--leading-normal);">{{ r.state }}</div>
+                  <div style="font-size:var(--font-2xs); color:var(--ink-faint); line-height:var(--leading-normal);">{{ r.cat }}</div>
+                  <div></div>
+                  <div style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; font-size:var(--font-2xs); color:var(--ink-faint); text-align:right;">{{ r.releasedLabel }}</div>
+                  <div style="grid-column:7 / -1; text-align:right; font-size:var(--font-2xs); letter-spacing:var(--track-micro); text-transform:uppercase; font-weight:600; color:{{ r.outcomeColor }};">{{ r.outcome }}</div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ r.showReveal }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ r.revealStyle }}">
+                  <div style="font-size:var(--font-xs); line-height:var(--leading-normal); color:var(--ink); max-width:var(--measure-reason); text-wrap:pretty;">{{ r.reason }}</div>
+                  <div style="margin-top:var(--space-3); display:flex; gap:var(--space-4); font-size:var(--font-2xs); letter-spacing:var(--track-micro); text-transform:uppercase; font-weight:600; color:var(--ink-faint);">
+                    <span>{{ r.state }}</span><span>{{ r.cat }}</span><span>{{ r.releasedLabel }}</span>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+
+            <sc-if value="{{ r.isQuotaLine }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:var(--space-8); padding:var(--space-4) 0 var(--space-3); border-bottom:2px solid var(--ink);">
+                <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink);">Ten percent inspection line</div>
+                <div style="font-size:var(--font-2xs); color:var(--ink-muted); letter-spacing:var(--track-micro); text-transform:uppercase; font-weight:600;">{{ quotaLabel }}</div>
+              </div>
+              <div style="padding:var(--space-3) 0 0; font-size:var(--font-xs); color:var(--ink-faint); max-width:64ch; line-height:var(--leading-normal); text-wrap:pretty;">Below this line sit the remaining ninety percent. They are not currently flagged for this year's sample, and they are not verified clean.</div>
+            </sc-if>
+          </div>
+        </sc-for>
+
+        <div style="padding:var(--space-8) 0 0; font-size:var(--font-xs); color:var(--ink-faint);">{{ tailLine }}</div>
+      </div>
+      </sc-if>
+    </div>
+
+    <div style="margin-top:var(--space-24); padding-top:var(--space-8); border-top:1px solid var(--hairline-strong); background:var(--paper); min-width:74rem;">
+      <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint);">States the data forces on the design</div>
+      <p style="margin:var(--space-4) 0 0; font-size:var(--font-xs); color:var(--ink-muted); max-width:62ch; line-height:var(--leading-normal);">Government records are incomplete. These are composed, not degraded versions of the row above.</p>
+
+      <div style="margin-top:var(--space-16); display:grid; gap:var(--space-16);">
+        <sc-for list="{{ stateSpecimens }}" as="sp" hint-placeholder-count="4">
+          <div>
+            <div style="display:flex; align-items:baseline; gap:var(--space-4); padding-bottom:var(--space-3); border-bottom:1px solid var(--hairline);">
+              <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink);">{{ sp.title }}</div>
+              <div style="font-size:var(--font-2xs); color:var(--ink-faint);">{{ sp.note }}</div>
+            </div>
+            <div style="padding-top:var(--space-4);">
+              <sc-if value="{{ sp.isRow }}" hint-placeholder-val="{{ true }}">
+                <div style="display:grid; grid-template-columns:3rem minmax(18rem,1fr) 7.5rem 11rem 8.5rem 8.5rem 5rem 5.5rem; min-width:74rem; gap:var(--space-4); padding:var(--row-pad) 0; border-bottom:1px solid var(--hairline); align-items:baseline;">
+                  <div style="{{ sp.rankStyle }}">{{ sp.rank }}</div>
+                  <div style="min-width:0;">
+                    <div style="font-size:var(--font-sm); font-weight:500; line-height:var(--leading-snug); text-wrap:pretty;">{{ sp.name }}</div>
+                    <div style="margin-top:var(--space-2); font-size:var(--font-xs); line-height:var(--leading-normal); color:var(--ink-muted); max-width:var(--measure-reason); text-wrap:pretty;">{{ sp.reason }}</div>
+                  </div>
+                  <div style="font-size:var(--font-xs); color:var(--ink-muted);">{{ sp.district }}</div>
+                  <div style="font-size:var(--font-xs); color:var(--ink-muted); text-wrap:pretty;">{{ sp.agency }}</div>
+                  <div style="{{ sp.sancStyle }}">{{ sp.sanc }}</div>
+                  <div style="{{ sp.spentStyle }}">{{ sp.spent }}</div>
+                  <div style="{{ sp.staleStyle }}">{{ sp.stale }}</div>
+                  <div style="{{ sp.scoreStyle }}">{{ sp.score }}</div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ sp.isSkeleton }}" hint-placeholder-val="{{ false }}">
+                <div>
+                  <sc-for list="{{ sp.lines }}" as="k" hint-placeholder-count="3">
+                    <div style="display:grid; grid-template-columns:3rem minmax(18rem,1fr) 7.5rem 11rem 8.5rem 8.5rem 5rem 5.5rem; min-width:74rem; gap:var(--space-4); padding:var(--row-pad) 0; border-bottom:1px solid var(--hairline); align-items:start;">
+                      <div style="height:.85em; border-radius:2px; background:var(--sunken); width:60%;"></div>
+                      <div>
+                        <div style="height:.85em; border-radius:2px; background:var(--sunken); width:{{ k.w1 }};"></div>
+                        <div style="height:.72em; border-radius:2px; background:var(--sunken); width:{{ k.w2 }}; margin-top:var(--space-2); opacity:.6;"></div>
+                      </div>
+                      <div style="height:.85em; border-radius:2px; background:var(--sunken); width:70%;"></div>
+                      <div style="height:.85em; border-radius:2px; background:var(--sunken); width:85%;"></div>
+                      <div style="height:.85em; border-radius:2px; background:var(--sunken); width:80%; justify-self:end;"></div>
+                      <div style="height:.85em; border-radius:2px; background:var(--sunken); width:70%; justify-self:end;"></div>
+                      <div style="height:.85em; border-radius:2px; background:var(--sunken); width:60%; justify-self:end;"></div>
+                      <div style="height:.85em; border-radius:2px; background:var(--sunken); width:75%; justify-self:end;"></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ sp.isEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:var(--space-12) 0; max-width:44ch;">
+                  <div style="font-size:var(--font-md); font-weight:500; letter-spacing:var(--track-heading);">No works match this filter.</div>
+                  <p style="margin:var(--space-4) 0 0; font-size:var(--font-sm); line-height:var(--leading-normal); color:var(--ink-muted); text-wrap:pretty;">Sanitation works in Jharkhand for 2025-26 returned nothing under the selected flag type. Nine works match if the flag type is set to all flags.</p>
+                  <div style="margin-top:var(--space-6); color:var(--accent); font-size:var(--font-sm); font-weight:500; text-decoration:underline; text-underline-offset:3px;">Set flag type to all flags</div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isFlow }}" hint-placeholder-val="{{ false }}">
+  <div style="position:relative; z-index:1; background:var(--paper); max-width:var(--page-max); margin:0 auto; padding:var(--space-16) var(--page-gutter) 0;">
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) 26rem; gap:var(--space-16); align-items:end;">
+      <div>
+        <h1 style="margin:0; font-size:var(--font-xl); font-weight:600; letter-spacing:var(--track-display); line-height:var(--leading-tight);">Fund flow</h1>
+        <p style="margin:var(--space-4) 0 0; font-size:var(--font-sm); line-height:var(--leading-normal); color:var(--ink-muted); max-width:56ch; text-wrap:pretty;">Money moves from a Member's recommendation, through a District Authority sanction, to an Implementing Agency, to a vendor. A vendor drawing work from an unusual number of Members is invisible in any row by row view.</p>
+      </div>
+      <p style="margin:0; font-size:var(--font-2xs); line-height:var(--leading-normal); color:var(--ink-faint); text-wrap:pretty;">Members are shown by constituency. Concentration is a reason to look at the procurement record, not a finding about any person or firm.</p>
+    </div>
+
+    <div style="position:relative; margin-top:var(--space-12); height:40rem; background:var(--sunken); border-radius:var(--radius-panel); overflow:hidden;">
+      <svg width="100%" height="100%" style="position:absolute; inset:0; display:block;">
+        <sc-for list="{{ edges }}" as="e" hint-placeholder-count="15">
+          <line x1="{{ e.x1 }}" y1="{{ e.y1 }}" x2="{{ e.x2 }}" y2="{{ e.y2 }}" stroke="{{ e.stroke }}" stroke-width="{{ e.w }}" stroke-linecap="round"></line>
+        </sc-for>
+      </svg>
+      <sc-for list="{{ nodes }}" as="n" hint-placeholder-count="20">
+        <div style="{{ n.style }}">
+          <div style="{{ n.dotStyle }}"></div>
+          <div style="{{ n.labelStyle }}">{{ n.label }}</div>
+          <sc-if value="{{ n.sub }}" hint-placeholder-val="{{ false }}">
+            <div style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; font-size:var(--font-2xs); color:var(--ink-faint); background:var(--sunken); padding:0 var(--space-2); line-height:var(--leading-snug);">{{ n.sub }}</div>
+          </sc-if>
+        </div>
+      </sc-for>
+
+      <div style="position:absolute; right:var(--space-6); top:var(--space-6); background:var(--surface); border-radius:var(--radius-panel); box-shadow:var(--shadow-raised); padding:var(--space-6); width:19rem; {{ contrastBorder }}">
+        <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint);">Filter</div>
+        <div style="margin-top:var(--space-4); font-size:var(--font-xs); line-height:var(--leading-normal); color:var(--ink-muted); text-wrap:pretty;">{{ graphFilterLine }}</div>
+        <div style="margin-top:var(--space-6); display:flex; align-items:center; justify-content:space-between; gap:var(--space-4);">
+          <span style="font-size:var(--font-xs); color:var(--ink);">Minimum Members per vendor</span>
+          <div style="display:flex; align-items:center; gap:var(--space-3);">
+            <button type="button" onClick="{{ decMin }}" style="width:1.6rem; height:1.6rem; border:1px solid var(--hairline-strong); background:var(--surface); border-radius:var(--radius-control); cursor:pointer; color:var(--ink); line-height:1;" style-hover="border-color:var(--accent); color:var(--accent);">&#8722;</button>
+            <span style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; font-size:var(--font-sm); min-width:1.2rem; text-align:center;">{{ minMps }}</span>
+            <button type="button" onClick="{{ incMin }}" style="width:1.6rem; height:1.6rem; border:1px solid var(--hairline-strong); background:var(--surface); border-radius:var(--radius-control); cursor:pointer; color:var(--ink); line-height:1;" style-hover="border-color:var(--accent); color:var(--accent);">+</button>
+          </div>
+        </div>
+        <button type="button" onClick="{{ toggleRest }}" style="margin-top:var(--space-4); background:none; border:0; padding:0; cursor:pointer; color:var(--accent); font-size:var(--font-xs); font-weight:500; text-decoration:underline; text-underline-offset:3px;" style-hover="color:oklch(44% 0.17 255);">{{ restLabel }}</button>
+      </div>
+
+      <div style="position:absolute; right:var(--space-6); bottom:var(--space-6); background:var(--surface); border-radius:var(--radius-panel); box-shadow:var(--shadow-raised); padding:var(--space-6); width:19rem; {{ contrastBorder }}">
+        <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint);">Cluster in focus</div>
+        <div style="margin-top:var(--space-3); font-size:var(--font-md); font-weight:500; letter-spacing:var(--track-heading);">Shreeja Constructions</div>
+        <div style="margin-top:var(--space-4); display:grid; grid-template-columns:auto 1fr; gap:var(--space-2) var(--space-6); font-size:var(--font-xs);">
+          <span style="color:var(--ink-muted);">Members</span><span style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; text-align:right;">11</span>
+          <span style="color:var(--ink-muted);">Districts</span><span style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; text-align:right;">4</span>
+          <span style="color:var(--ink-muted);">Works</span><span style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; text-align:right;">23</span>
+          <span style="color:var(--ink-muted);">Paid</span><span style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; text-align:right;">&#8377;9,84,20,000</span>
+        </div>
+        <p style="margin:var(--space-4) 0 0; font-size:var(--font-2xs); line-height:var(--leading-normal); color:var(--ink-faint); text-wrap:pretty;">The median vendor in this filter is paid on works from one Member. Three of these works appear in the inspection list above.</p>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isSpec }}" hint-placeholder-val="{{ false }}">
+  <div style="position:relative; z-index:1; background:var(--paper); max-width:var(--page-max); margin:0 auto; padding:var(--space-16) var(--page-gutter) 0;">
+    <h1 style="margin:0; font-size:var(--font-xl); font-weight:600; letter-spacing:var(--track-display); line-height:var(--leading-tight);">Specimen sheet</h1>
+    <p style="margin:var(--space-4) 0 0; font-size:var(--font-sm); line-height:var(--leading-normal); color:var(--ink-muted); max-width:62ch; text-wrap:pretty;">Three numbers are chosen by hand. Every size, gap, row height and radius on the page is derived from them. Change an anchor in the tweaks panel and the whole page reshapes.</p>
+
+    <div style="margin-top:var(--space-12); display:grid; grid-template-columns:repeat(auto-fit, minmax(15rem,1fr)); gap:var(--space-12); max-width:60rem;">
+      <sc-for list="{{ anchors }}" as="a" hint-placeholder-count="3">
+        <div style="border-top:2px solid var(--ink); padding-top:var(--space-4);">
+          <div style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; font-size:var(--font-lg); font-weight:500; letter-spacing:var(--track-heading);">{{ a.value }}</div>
+          <div style="margin-top:var(--space-2); font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint);">{{ a.name }}</div>
+          <div style="margin-top:var(--space-2); font-size:var(--font-2xs); color:var(--ink-muted); line-height:var(--leading-normal);">{{ a.note }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top:var(--space-24);">
+      <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint); padding-bottom:var(--space-3); border-bottom:1px solid var(--hairline-strong);">Type scale, tracking is size specific</div>
+      <sc-for list="{{ typeScale }}" as="t" hint-placeholder-count="7">
+        <div style="display:grid; grid-template-columns:9rem 5.5rem 4.5rem 6rem 5.5rem minmax(0,1fr); gap:var(--space-6); align-items:baseline; padding:var(--space-4) 0; border-bottom:1px solid var(--hairline);">
+          <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint);">{{ t.role }}</div>
+          <div style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; font-size:var(--font-2xs); color:var(--ink-muted); text-align:right;">{{ t.rem }}</div>
+          <div style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; font-size:var(--font-2xs); color:var(--ink-muted); text-align:right;">{{ t.px }}</div>
+          <div style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; font-size:var(--font-2xs); color:var(--ink-muted); text-align:right;">{{ t.track }}</div>
+          <div style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; font-size:var(--font-2xs); color:var(--ink-muted); text-align:right;">{{ t.lead }}</div>
+          <div style="{{ t.sampleStyle }}">{{ t.sample }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top:var(--space-24); display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:var(--space-24);">
+      <div>
+        <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint); padding-bottom:var(--space-3); border-bottom:1px solid var(--hairline-strong);">Space scale</div>
+        <sc-for list="{{ spaceScale }}" as="s" hint-placeholder-count="9">
+          <div style="display:grid; grid-template-columns:5rem 4.5rem minmax(0,1fr); gap:var(--space-6); align-items:center; padding:var(--space-3) 0; border-bottom:1px solid var(--hairline);">
+            <div style="font-family:'Geist Mono', ui-monospace, monospace; font-size:var(--font-2xs); color:var(--ink-muted);">{{ s.name }}</div>
+            <div style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; font-size:var(--font-2xs); color:var(--ink-muted); text-align:right;">{{ s.rem }}</div>
+            <div style="{{ s.barStyle }}"></div>
+          </div>
+        </sc-for>
+      </div>
+      <div>
+        <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint); padding-bottom:var(--space-3); border-bottom:1px solid var(--hairline-strong);">Colour</div>
+        <sc-for list="{{ palette }}" as="c" hint-placeholder-count="14">
+          <div style="display:grid; grid-template-columns:2.5rem 9rem minmax(0,1fr); gap:var(--space-6); align-items:center; padding:var(--space-3) 0; border-bottom:1px solid var(--hairline);">
+            <div style="{{ c.swatch }}"></div>
+            <div style="font-family:'Geist Mono', ui-monospace, monospace; font-size:var(--font-2xs); color:var(--ink);">{{ c.token }}</div>
+            <div style="font-family:'Geist Mono', ui-monospace, monospace; font-size:var(--font-2xs); color:var(--ink-faint);">{{ c.value }}</div>
+          </div>
+        </sc-for>
+        <p style="margin:var(--space-6) 0 0; font-size:var(--font-xs); line-height:var(--leading-normal); color:var(--ink-muted); max-width:46ch; text-wrap:pretty;">The risk ramp is warm and the interactive accent is cool, so nothing reads as both risky and clickable. No step is green. Green would claim verified clean, which nothing here is.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:var(--space-24);">
+      <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint); padding-bottom:var(--space-3); border-bottom:1px solid var(--hairline-strong);">Elevation, two levels only</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(15rem,1fr)); gap:var(--space-12); margin-top:var(--space-8); align-items:start;">
+        <div style="background:var(--paper); border-bottom:1px solid var(--hairline); padding:var(--space-8) var(--space-6);">
+          <div style="font-size:var(--font-sm); font-weight:500;">Page</div>
+          <div style="margin-top:var(--space-2); font-size:var(--font-2xs); color:var(--ink-muted); line-height:var(--leading-normal);">Off white paper, hairline separation, no shadow. Everything that belongs to the document sits here.</div>
+        </div>
+        <div style="background:var(--surface); border-radius:var(--radius-panel); box-shadow:var(--shadow-raised); padding:var(--space-8) var(--space-6);">
+          <div style="font-size:var(--font-sm); font-weight:500;">Raised</div>
+          <div style="margin-top:var(--space-2); font-size:var(--font-2xs); color:var(--ink-muted); line-height:var(--leading-normal);">Sticky filter bar, graph controls, hover reveal. Brighter than the page, never greyer.</div>
+        </div>
+        <div style="background:var(--surface); border-radius:var(--radius-panel); box-shadow:var(--shadow-panel); padding:var(--space-8) var(--space-6);">
+          <div style="font-size:var(--font-sm); font-weight:500;">Panel</div>
+          <div style="margin-top:var(--space-2); font-size:var(--font-2xs); color:var(--ink-muted); line-height:var(--leading-normal);">The detail panel. Shadow is tinted to the ink hue, never neutral black.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:var(--space-24);">
+      <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint); padding-bottom:var(--space-3); border-bottom:1px solid var(--hairline-strong);">Three accessibility signals, read live from this browser</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(15rem,1fr)); gap:var(--space-12); margin-top:var(--space-8);">
+        <sc-for list="{{ a11y }}" as="a" hint-placeholder-count="3">
+          <div>
+            <div style="display:flex; align-items:baseline; gap:var(--space-3);">
+              <div style="font-size:var(--font-sm); font-weight:500;">{{ a.name }}</div>
+              <div style="font-family:'Geist Mono', ui-monospace, monospace; font-size:var(--font-2xs); letter-spacing:var(--track-micro); text-transform:uppercase; color:{{ a.color }};">{{ a.status }}</div>
+            </div>
+            <div style="margin-top:var(--space-2); font-size:var(--font-2xs); color:var(--ink-muted); line-height:var(--leading-normal); text-wrap:pretty;">{{ a.effect }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ panelOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ panelStyle }}">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:var(--space-6); padding:var(--space-8) var(--space-8) var(--space-6);">
+        <div style="min-width:0;">
+          <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint);">{{ sel.rankLabel }}</div>
+          <div style="margin-top:var(--space-3); font-size:var(--font-md); font-weight:500; letter-spacing:var(--track-heading); line-height:var(--leading-snug); text-wrap:pretty;">{{ sel.name }}</div>
+        </div>
+        <button type="button" onClick="{{ closePanel }}" style="flex:0 0 auto; width:2rem; height:2rem; display:flex; align-items:center; justify-content:center; background:none; border:0; border-radius:var(--radius-control); cursor:pointer; color:var(--ink-faint);" style-hover="color:var(--ink); background:var(--sunken);"><i class="ph ph-x"></i></button>
+      </div>
+
+      <div style="flex:1 1 auto; overflow-y:auto; padding:0 var(--space-8) var(--space-16);">
+        <div style="display:grid; grid-template-columns:auto minmax(0,1fr); gap:var(--space-3) var(--space-8); padding:var(--space-6) 0; border-top:1px solid var(--hairline);">
+          <sc-for list="{{ sel.record }}" as="f" hint-placeholder-count="8">
+            <div style="font-size:var(--font-xs); color:var(--ink-faint); white-space:nowrap;">{{ f.k }}</div>
+            <div style="{{ f.style }}">{{ f.v }}</div>
+          </sc-for>
+        </div>
+
+        <div style="padding-top:var(--space-8); border-top:1px solid var(--hairline);">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:var(--space-6);">
+            <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint);">Risk breakdown</div>
+            <div style="display:flex; align-items:baseline; gap:var(--space-3);">
+              <span style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; font-size:var(--font-lg); font-weight:500; letter-spacing:var(--track-heading); color:{{ sel.bandColor }};">{{ sel.score }}</span>
+              <span style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:{{ sel.bandColor }};">{{ sel.band }}</span>
+            </div>
+          </div>
+          <sc-for list="{{ sel.factors }}" as="f" hint-placeholder-count="4">
+            <div style="padding:var(--space-4) 0; border-bottom:1px solid var(--hairline);">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:var(--space-6);">
+                <div style="font-size:var(--font-xs); font-weight:500; color:var(--ink);">{{ f.label }}</div>
+                <div style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; font-size:var(--font-xs); color:var(--ink);">{{ f.weight }}</div>
+              </div>
+              <div style="margin-top:var(--space-2); height:2px; background:var(--hairline);">
+                <div style="{{ f.barStyle }}"></div>
+              </div>
+              <div style="margin-top:var(--space-2); font-size:var(--font-2xs); line-height:var(--leading-normal); color:var(--ink-muted); text-wrap:pretty;">{{ f.detail }}</div>
+            </div>
+          </sc-for>
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:var(--space-6); padding:var(--space-4) 0;">
+            <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint);">Total</div>
+            <div style="font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; font-size:var(--font-xs); color:var(--ink);">{{ sel.score }}</div>
+          </div>
+        </div>
+
+        <div style="margin-top:var(--space-6); padding:var(--space-8); background:var(--sunken); border-radius:var(--radius-panel);">
+          <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint);">Peer group</div>
+          <div style="margin-top:var(--space-3); font-size:var(--font-md); font-weight:400; letter-spacing:var(--track-heading); line-height:var(--leading-snug); color:var(--ink); text-wrap:pretty;">{{ sel.peer }}</div>
+          <div style="margin-top:var(--space-4); font-size:var(--font-2xs); line-height:var(--leading-normal); color:var(--ink-muted); max-width:46ch; text-wrap:pretty;">A road through hills costs more than a road across plains. The comparison is drawn inside the same category, state, year and length band, so terrain is held constant.</div>
+        </div>
+
+        <div style="margin-top:var(--space-12); padding-top:var(--space-8); border-top:1px solid var(--hairline);">
+          <div style="font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink-faint);">Inspection</div>
+          <div style="margin-top:var(--space-3); font-size:var(--font-xs); color:var(--ink-muted); line-height:var(--leading-normal); max-width:48ch; text-wrap:pretty;">{{ sel.outcomeLine }}</div>
+          <div style="margin-top:var(--space-6); display:flex; flex-wrap:wrap; gap:var(--space-3);">
+            <sc-for list="{{ sel.outcomes }}" as="o" hint-placeholder-count="3">
+              <button type="button" onClick="{{ o.set }}" style="{{ o.style }}">{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <button type="button" onClick="{{ goFlow }}" style="margin-top:var(--space-12); display:flex; align-items:center; gap:var(--space-3); background:none; border:0; padding:0; cursor:pointer; color:var(--accent); font-size:var(--font-sm); font-weight:500;" style-hover="color:oklch(44% 0.17 255);">
+          <span style="text-decoration:underline; text-underline-offset:3px;">Open this vendor in the fund flow view</span><i class="ph ph-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;fontBase&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1,&quot;min&quot;:0.75,&quot;max&quot;:1.25,&quot;step&quot;:0.0625,&quot;unit&quot;:&quot;rem&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Scale anchors&quot;},&quot;typeRatio&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1.2,&quot;min&quot;:1.1,&quot;max&quot;:1.4,&quot;step&quot;:0.01,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Scale anchors&quot;},&quot;spaceUnit&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.25,&quot;min&quot;:0.2,&quot;max&quot;:0.4,&quot;step&quot;:0.005,&quot;unit&quot;:&quot;rem&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Scale anchors&quot;},&quot;quotaPercent&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:10,&quot;min&quot;:5,&quot;max&quot;:25,&quot;step&quot;:1,&quot;unit&quot;:&quot;%&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Inspection&quot;}}">
+const F = {
+  cost:    { label: 'Cost per unit above peer group', how: 'Unit rate against the peer group median' },
+  time:    { label: 'Time overrun since sanction date', how: 'Elapsed months against the one year completion norm' },
+  noentry: { label: 'Funds released with no progress entry', how: 'Share released against days since the last entry' },
+  vendor:  { label: 'Vendor receiving work from many Members', how: 'Distinct Members of Parliament paying this vendor' },
+  photo:   { label: 'No asset photograph at payment stage', how: 'Payment stages released without an uploaded image' },
+  society: { label: 'Implementing agency is a society or trust', how: 'Guidelines require full inspection, not the ten percent sample' }
+};
+
+const WORKS = [
+  { id:'w1', rank:1, score:96, name:'Approach road and culvert, Sherghati to Dobhi, package 2', district:'Gaya', state:'Bihar', cat:'Roads and bridges', agency:'Rural Works Department, Gaya Division', sanc:18750000, spent:15750000, stale:172, sd:'14 June 2024', vendor:'Shreeja Constructions', peer:'Compared against 289 road works of 2 to 5 kilometres in Bihar for 2025-26.',
+    chip:'Cost 2.4 times peer median', reason:'Cost per kilometre is 2.4 times the median of 289 comparable road works in this peer group. 84 percent of funds released with no progress entry in 172 days.',
+    f:[['cost',34,'Rs 62,50,000 per kilometre against a peer median of Rs 26,04,000.'],['noentry',26,'84 percent released. Last entry 12 March 2025.'],['photo',20,'Two payment stages released, no image uploaded at either.'],['time',16,'14 months since sanction against a one year norm.']] },
+  { id:'w2', rank:2, score:93, name:'Piped drinking water supply, Kabisuryanagar cluster, phase 3', district:'Ganjam', state:'Odisha', cat:'Drinking water', agency:'Rural Water Supply and Sanitation Division, Ganjam', sanc:24000000, spent:21600000, stale:214, sd:'02 May 2024', vendor:'Maa Tarini Infra Projects', peer:'Compared against 412 piped water works in Odisha for 2025-26.',
+    chip:'Vendor paid on works from 11 Members', reason:'The vendor is paid on works recommended by 11 different Members of Parliament across 4 districts. 90 percent released, last progress entry 214 days ago.',
+    f:[['vendor',36,'11 Members against a peer median of 1.'],['noentry',24,'90 percent released. Last entry 29 January 2025.'],['photo',18,'Third payment stage released with no image.'],['cost',15,'1.3 times the peer median per household connection.']] },
+  { id:'w3', rank:3, score:89, name:'Community health sub-centre building, Baliapur block', district:'Dhanbad', state:'Jharkhand', cat:'Public health', agency:'Jharkhand Nirman Nigam Limited, Dhanbad', sanc:9800000, spent:4900000, stale:96, sd:'08 November 2023', vendor:'Bharat Buildcon', peer:'Compared against 156 health facility works in Jharkhand for 2025-26.',
+    chip:'26 months since sanction', reason:'Sanctioned 26 months ago against a one year completion norm. Half the funds released and no asset photograph uploaded at either payment stage.',
+    f:[['time',32,'26 months elapsed. Longest in this category for the state.'],['photo',26,'No image at either released stage.'],['noentry',18,'50 percent released. Last entry 96 days ago.'],['cost',13,'1.2 times the peer median per square metre.']] },
+  { id:'w4', rank:4, score:86, name:'Construction of additional classrooms, Middle School Kasba', district:'Purnia', state:'Bihar', cat:'Education', agency:'Sri Ram Shiksha Seva Sansthan, registered society', sanc:6200000, spent:3100000, stale:61, sd:'19 August 2024', vendor:'Not recorded', peer:'Compared against 204 classroom works in Bihar for 2025-26.',
+    chip:'Society, full inspection due', reason:'The implementing agency is a registered society. Scheme guidelines require full inspection of society and trust works, not the ten percent sample.',
+    f:[['society',34,'Full inspection is mandatory under the guidelines.'],['cost',22,'1.8 times the peer median per classroom.'],['time',18,'12 months since sanction, at the norm.'],['photo',12,'First stage released with no image.']] },
+  { id:'w5', rank:5, score:84, name:'Black topping of village road, Semiliguda to Sunabeda link', district:'Koraput', state:'Odisha', cat:'Roads and bridges', agency:'Rural Works Department, Koraput Division', sanc:14500000, spent:13775000, stale:188, sd:'11 April 2024', vendor:'Nilachal Roadways', peer:'Compared against 176 hill road works in Odisha for 2025-26.',
+    chip:'95 percent released, 188 days stale', reason:'95 percent of funds released. No progress entry recorded since 24 February 2025, and the work is not marked complete.',
+    f:[['noentry',32,'95 percent released, 188 days without an entry.'],['photo',22,'No image at the final released stage.'],['cost',18,'1.4 times the peer median, terrain band held constant.'],['time',12,'16 months since sanction.']] },
+  { id:'w6', rank:6, score:81, name:'Solar street lighting, 42 wards, Kanti block', district:'Muzaffarpur', state:'Bihar', cat:'Electrification', agency:'Bihar Renewable Energy Development Agency', sanc:8400000, spent:8400000, stale:143, sd:'27 March 2024', vendor:'Shreeja Constructions', peer:'Compared against 98 lighting works in Bihar for 2025-26.',
+    chip:'Vendor paid on works from 11 Members', reason:'The same vendor appears on four other works in this list, paid on recommendations from 11 Members of Parliament. The full amount is released and the work is not marked complete.',
+    f:[['vendor',30,'11 Members, 4 districts, 23 works.'],['noentry',24,'100 percent released, not marked complete.'],['photo',16,'No image at the final stage.'],['time',11,'17 months since sanction.']] },
+  { id:'w7', rank:7, score:78, name:'Overhead water tank, 150 kilolitre, Rajgangpur', district:'Sundargarh', state:'Odisha', cat:'Drinking water', agency:'Public Health Engineering Department, Sundargarh Division', sanc:19200000, spent:11520000, stale:74, sd:'06 September 2024', vendor:'Ispat Infra', peer:'Compared against 118 storage tanks of 100 to 200 kilolitres in Odisha for 2025-26.',
+    chip:'Cost 1.9 times peer median', reason:'Unit cost per kilolitre of storage is 1.9 times the median of 118 comparable tanks in this peer group.',
+    f:[['cost',33,'Rs 1,28,000 per kilolitre against a peer median of Rs 67,400.'],['time',20,'11 months since sanction.'],['noentry',15,'60 percent released, last entry 74 days ago.'],['photo',10,'Image present at the first stage only.']] },
+  { id:'w8', rank:8, score:75, name:'Reconstruction of community hall, Marhaura', district:'Saran', state:'Bihar', cat:'Community assets', agency:'Zilla Parishad, Saran', sanc:5600000, spent:null, stale:null, sd:'21 June 2024', vendor:null, peer:'Compared against 87 community hall works in Bihar for 2025-26.',
+    chip:'Expenditure not recorded', reason:'No expenditure figure has been recorded against a work sanctioned 14 months ago, and no vendor has been entered on the portal.',
+    f:[['time',28,'14 months since sanction, no completion entry.'],['noentry',26,'No payment or progress record of any kind.'],['photo',21,'No images uploaded.']] },
+  { id:'w9', rank:9, score:72, name:'Boundary wall and toilet block, Government Girls High School, Barhi', district:'Hazaribagh', state:'Jharkhand', cat:'Sanitation', agency:'Block Development Office, Barhi', sanc:4300000, spent:3440000, stale:118, sd:'30 July 2024', vendor:'Sahu and Sons', peer:'Compared against 143 school sanitation works in Jharkhand for 2025-26.',
+    chip:'No photograph at payment', reason:'Two payment stages have been released with no asset photograph uploaded. The portal requires images at each stage of payment.',
+    f:[['photo',30,'Two stages released, no image at either.'],['noentry',22,'80 percent released, last entry 118 days ago.'],['cost',20,'1.5 times the peer median per running metre.']] },
+  { id:'w10', rank:10, score:70, name:'Repair and widening of Soro to Bahanaga road, chainage 0 to 4.2 kilometres', district:'Balasore', state:'Odisha', cat:'Roads and bridges', agency:'Rural Works Department, Balasore Division', sanc:21000000, spent:12600000, stale:52, sd:'15 October 2024', vendor:'Nilachal Roadways', peer:'Compared against 289 road works of 2 to 5 kilometres in Odisha for 2025-26.',
+    chip:'Cost 1.7 times peer median', reason:'Cost per kilometre is 1.7 times the peer median. Two of three payment stages are released against 40 percent physical progress reported.',
+    f:[['cost',28,'Rs 50,00,000 per kilometre against a peer median of Rs 29,40,000.'],['noentry',24,'60 percent released against 40 percent reported.'],['time',18,'10 months since sanction.']] },
+  { id:'w11', rank:11, score:67, name:'Installation of hand pumps and platforms at 60 locations across Silao and Giriak blocks, including apron construction and soak pit provision', district:'Nalanda', state:'Bihar', cat:'Drinking water', agency:'Executive Engineer, Public Health Engineering Department, Nalanda Circle Office', sanc:3600000, spent:2880000, stale:89, sd:'03 December 2024', vendor:'Magadh Borewells', peer:'Compared against 331 hand pump works in Bihar for 2025-26.',
+    chip:'80 percent released, 89 days stale', reason:'80 percent released against 55 percent of locations reported complete. No progress entry in 89 days.',
+    f:[['noentry',26,'80 percent released, 55 percent reported.'],['cost',22,'1.4 times the peer median per installation.'],['photo',19,'Images uploaded for 12 of 60 locations.']] },
+  { id:'w12', rank:12, score:64, name:'Anganwadi centre building, Chhatarpur block', district:'Palamu', state:'Jharkhand', cat:'Public health', agency:'Drinking Water and Sanitation Division, Palamu', sanc:3900000, spent:1950000, stale:205, sd:'09 February 2024', vendor:'Vindhya Constructions', peer:'Compared against 121 anganwadi works in Jharkhand for 2025-26.',
+    chip:'205 days stale', reason:'Half the funds are released and there has been no progress entry in 205 days, the longest gap in this filter.',
+    f:[['noentry',30,'205 days without an entry.'],['time',20,'18 months since sanction.'],['photo',14,'No image at the released stage.']] },
+  { id:'w13', rank:13, score:61, name:'Concrete drain, Baripada municipal ward 12', district:'Mayurbhanj', state:'Odisha', cat:'Sanitation', agency:'Municipality, Baripada', sanc:2800000, spent:2380000, stale:44, sd:'22 November 2024', vendor:'Subarnarekha Works', peer:'Compared against 203 drain works in Odisha for 2025-26.',
+    chip:'Cost 1.6 times peer median', reason:'Cost per running metre is 1.6 times the median of 203 comparable drain works in this peer group.',
+    f:[['cost',30,'Rs 9,330 per metre against a peer median of Rs 5,830.'],['noentry',18,'85 percent released, last entry 44 days ago.'],['photo',13,'Image present at the first stage only.']] },
+  { id:'w14', rank:14, score:58, name:'Library building, Degree College, Barsoi', district:'Katihar', state:'Bihar', cat:'Education', agency:'Bihar State Educational Infrastructure Development Corporation', sanc:11500000, spent:5750000, stale:71, sd:'18 March 2024', vendor:'Kosi Constructions', peer:'Compared against 64 college building works in Bihar for 2025-26.',
+    chip:'17 months since sanction', reason:'17 months since sanction against a one year norm. Half released, with no photograph at the second payment stage.',
+    f:[['time',26,'17 months elapsed.'],['photo',18,'No image at the second stage.'],['noentry',14,'50 percent released, last entry 71 days ago.']] },
+  { id:'w15', rank:15, score:55, name:'Passenger shed and platform, Bundu bus stand', district:'Ranchi', state:'Jharkhand', cat:'Community assets', agency:'Municipal Corporation, Ranchi', sanc:4700000, spent:3760000, stale:63, sd:'07 January 2025', vendor:'Shreeja Constructions', peer:'Compared against 92 transport shelter works in Jharkhand for 2025-26.',
+    chip:'Vendor paid on works from 11 Members', reason:'The vendor appears on works recommended by 11 Members of Parliament. No other factor is elevated on this work.',
+    f:[['vendor',28,'11 Members, 4 districts.'],['noentry',16,'80 percent released, last entry 63 days ago.'],['cost',11,'1.1 times the peer median.']] },
+  { id:'w16', rank:16, score:52, name:'Cross drainage structure, Junagarh to Dharamgarh road', district:'Kalahandi', state:'Odisha', cat:'Roads and bridges', agency:'Rural Works Department, Kalahandi Division', sanc:16400000, spent:9840000, stale:38, sd:'25 February 2025', vendor:'Nilachal Roadways', peer:'Compared against 74 cross drainage works in Odisha for 2025-26.',
+    chip:'Cost 1.4 times peer median', reason:'Cost is 1.4 times the peer median for structures of this span. Progress entries are current.',
+    f:[['cost',24,'1.4 times the peer median per metre of span.'],['time',16,'6 months since sanction, within norm.'],['photo',12,'Image present at the first stage only.']] },
+  { id:'w17', rank:17, score:49, name:'Tube well and distribution line, Dehri block', district:'Rohtas', state:'Bihar', cat:'Drinking water', agency:'Bihar Rajya Jal Parishad, Rohtas', sanc:5100000, spent:3570000, stale:57, sd:'12 January 2025', vendor:'Magadh Borewells', peer:'Compared against 187 tube well works in Bihar for 2025-26.',
+    chip:'70 percent released, no photograph', reason:'70 percent released with no asset photograph at the second payment stage. All other checks are current.',
+    f:[['photo',24,'No image at the second stage.'],['noentry',15,'70 percent released, last entry 57 days ago.'],['cost',10,'1.1 times the peer median.']] },
+  { id:'w18', rank:18, score:44, name:'Additional room, Primary Health Centre, Bengabad', district:'Giridih', state:'Jharkhand', cat:'Public health', agency:'Jharkhand Nirman Nigam Limited, Giridih', sanc:3200000, spent:2560000, stale:29, sd:'04 March 2025', vendor:'Bharat Buildcon', peer:'Compared against 156 health facility works in Jharkhand for 2025-26.',
+    chip:'Cost 1.3 times peer median', reason:'Slightly above the peer median on unit cost. Documentation is complete and entries are current.',
+    f:[['cost',20,'1.3 times the peer median per square metre.'],['time',14,'5 months since sanction, within norm.'],['photo',10,'Image present at both released stages.']] },
+  { id:'w19', rank:19, score:39, name:'Solar high mast lighting, Salepur block, 8 units', district:'Cuttack', state:'Odisha', cat:'Electrification', agency:'Odisha Renewable Energy Development Agency', sanc:6900000, spent:5520000, stale:22, sd:'16 April 2025', vendor:'Utkal Solar', peer:'Compared against 98 lighting works in Odisha for 2025-26.',
+    chip:'Payments ahead of progress', reason:'Payments are ahead of reported progress by one stage. All other checks are current.',
+    f:[['noentry',18,'80 percent released against 60 percent reported.'],['cost',12,'1.1 times the peer median per unit.'],['photo',9,'Image present at both released stages.']] },
+  { id:'w20', rank:20, score:34, name:'Culvert on village road, Singhwara block', district:'Darbhanga', state:'Bihar', cat:'Roads and bridges', agency:'Rural Works Department, Darbhanga Division', sanc:2400000, spent:1680000, stale:19, sd:'28 May 2025', vendor:'Kosi Constructions', peer:'Compared against 74 culvert works in Bihar for 2025-26.',
+    chip:'No factor elevated', reason:'No individual factor is elevated. This work sits at the boundary of the flagged set and is shown for completeness.',
+    f:[['cost',14,'At the peer median.'],['time',12,'3 months since sanction, within norm.'],['photo',8,'Image present at the released stage.']] }
+];
+
+const COLS = [
+  { key:'rank',  label:'Rank',       align:'left'  },
+  { key:'name',  label:'Work',       align:'left'  },
+  { key:'district', label:'District', align:'left' },
+  { key:'agency', label:'Implementing agency', align:'left' },
+  { key:'sanc',  label:'Sanctioned', align:'right' },
+  { key:'spent', label:'Spent',      align:'right' },
+  { key:'stale', label:'Days stale', align:'right' },
+  { key:'score', label:'Risk',       align:'right' }
+];
+
+const SCOPE = 168;
+const BANDS = [
+  { min:88, label:'Highest priority', v:'var(--risk-4)' },
+  { min:72, label:'High',             v:'var(--risk-3)' },
+  { min:52, label:'Moderate',         v:'var(--risk-2)' },
+  { min:34, label:'Low',              v:'var(--risk-1)' },
+  { min:0,  label:'Not currently flagged', v:'var(--risk-0)' }
+];
+
+class Component extends DCLogic {
+  state = {
+    view: 'list', dataState: 'data', treatment: 'two',
+    hovered: null, selected: null, focusIdx: -1, keyboard: false,
+    sortKey: 'rank', sortDir: 'asc', stuck: false,
+    filterIdx: [0, 0, 0, 0], outcomes: {}, barH: 0, stripFour: true, hoveredFig: null,
+    minMps: 3, showRest: false,
+    reduceMotion: false, moreContrast: false, reduceTransparency: false,
+    panelOrigin: '50%'
+  };
+
+  rootRef = React.createRef();
+  sentinelRef = React.createRef();
+  tableRef = React.createRef();
+  barRef = React.createRef();
+  stripRef = React.createRef();
+  dotsRef = React.createRef();
+  dotsRevealRef = React.createRef();
+  meterRef = React.createRef();
+  meterMarkRef = React.createRef();
+  meterLabelRef = React.createRef();
+
+  measureStrip = () => {
+    const el = this.stripRef.current;
+    if (!el) return;
+    const four = el.getBoundingClientRect().width >= 66 * 16;
+    if (four !== this.state.stripFour) this.setState({ stripFour: four });
+  };
+
+  onPointer = (e) => {
+    this.px = e.clientX; this.py = e.clientY;
+    if (this.raf) return;
+    this.raf = requestAnimationFrame(() => {
+      this.raf = 0;
+      const el = this.dotsRevealRef.current;
+      if (!el) return;
+      el.style.setProperty('--mx', this.px + 'px');
+      el.style.setProperty('--my', this.py + 'px');
+      el.style.opacity = '1';
+    });
+  };
+
+  onMeterMove = (e) => {
+    const el = this.meterRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const t = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    const rank = Math.max(1, Math.ceil(t * SCOPE));
+    if (this.meterMarkRef.current) {
+      this.meterMarkRef.current.style.transform = 'translateX(' + Math.round(t * r.width) + 'px)';
+      this.meterMarkRef.current.style.opacity = '1';
+    }
+    if (this.meterLabelRef.current) {
+      this.meterLabelRef.current.textContent = 'Rank ' + rank + ' of ' + SCOPE + (rank <= Math.ceil(SCOPE * this.anchors().quota / 100) ? ', inside the quota' : ', outside the quota');
+    }
+  };
+
+  onMeterLeave = () => {
+    if (this.meterMarkRef.current) this.meterMarkRef.current.style.opacity = '0';
+    if (this.meterLabelRef.current) this.meterLabelRef.current.textContent = '';
+  };
+
+  measureBar = () => {
+    const el = this.barRef.current;
+    if (!el) return;
+    const h = Math.round(el.getBoundingClientRect().height);
+    if (h && h !== this.state.barH) this.setState({ barH: h });
+  };
+
+  componentDidMount() {
+    const mq = (q) => (window.matchMedia ? window.matchMedia(q) : { matches: false, addEventListener() {} });
+    const m1 = mq('(prefers-reduced-motion: reduce)');
+    const m2 = mq('(prefers-contrast: more)');
+    const m3 = mq('(prefers-reduced-transparency: reduce)');
+    const sync = () => this.setState({ reduceMotion: m1.matches, moreContrast: m2.matches, reduceTransparency: m3.matches });
+    sync();
+    [m1, m2, m3].forEach(m => m.addEventListener && m.addEventListener('change', sync));
+
+    if (this.sentinelRef.current && window.IntersectionObserver) {
+      this.io = new IntersectionObserver(
+        ([e]) => this.setState({ stuck: !e.isIntersecting }),
+        { rootMargin: '0px 0px -100% 0px', threshold: 0 }
+      );
+      this.io.observe(this.sentinelRef.current);
+    }
+    this.applyAnchors();
+    this.measureBar();
+    this.measureStrip();
+    if (window.ResizeObserver) {
+      this.ro = new ResizeObserver(() => { this.measureBar(); this.measureStrip(); });
+      if (this.barRef.current) this.ro.observe(this.barRef.current);
+      if (this.stripRef.current) this.ro.observe(this.stripRef.current);
+    }
+    window.addEventListener('resize', this.measureBar);
+    window.addEventListener('pointermove', this.onPointer, { passive: true });
+  }
+  componentDidUpdate() {
+    this.applyAnchors();
+    if (this.ro && this.barRef.current && this.observed !== this.barRef.current) {
+      this.ro.observe(this.barRef.current);
+      if (this.stripRef.current) this.ro.observe(this.stripRef.current);
+      this.observed = this.barRef.current;
+    }
+    this.measureBar();
+    this.measureStrip();
+  }
+  componentWillUnmount() {
+    if (this.io) this.io.disconnect();
+    if (this.ro) this.ro.disconnect();
+    if (this.raf) cancelAnimationFrame(this.raf);
+    window.removeEventListener('resize', this.measureBar);
+    window.removeEventListener('pointermove', this.onPointer);
+  }
+
+  applyAnchors() {
+    const el = this.rootRef.current;
+    if (!el) return;
+    const p = this.props || {};
+    if (p.fontBase) el.style.setProperty('--font-base', p.fontBase + 'rem');
+    if (p.typeRatio) el.style.setProperty('--ratio', String(p.typeRatio));
+    if (p.spaceUnit) el.style.setProperty('--space-unit', p.spaceUnit + 'rem');
+  }
+
+  anchors() {
+    const p = this.props || {};
+    return { base: p.fontBase || 1, ratio: p.typeRatio || 1.2, unit: p.spaceUnit || 0.25, quota: p.quotaPercent || 10 };
+  }
+
+  inr(n) {
+    if (n === null || n === undefined) return null;
+    const s = String(Math.round(n));
+    if (s.length <= 3) return s;
+    return s.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' + s.slice(-3);
+  }
+  rupees(n) { return n === null || n === undefined ? null : '\u20B9' + this.inr(n); }
+  band(score) { return BANDS.find(b => score >= b.min); }
+
+  set(patch) { this.setState(patch); }
+
+  openWork(w, ev) {
+    const y = ev && ev.currentTarget ? ev.currentTarget.getBoundingClientRect().top + ev.currentTarget.offsetHeight / 2 : 0;
+    this.setState({ selected: w.id, panelOrigin: Math.max(0, Math.round(y)) + 'px' });
+  }
+
+  visibleRows() {
+    const { sortKey, sortDir } = this.state;
+    const rows = WORKS.slice();
+    if (sortKey !== 'rank') {
+      const dir = sortDir === 'asc' ? 1 : -1;
+      rows.sort((a, b) => {
+        const x = a[sortKey], y = b[sortKey];
+        if (x === null || x === undefined) return 1;
+        if (y === null || y === undefined) return -1;
+        if (typeof x === 'string') return x.localeCompare(y) * dir;
+        return (x - y) * dir;
+      });
+    }
+    return rows;
+  }
+
+  onKeyDown = (e) => {
+    const rows = this.visibleRows();
+    const i = this.state.focusIdx;
+    if (e.key === 'ArrowDown') { e.preventDefault(); this.setState({ focusIdx: Math.min(rows.length - 1, i + 1), keyboard: true }); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); this.setState({ focusIdx: Math.max(0, i - 1), keyboard: true }); }
+    else if (e.key === 'Home') { e.preventDefault(); this.setState({ focusIdx: 0, keyboard: true }); }
+    else if (e.key === 'End') { e.preventDefault(); this.setState({ focusIdx: rows.length - 1, keyboard: true }); }
+    else if ((e.key === 'Enter' || e.key === ' ') && i >= 0) { e.preventDefault(); this.setState({ selected: rows[i].id, panelOrigin: '50%' }); }
+    else if (e.key === 'Escape') { this.setState({ selected: null }); }
+  };
+
+  renderVals() {
+    const S = this.state;
+    const A = this.anchors();
+    const quotaN = Math.ceil(SCOPE * A.quota / 100);
+    const quotaPct = Math.round(quotaN / SCOPE * 10000) / 100;
+    const mono = "font-family:'Geist Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums;";
+    const micro = 'font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase;';
+    const linkBtn = 'background:none; border:0; padding:0; cursor:pointer;';
+
+    const views = [
+      { k:'list', label:'Inspection list' }, { k:'flow', label:'Fund flow' }, { k:'spec', label:'Specimen sheet' }
+    ].map(v => ({
+      label: v.label, go: () => this.set({ view: v.k }),
+      style: linkBtn + micro + 'color:' + (S.view === v.k ? 'var(--ink)' : 'var(--ink-faint)') + '; border-bottom:1px solid ' + (S.view === v.k ? 'var(--ink)' : 'transparent') + '; padding-bottom:2px;'
+    }));
+
+    const filterDefs = [
+      { label:'States', opts:['Bihar, Odisha, Jharkhand', 'All states', 'Bihar only'] },
+      { label:'Year', opts:['2025-26', '2024-25', '2023-24'] },
+      { label:'Category', opts:['All categories', 'Roads and bridges', 'Drinking water', 'Sanitation'] },
+      { label:'Flag type', opts:['All flags', 'Cost above peer group', 'No progress entry', 'Vendor concentration'] }
+    ];
+    const filters = filterDefs.map((f, i) => ({
+      label: f.label, value: f.opts[S.filterIdx[i] % f.opts.length],
+      cycle: () => { const n = S.filterIdx.slice(); n[i] = (n[i] + 1) % f.opts.length; this.set({ filterIdx: n }); }
+    }));
+
+    const segStyle = (on) => linkBtn + 'font-size:var(--font-xs); font-weight:500; color:' + (on ? 'var(--ink)' : 'var(--ink-faint)') + '; border-bottom:1px solid ' + (on ? 'var(--ink)' : 'transparent') + '; padding-bottom:1px;';
+    const treatments = [
+      { k:'two', label:'Two line' }, { k:'hover', label:'Hover reveal' }
+    ].map(t => ({ label: t.label, go: () => this.set({ treatment: t.k, hovered: null }), style: segStyle(S.treatment === t.k) }));
+    const dataStates = [
+      { k:'data', label:'Loaded' }, { k:'loading', label:'Loading' }, { k:'empty', label:'Empty' }
+    ].map(d => ({ label: d.label, go: () => this.set({ dataState: d.k }), style: segStyle(S.dataState === d.k) }));
+
+    const stuck = S.stuck;
+    const filterBarStyle = stuck
+      ? 'margin:0 calc(var(--space-6) * -1); padding:var(--space-4) var(--space-6); background:var(--surface); border-radius:var(--radius-panel); box-shadow:' + (S.moreContrast ? 'none' : 'var(--shadow-raised)') + '; ' + (S.moreContrast ? 'border:1px solid var(--hairline-strong);' : '') + ' transition:box-shadow 240ms cubic-bezier(.32,.72,0,1), background-color 240ms cubic-bezier(.32,.72,0,1);'
+      : 'margin:0; padding:var(--space-4) 0; background:var(--paper); border-bottom:1px solid var(--hairline); border-radius:0; transition:box-shadow 240ms cubic-bezier(.32,.72,0,1), background-color 240ms cubic-bezier(.32,.72,0,1);';
+
+    const sortedOff = S.sortKey !== 'rank';
+    const columns = COLS.map(c => ({
+      label: c.label,
+      caret: S.sortKey === c.key ? (S.sortDir === 'asc' ? ' \u2191' : ' \u2193') : '',
+      sort: () => this.set({ sortKey: c.key, sortDir: S.sortKey === c.key && S.sortDir === 'asc' ? 'desc' : 'asc' }),
+      style: linkBtn + micro + 'color:' + (S.sortKey === c.key ? 'var(--ink)' : 'var(--ink-faint)') + '; text-align:' + c.align + '; justify-self:' + (c.align === 'right' ? 'end' : 'start') + '; line-height:var(--leading-snug);'
+    }));
+
+    const rowsData = this.visibleRows();
+    const rows = rowsData.map((w, i) => {
+      const b = this.band(w.score);
+      const hovered = S.hovered === w.id;
+      const focused = S.focusIdx === i && S.keyboard;
+      const isSel = S.selected === w.id;
+      const quotaMember = w.rank <= quotaN;
+      const out = S.outcomes[w.id];
+      return {
+        rank: String(w.rank).padStart(2, '0'),
+        name: w.name, district: w.district, state: w.state, cat: w.cat, agency: w.agency,
+        sanc: this.rupees(w.sanc), spent: w.spent === null ? 'Not recorded' : this.rupees(w.spent),
+        stale: w.stale === null ? 'No entry' : String(w.stale),
+        score: String(w.score), band: b.label, bandColor: b.v,
+        reason: w.reason, chip: w.chip,
+        releasedLabel: w.spent === null ? '' : Math.round(w.spent / w.sanc * 100) + ' percent released',
+        outcome: out ? out.label : '',
+        outcomeColor: out ? out.color : 'var(--ink-faint)',
+        showChip: S.treatment === 'hover',
+        showReason: S.treatment === 'two',
+        showReveal: S.treatment === 'hover' && (hovered || focused),
+        isQuotaLine: !sortedOff && w.rank === quotaN && S.dataState === 'data',
+        showTick: hovered || focused || isSel,
+        tickStyle: 'position:absolute; left:0; top:50%; transform:translateY(-50%); width:2px; height:1.5em; background:' + b.v + ';',
+        rowStyle: 'position:relative; cursor:pointer; padding:var(--row-pad) var(--space-3); margin:0 calc(var(--space-3) * -1); border-bottom:1px solid var(--hairline); background:' + (isSel ? 'var(--accent-wash)' : hovered ? 'var(--sunken)' : 'transparent') + '; outline:' + (focused ? '2px solid var(--accent)' : '2px solid transparent') + '; outline-offset:-2px; transition:' + (S.reduceMotion ? 'background-color 120ms linear' : 'background-color 90ms linear') + ';',
+        rankStyle: mono + 'font-size:var(--font-xs); color:' + (quotaMember ? 'var(--ink)' : 'var(--ink-faint)') + '; font-weight:' + (quotaMember ? '500' : '400') + ';',
+        numStyle: mono + 'font-size:var(--font-sm); text-align:right; color:var(--ink);',
+        spentStyle: mono + 'font-size:' + (w.spent === null ? 'var(--font-xs)' : 'var(--font-sm)') + '; text-align:right; color:' + (w.spent === null ? 'var(--ink-faint)' : 'var(--ink)') + '; font-style:' + (w.spent === null ? 'italic' : 'normal') + ';',
+        staleStyle: mono + 'font-size:' + (w.stale === null ? 'var(--font-xs)' : 'var(--font-sm)') + '; text-align:right; color:' + (w.stale === null ? 'var(--ink-faint)' : w.stale > 120 ? 'var(--risk-3)' : 'var(--ink-muted)') + '; font-style:' + (w.stale === null ? 'italic' : 'normal') + ';',
+        scoreStyle: mono + 'font-size:var(--font-md); font-weight:500; text-align:right; letter-spacing:var(--track-heading); color:' + b.v + ';',
+        revealStyle: 'position:absolute; left:4rem; top:calc(100% - var(--space-2)); z-index:20; width:min(34rem, 60vw); background:var(--surface); border-radius:var(--radius-panel); box-shadow:' + (S.moreContrast ? 'none' : 'var(--shadow-raised)') + '; ' + (S.moreContrast ? 'border:1px solid var(--hairline-strong);' : '') + ' padding:var(--space-6); pointer-events:none;',
+        enter: () => this.set({ hovered: w.id }),
+        leave: () => this.set({ hovered: null }),
+        press: () => this.set({ hovered: w.id, keyboard: false, focusIdx: i }),
+        open: (e) => this.openWork(w, e)
+      };
+    });
+
+    const skeletons = [
+      { w1:'72%', w2:'54%' }, { w1:'58%', w2:'62%' }, { w1:'81%', w2:'44%' },
+      { w1:'66%', w2:'58%' }, { w1:'75%', w2:'49%' }, { w1:'52%', w2:'61%' }
+    ];
+
+    const scopeLine = sortedOff
+      ? 'Sorted by ' + (COLS.find(c => c.key === S.sortKey) || {}).label.toLowerCase() + '. The ten percent line applies to risk order only, so it is hidden here. Works inside the quota keep a solid rank numeral.'
+      : SCOPE + ' works are under implementation in this filter. The ten percent obligation falls at rank ' + quotaN + '. Ranks 1 to 20 are shown, ordered by risk score.';
+
+    const specRow = (w, over) => {
+      const b = this.band(w.score);
+      return Object.assign({
+        isRow: true, isSkeleton: false, isEmpty: false,
+        rank: String(w.rank).padStart(2, '0'), name: w.name, district: w.district, agency: w.agency, reason: w.reason,
+        sanc: this.rupees(w.sanc), spent: w.spent === null ? 'Not recorded' : this.rupees(w.spent),
+        stale: w.stale === null ? 'No entry' : String(w.stale), score: String(w.score),
+        rankStyle: mono + 'font-size:var(--font-xs); color:var(--ink);',
+        sancStyle: mono + 'font-size:var(--font-sm); text-align:right;',
+        spentStyle: mono + 'font-size:' + (w.spent === null ? 'var(--font-xs)' : 'var(--font-sm)') + '; text-align:right; color:' + (w.spent === null ? 'var(--ink-faint)' : 'var(--ink)') + '; font-style:' + (w.spent === null ? 'italic' : 'normal') + ';',
+        staleStyle: mono + 'font-size:' + (w.stale === null ? 'var(--font-xs)' : 'var(--font-sm)') + '; text-align:right; color:' + (w.stale === null ? 'var(--ink-faint)' : 'var(--ink-muted)') + '; font-style:' + (w.stale === null ? 'italic' : 'normal') + ';',
+        scoreStyle: mono + 'font-size:var(--font-md); font-weight:500; text-align:right; color:' + b.v + ';'
+      }, over || {});
+    };
+
+    const stateSpecimens = [
+      Object.assign({ title:'Loading', note:'Skeleton rows carry the real row geometry. Never a spinner.', isRow:false, isSkeleton:true, isEmpty:false, lines: skeletons.slice(0, 3) }, {}),
+      Object.assign({ title:'Empty', note:'A filter combination that returns nothing, composed, with the way out.', isRow:false, isSkeleton:false, isEmpty:true }, {}),
+      specRow(WORKS[7], { title:'Missing fields', note:'Vendor not entered, expenditure not recorded, no progress entry.' }),
+      specRow(WORKS[10], { title:'Long values', note:'A work name running to three lines and an agency name longer than its column.' })
+    ];
+
+    const sel = (() => {
+      const w = WORKS.find(x => x.id === S.selected);
+      if (!w) return null;
+      const b = this.band(w.score);
+      const out = S.outcomes[w.id];
+      const fieldStyle = (missing) => 'font-size:var(--font-xs); color:' + (missing ? 'var(--ink-faint)' : 'var(--ink)') + '; font-style:' + (missing ? 'italic' : 'normal') + '; text-wrap:pretty;';
+      const numField = mono + 'font-size:var(--font-xs); color:var(--ink);';
+      const opts = [
+        { k:'sched', label:'Inspection scheduled', color:'var(--ink-muted)' },
+        { k:'none',  label:'Inspected, no action needed', color:'var(--ink-muted)' },
+        { k:'issue', label:'Inspected, issue recorded', color:'var(--risk-3)' }
+      ];
+      return {
+        rankLabel: 'Rank ' + w.rank + ' of ' + SCOPE + ' works under implementation',
+        name: w.name, score: String(w.score), band: b.label, bandColor: b.v, peer: w.peer,
+        record: [
+          { k:'District', v:w.district + ', ' + w.state, style: fieldStyle(false) },
+          { k:'Category', v:w.cat, style: fieldStyle(false) },
+          { k:'Implementing agency', v:w.agency, style: fieldStyle(false) },
+          { k:'Vendor', v:w.vendor || 'Not entered on the portal', style: fieldStyle(!w.vendor) },
+          { k:'Sanctioned on', v:w.sd, style: fieldStyle(false) },
+          { k:'Sanctioned amount', v:this.rupees(w.sanc), style: numField },
+          { k:'Released to date', v:w.spent === null ? 'Not recorded' : this.rupees(w.spent), style: w.spent === null ? fieldStyle(true) : numField },
+          { k:'Last progress entry', v:w.stale === null ? 'No entry recorded' : w.stale + ' days ago', style: w.stale === null ? fieldStyle(true) : numField }
+        ],
+        factors: w.f.map(([k, weight, detail]) => ({
+          label: F[k].label, weight: '+' + weight, detail: detail + ' ' + F[k].how + '.',
+          barStyle: 'height:2px; width:' + Math.round(weight / 36 * 100) + '%; background:' + b.v + ';'
+        })),
+        outcomeLine: out
+          ? 'Recorded on 31 August 2026: ' + out.label.toLowerCase() + '. This outcome becomes training data for the next ranking.'
+          : 'No inspection recorded against this work. Recording an outcome, either way, is what turns the ranking into something that learns.',
+        outcomes: opts.map(o => ({
+          label: o.label,
+          set: () => { const n = Object.assign({}, S.outcomes); n[w.id] = { label:o.label, color:o.color }; this.set({ outcomes: n }); },
+          style: 'padding:var(--space-2) var(--space-4); border:1px solid ' + (out && out.label === o.label ? 'var(--accent)' : 'var(--hairline-strong)') + '; background:' + (out && out.label === o.label ? 'var(--accent-wash)' : 'var(--surface)') + '; color:' + (out && out.label === o.label ? 'var(--accent)' : 'var(--ink)') + '; border-radius:var(--radius-control); cursor:pointer; font-size:var(--font-xs); font-weight:500;'
+        }))
+      };
+    })();
+
+    const panelOpen = !!sel;
+    const panelStyle = 'position:fixed; top:0; right:0; bottom:0; width:var(--panel-width); z-index:80; display:flex; flex-direction:column; background:var(--surface); border-top-left-radius:var(--radius-panel); border-bottom-left-radius:var(--radius-panel); box-shadow:' + (S.moreContrast ? 'none' : 'var(--shadow-panel)') + '; ' + (S.moreContrast ? 'border-left:1px solid var(--hairline-strong);' : '') + ' transform-origin:right ' + S.panelOrigin + '; ' + (S.reduceMotion ? 'animation:none; opacity:1;' : 'transform:translateX(0);');
+
+    const MPS = ['Gaya', 'Nalanda', 'Purnia', 'Saran', 'Muzaffarpur', 'Katihar', 'Darbhanga', 'Rohtas', 'Bihar RS', 'Jharkhand RS', 'Odisha RS'];
+    const AGN = ['Rural Works Department, Gaya', 'Zilla Parishad, Saran', 'Municipal Corporation, Ranchi', 'Bihar Renewable Energy Agency'];
+    const dim = S.reduceTransparency ? 'var(--hairline)' : 'oklch(64% 0.008 265 / .35)';
+    const nodes = [];
+    const edges = [];
+    const vx = 48, vy = 46;
+    MPS.forEach((m, i) => {
+      const y = 6 + i * (80 / (MPS.length - 1));
+      const ax = 27, ai = Math.min(AGN.length - 1, Math.floor(i * AGN.length / MPS.length));
+      const ay = 16 + ai * 20;
+      nodes.push({
+        label: m, sub: '',
+        style: 'position:absolute; left:5%; top:' + y + '%; transform:translateY(-50%); display:flex; align-items:center; gap:var(--space-3);',
+        dotStyle: 'width:6px; height:6px; border-radius:50%; background:var(--ink-muted); flex:0 0 auto;',
+        labelStyle: 'font-size:var(--font-2xs); color:var(--ink); white-space:nowrap; background:var(--sunken); padding:0 var(--space-2);'
+      });
+      edges.push({ x1:'5%', y1:y + '%', x2:ax + '%', y2:ay + '%', stroke:'oklch(52% 0.16 255 / .28)', w:'1' });
+    });
+    AGN.forEach((a, i) => {
+      const y = 16 + i * 20;
+      nodes.push({
+        label: a, sub: '',
+        style: 'position:absolute; left:27%; top:' + y + '%; transform:translate(-50%,-4.5px); display:flex; flex-direction:column; align-items:center; gap:var(--space-2); text-align:center;',
+        dotStyle: 'width:9px; height:9px; border-radius:50%; background:var(--ink); flex:0 0 auto;',
+        labelStyle: 'font-size:var(--font-2xs); font-weight:500; color:var(--ink); max-width:11rem; line-height:var(--leading-snug); background:var(--sunken); padding:var(--space-1) var(--space-2);'
+      });
+      edges.push({ x1:'27%', y1:y + '%', x2:vx + '%', y2:vy + '%', stroke:'oklch(54% 0.16 38 / .5)', w:String(2 + i % 3) });
+    });
+    nodes.push({
+      label: 'Shreeja Constructions', sub: '\u20B99,84,20,000 \u00B7 23 works',
+      style: 'position:absolute; left:48%; top:46%; margin-left:-4.5rem; transform:translateY(-10px); display:flex; flex-direction:column; align-items:center; gap:var(--space-2); text-align:center; width:9rem;',
+      dotStyle: 'width:20px; height:20px; border-radius:50%; background:var(--risk-4); flex:0 0 auto;',
+      labelStyle: 'font-size:var(--font-sm); font-weight:600; letter-spacing:var(--track-heading); color:var(--ink); line-height:var(--leading-snug); background:var(--sunken); padding:var(--space-1) var(--space-2);'
+    });
+    if (S.showRest) {
+      nodes.push({
+        label: 'Held back, 208 vendors below the threshold', sub: '',
+        style: 'position:absolute; left:5%; top:88%; max-width:40%; display:flex; align-items:center; gap:var(--space-2);',
+        dotStyle: 'width:0; height:0;',
+        labelStyle: micro + 'color:var(--ink-faint); background:var(--sunken); padding:0 var(--space-2);'
+      });
+      nodes.push({
+        label: 'Kosi Constructions, Magadh Borewells, Nilachal Roadways, Utkal Solar, and 204 others', sub: '',
+        style: 'position:absolute; left:5%; top:93%; max-width:38%; display:flex; align-items:flex-start; gap:var(--space-2);',
+        dotStyle: 'width:5px; height:5px; border-radius:50%; background:' + dim + '; flex:0 0 auto; margin-top:.45em;',
+        labelStyle: 'font-size:var(--font-2xs); line-height:var(--leading-normal); color:' + (S.reduceTransparency ? 'var(--ink-faint)' : 'oklch(64% 0.008 265 / .6)') + '; background:var(--sunken); padding:0 var(--space-2);'
+      });
+    }
+
+    const px = (mult) => Math.round(A.base * 16 * mult * 100) / 100;
+    const typeScale = [
+      { role:'Column head', mult:1 / (A.ratio * A.ratio), track:'0.04em', lead:'1.3', weight:600, upper:true, sample:'IMPLEMENTING AGENCY' },
+      { role:'Reason line', mult:1 / A.ratio, track:'0em', lead:'1.55', weight:400, sample:'Cost per kilometre is 2.4 times the peer median.' },
+      { role:'Table cell, anchor', mult:1, track:'0em', lead:'1.3', weight:500, sample:'Approach road and culvert, Sherghati to Dobhi' },
+      { role:'Risk score', mult:A.ratio, track:'-0.012em', lead:'1.3', weight:500, sample:'96' },
+      { role:'Section head', mult:A.ratio * A.ratio, track:'-0.012em', lead:'1.3', weight:550, sample:'Fund flow' },
+      { role:'Summary figure', mult:Math.pow(A.ratio, 3), track:'-0.012em', lead:'1.1', weight:500, sample:'1,04,382' },
+      { role:'Page title', mult:Math.pow(A.ratio, 4), track:'-0.022em', lead:'1.1', weight:600, sample:'NidhiNetra' }
+    ].map(t => ({
+      role: t.role,
+      rem: (Math.round(A.base * t.mult * 1000) / 1000) + 'rem',
+      px: px(t.mult) + 'px',
+      track: t.track, lead: t.lead,
+      sample: t.sample,
+      sampleStyle: 'font-size:' + px(t.mult) + 'px; font-weight:' + t.weight + '; letter-spacing:' + t.track + '; line-height:' + t.lead + '; ' + (t.upper ? 'text-transform:uppercase;' : '') + ' color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;'
+    }));
+
+    const spaceScale = [1, 2, 3, 4, 6, 8, 12, 16, 24].map(n => ({
+      name: '--space-' + n,
+      rem: (Math.round(A.unit * n * 1000) / 1000) + 'rem',
+      barStyle: 'height:6px; width:' + (A.unit * n * 16) + 'px; background:var(--ink); max-width:100%;'
+    }));
+
+    const palette = [
+      ['--paper', 'oklch(99% .002 250)'], ['--surface', 'oklch(100% 0 0)'], ['--sunken', 'oklch(97.5% .003 250)'],
+      ['--hairline', 'oklch(92% .004 250)'], ['--hairline-strong', 'oklch(85% .005 250)'],
+      ['--ink', 'oklch(21% .012 265)'], ['--ink-muted', 'oklch(48% .010 265)'], ['--ink-faint', 'oklch(64% .008 265)'],
+      ['--accent', 'oklch(52% .16 255)'], ['--accent-wash', 'oklch(96% .03 255)'],
+      ['--risk-1', 'oklch(66% .11 75)'], ['--risk-2', 'oklch(60% .14 55)'], ['--risk-3', 'oklch(54% .16 38)'], ['--risk-4', 'oklch(46% .17 28)']
+    ].map(([token, value]) => ({
+      token, value,
+      swatch: 'width:2.5rem; height:1.5rem; border-radius:var(--radius-control); background:var(' + token + '); box-shadow:inset 0 0 0 1px var(--hairline);'
+    }));
+
+    const a11y = [
+      { name:'Reduced motion', on:S.reduceMotion, effect:'Springs and slides become short opacity cross fades. Overshoot is dropped. Colour and opacity changes that aid comprehension are kept.' },
+      { name:'Reduced transparency', on:S.reduceTransparency, effect:'Dimmed graph nodes become solid faint ink rather than a low opacity of the active colour.' },
+      { name:'Increased contrast', on:S.moreContrast, effect:'Every floating surface loses its shadow and gains a defined border against the page.' }
+    ].map(a => ({
+      name: a.name, effect: a.effect,
+      status: a.on ? 'Active' : 'Not set',
+      color: a.on ? 'var(--accent)' : 'var(--ink-faint)'
+    }));
+
+    return {
+      rootRef: this.rootRef, sentinelRef: this.sentinelRef, tableRef: this.tableRef, barRef: this.barRef,
+      stripRef: this.stripRef, dotsRef: this.dotsRef, dotsRevealRef: this.dotsRevealRef,
+      meterRef: this.meterRef, meterMarkRef: this.meterMarkRef, meterLabelRef: this.meterLabelRef,
+      views, isList: S.view === 'list', isFlow: S.view === 'flow', isSpec: S.view === 'spec',
+      stripStyle: 'margin-top:var(--space-12); background:var(--paper); display:grid; grid-template-columns:repeat(' + (S.stripFour ? 4 : 2) + ', minmax(0,1fr)); column-gap:var(--space-8); row-gap:var(--space-12);',
+      summary: [
+        { value:'1,04,382', label:'Works under implementation', context:'Across 731 districts and 36 states and union territories', compute:'Sanctioned, not yet marked complete on the portal' },
+        { value:'12,704', label:'Flagged for inspection', context:'12.2 percent of works under implementation', compute:'12,704 divided by 1,04,382' },
+        { value:'\u20B92,286.40 cr', label:'Sanctioned under flagged works', context:'\u20B917,99,000 average per flagged work', compute:'\u20B92,286.40 cr divided by 12,704 works' },
+        { value:'\u20B91,729.00 cr', label:'Released, unspent beyond twelve months', context:'Covers 9,412 works with no progress entry', compute:'Released minus utilised, entries older than 365 days' }
+      ].map((s, i) => ({
+        value: s.value, label: s.label, context: s.context, compute: s.compute,
+        enter: () => this.set({ hoveredFig: i }),
+        leave: () => this.set({ hoveredFig: null }),
+        cellStyle: 'background:var(--paper); padding-left:' + (i % (S.stripFour ? 4 : 2) === 0 ? '0' : 'var(--space-8)') + '; border-left:' + (i % (S.stripFour ? 4 : 2) === 0 ? '0' : '1px solid var(--hairline)') + ';',
+        computeStyle: 'margin-top:var(--space-2); font-size:var(--font-2xs); color:var(--ink-faint); line-height:var(--leading-normal); max-width:30ch; text-wrap:pretty; opacity:' + (S.hoveredFig === i ? '1' : '0') + '; transition:opacity 120ms linear;'
+      })),
+      meterRestStyle: 'position:absolute; left:' + quotaPct + '%; right:0; top:0; bottom:0; border:1px solid var(--hairline); border-left:0;',
+      meterFillStyle: 'position:absolute; left:0; top:0; bottom:0; width:' + quotaPct + '%; background:linear-gradient(to right, var(--risk-4), var(--risk-3) 45%, var(--risk-1));',
+      meterCutStyle: 'position:absolute; left:' + quotaPct + '%; top:calc(var(--space-2) * -1); bottom:calc(var(--space-2) * -1); width:1px; background:var(--ink);',
+      meterCutLabelStyle: 'position:absolute; left:calc(' + quotaPct + '% + var(--space-3)); top:0; font-size:var(--font-2xs); font-weight:600; letter-spacing:var(--track-micro); text-transform:uppercase; color:var(--ink); white-space:nowrap;',
+      meterCutLabel: 'Rank ' + quotaN + ', cutoff',
+      meterSentence: 'The bar is all ' + SCOPE + ' works under implementation in this filter. The filled segment is the ' + A.quota + ' percent that must be inspected this year, ' + quotaN + ' works. The ' + (SCOPE - quotaN) + ' works past the cutoff are not currently flagged, which is not the same as verified clean.',
+      onMeterMove: this.onMeterMove, onMeterLeave: this.onMeterLeave,
+      showDots: !S.moreContrast,
+      dotsBaseStyle: 'position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5; background-image:radial-gradient(var(--hairline) 1px, transparent 1px); background-size:calc(var(--space-unit) * 6) calc(var(--space-unit) * 6);',
+      dotsRevealStyle: 'position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0; --mx:50vw; --my:50vh; background-image:radial-gradient(var(--hairline-strong) 1px, transparent 1px); background-size:calc(var(--space-unit) * 6) calc(var(--space-unit) * 6); -webkit-mask-image:radial-gradient(circle 14rem at var(--mx) var(--my), #000, transparent 72%); mask-image:radial-gradient(circle 14rem at var(--mx) var(--my), #000, transparent 72%);' + (S.reduceMotion ? ' display:none;' : ''),
+      filters, treatments, dataStates, filterBarStyle, columns, scopeLine,
+      headTop: (S.barH || 0) + 'px',
+      rows, skeletons, stateSpecimens,
+      isLoading: S.dataState === 'loading', isEmpty: S.dataState === 'empty', hasRows: S.dataState === 'data',
+      quotaLabel: quotaN + ' of ' + SCOPE + ' works under implementation in this filter',
+      tailLine: 'Ranks 21 to ' + SCOPE + ' continue below. They are not currently flagged, which is not the same as verified clean.',
+      onKeyDown: this.onKeyDown,
+      clearFlag: () => { const n = S.filterIdx.slice(); n[3] = 0; this.set({ filterIdx: n, dataState: 'data' }); },
+      clearAll: () => this.set({ filterIdx: [0, 0, 0, 0], dataState: 'data' }),
+      panelOpen, panelStyle, sel: sel || {},
+      closePanel: () => this.set({ selected: null }),
+      goFlow: () => this.set({ view: 'flow', selected: null }),
+      nodes, edges, minMps: String(S.minMps),
+      graphFilterLine: 'Showing vendors paid on works recommended by ' + S.minMps + ' or more Members of Parliament. 6 of 214 vendors in this filter match. Everything else is held back so the cluster reads.',
+      restLabel: S.showRest ? 'Hide the vendors that do not match' : 'Show the vendors that do not match',
+      incMin: () => this.set({ minMps: Math.min(11, S.minMps + 1) }),
+      decMin: () => this.set({ minMps: Math.max(1, S.minMps - 1) }),
+      toggleRest: () => this.set({ showRest: !S.showRest }),
+      contrastBorder: S.moreContrast ? 'border:1px solid var(--hairline-strong); box-shadow:none;' : '',
+      anchors: [
+        { value:A.base + 'rem', name:'--font-base', note:'The table cell. The most frequent size on the page, so every other size is derived from it.' },
+        { value:String(A.ratio), name:'--ratio', note:'A minor third. Tight enough that a dense page stays coherent across seven steps.' },
+        { value:A.unit + 'rem', name:'--space-unit', note:'Every gap, pad, row height and radius is a multiple of this.' }
+      ],
+      typeScale, spaceScale, palette, a11y
+    };
+  }
+}
+
+</script>
+</body>
+</html>

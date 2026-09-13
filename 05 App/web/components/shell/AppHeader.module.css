@@ -1,0 +1,163 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  background: var(--surface);
+  box-shadow: var(--shadow-header);
+}
+
+.inner {
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.gov {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  line-height: 1.15;
+}
+
+.govHi {
+  font-family: var(--font-deva);
+  font-size: var(--font-md);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.govEn {
+  margin-top: 3px;
+  font-size: var(--font-2xs);
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.divider {
+  flex: none;
+  width: 1px;
+  height: 2.5rem;
+  background: var(--hairline-strong);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: none;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius-control);
+}
+
+.brand:hover {
+  color: inherit;
+}
+
+.logo {
+  width: 6.5rem;
+  height: auto;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+}
+
+.wordmark {
+  font-family: var(--font-serif);
+  font-size: var(--font-xl);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: var(--track-heading);
+  color: var(--ink);
+}
+
+.ministry {
+  max-width: 11.5rem;
+  margin-top: 5px;
+  font-size: var(--font-xs);
+  line-height: 1.3;
+  color: var(--ink-muted);
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  flex: none;
+  margin-left: auto;
+}
+
+.searchFallback {
+  width: clamp(11rem, 17vw, 18.5rem);
+  height: 2.5rem;
+  border-radius: var(--radius-control);
+  background: var(--row-hover);
+}
+
+.viksit {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.flagBar {
+  flex: none;
+  width: 3px;
+  height: 2.5rem;
+  border-radius: 2px;
+  background: linear-gradient(
+    to bottom,
+    var(--saffron) 0 33.33%,
+    #dfe3e9 33.33% 66.66%,
+    var(--tricolour-lower) 66.66% 100%
+  );
+}
+
+.viksitText {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-deva);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+/* The header sheds its least essential marks as the width runs out, in the
+   order an officer would miss them least. Navigation collapses last. */
+@media (max-width: 95rem) {
+  .viksit {
+    display: none;
+  }
+}
+
+@media (max-width: 85rem) {
+  .gov,
+  .divider {
+    display: none;
+  }
+}
+
+@media (max-width: 74rem) {
+  .ministry {
+    display: none;
+  }
+}
+
+@media (max-width: 61.25rem) {
+  .inner {
+    gap: var(--space-3);
+  }
+  .logo {
+    width: 5rem;
+  }
+  .searchFallback {
+    display: none;
+  }
+}

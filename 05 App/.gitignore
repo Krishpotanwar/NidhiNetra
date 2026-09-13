@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+web/node_modules/
+web/.next/
+.venv/
+__pycache__/
+*.pyc
+.ruff_cache/
+.pytest_cache/
+
+# generated (from contracts/, via make contracts)
+api/src/nidhinetra_api/generated/
+web/lib/generated/
+
+# data/raw and data/interim are rebuildable and gitignored via their own
+# nested .gitignore files (data/raw/.gitignore, data/interim/.gitignore) --
+# a parent-level `dir/* + !dir/.gitkeep` negation here was silently not
+# taking effect (git check-ignore kept attributing matches to the glob
+# line, not the negation; root cause not chased down, this pattern is the
+# standard robust fix). data/snapshot IS committed, deliberately not
+# listed here.
+
+# local env
+.env
+.env.local

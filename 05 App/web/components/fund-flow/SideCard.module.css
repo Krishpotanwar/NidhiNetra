@@ -1,0 +1,86 @@
+.card {
+  padding: var(--space-5) var(--space-6);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.note {
+  margin: var(--space-3) 0 0;
+  font-size: var(--font-note);
+  line-height: var(--leading-normal);
+  color: var(--ink-muted);
+}
+
+.stepperRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+
+.stepperButton {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2.125rem;
+  border: 0;
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.stepperButton:hover:not(:disabled) {
+  background: var(--row-hover);
+  color: var(--ink);
+}
+
+.stepperButton:disabled {
+  color: var(--ink-faint);
+  cursor: default;
+}
+
+.stepperValue {
+  min-width: 2rem;
+  font-family: var(--font-mono);
+  font-size: var(--font-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  border-inline: 1px solid var(--control-border);
+  line-height: 2.125rem;
+}
+
+.clusterName {
+  margin: var(--space-3) 0 0;
+  font-size: var(--font-md);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  color: var(--ink);
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-4) 0 0;
+  font-size: var(--font-sm);
+}
+
+.figures dt {
+  color: var(--ink-muted);
+}
+
+.figures dd {
+  margin: 0;
+  color: var(--ink);
+}

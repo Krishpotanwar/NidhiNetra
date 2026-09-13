@@ -1,0 +1,157 @@
+.card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(20rem, 1fr);
+  gap: var(--space-6);
+  align-items: center;
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.card[data-stale] {
+  opacity: 0.62;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.legend {
+  display: flex;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-2xs);
+  color: var(--ink-muted);
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.swatchQuota,
+.swatchFlagged {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 3px;
+}
+
+.swatchQuota {
+  background: var(--risk-ramp);
+}
+
+.swatchFlagged {
+  background: var(--risk-2-wash);
+  border: 1px solid var(--risk-2);
+}
+
+.trackWrap {
+  position: relative;
+  margin-top: var(--space-4);
+  padding-bottom: 1.45rem;
+}
+
+.track {
+  position: relative;
+  height: 1.35rem;
+  border-radius: var(--radius-control);
+  background: var(--sunken);
+  overflow: hidden;
+}
+
+.fill,
+.flagged {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  border-radius: inherit;
+}
+
+.fill {
+  background: var(--risk-ramp);
+}
+
+.flagged {
+  background: var(--risk-2-wash);
+}
+
+.tick {
+  position: absolute;
+  top: -0.25rem;
+  width: 2px;
+  height: 1.85rem;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--ink);
+}
+
+.tickLabel {
+  position: absolute;
+  top: 1.75rem;
+  transform: translateX(0);
+  font-size: var(--font-2xs);
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.tickLabel[data-flip] {
+  transform: translateX(-100%);
+}
+
+.explainer {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--sunken);
+  border-radius: var(--radius-control);
+}
+
+.explainer p {
+  margin: 0;
+  font-size: var(--font-note);
+  line-height: var(--leading-normal);
+  color: var(--ink-2);
+}
+
+.infoIcon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--ink-muted);
+}
+
+.skeletonLabel,
+.skeletonText {
+  display: block;
+  border-radius: 3px;
+  background: var(--sunken);
+}
+
+.skeletonLabel {
+  width: 12rem;
+  height: 0.75rem;
+}
+
+.skeletonText {
+  width: 100%;
+  height: 2.5rem;
+}
+
+@media (max-width: 75rem) {
+  .card {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nidhinetra.local/contracts/fund_flow_graph.schema.json",
+  "title": "FundFlowGraph",
+  "description": "Execution Plan section 3.3. Produced by A3, consumed by A4. Only meaningful at national scale -- see NidhiNetra Viva Brief part 7. M5 is conditional on implementing_agency and vendor_name surviving the data spike across 8-plus states (eng review, Design Review - Data Spike First).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["nodes", "edges"],
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "label", "risk_weight"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "type": { "type": "string", "enum": ["MP", "Agency", "Vendor"] },
+          "label": { "type": "string", "minLength": 1 },
+          "risk_weight": { "type": "number", "minimum": 0 }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "target", "work_count", "total_amount_inr", "flagged_work_count"],
+        "properties": {
+          "source": { "type": "string", "minLength": 1, "description": "Must match a node id" },
+          "target": { "type": "string", "minLength": 1, "description": "Must match a node id" },
+          "work_count": { "type": "integer", "minimum": 1 },
+          "total_amount_inr": { "type": "number", "minimum": 0 },
+          "flagged_work_count": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  }
+}

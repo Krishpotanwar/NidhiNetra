@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NidhiNetra Pitch Script</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,600;1,6..72,400&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root{
+    --paper:#F2F4F7; --surface:#FFFFFF; --ink:#14181F; --ink-soft:#3D4551;
+    --muted:#6B7482; --rule:#D9DEE6; --accent:#1B4D8F; --accent-soft:#E7EEF8;
+    --mark:#8A4B12; --mark-soft:#F7EFE5; --shadow:0 1px 2px rgba(20,24,31,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0F1216; --surface:#161A20; --ink:#E7EAEF; --ink-soft:#BAC1CC;
+      --muted:#868F9D; --rule:#262C35; --accent:#8FB4E8; --accent-soft:#1A2534;
+      --mark:#D9A166; --mark-soft:#241D14; --shadow:0 1px 2px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0F1216; --surface:#161A20; --ink:#E7EAEF; --ink-soft:#BAC1CC;
+    --muted:#868F9D; --rule:#262C35; --accent:#8FB4E8; --accent-soft:#1A2534;
+    --mark:#D9A166; --mark-soft:#241D14; --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"Public Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    line-height:1.65; margin:0; padding:0 1.25rem 6rem;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:60rem; margin:0 auto}
+
+  /* ---------- masthead ---------- */
+  header.mast{padding:4.5rem 0 2.25rem; border-bottom:2px solid var(--ink)}
+  .eyebrow{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.72rem;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--accent);
+    margin:0 0 1.1rem; font-weight:500;
+  }
+  h1{
+    font-family:Newsreader,Georgia,serif; font-weight:600;
+    font-size:clamp(2.6rem,6.5vw,4.1rem); line-height:1.02; letter-spacing:-.02em;
+    margin:0 0 .85rem; text-wrap:balance;
+  }
+  .standfirst{
+    font-family:Newsreader,Georgia,serif; font-size:clamp(1.1rem,2.4vw,1.35rem);
+    color:var(--ink-soft); max-width:44ch; margin:0 0 2rem; line-height:1.5;
+  }
+  .facts{display:flex; flex-wrap:wrap; gap:0 2.5rem; row-gap:1rem; margin:0; padding:0}
+  .facts div{display:flex; flex-direction:column; gap:.15rem}
+  .facts dt{
+    font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--muted);
+  }
+  .facts dd{margin:0; font-weight:600; font-size:1.02rem; font-variant-numeric:tabular-nums}
+
+  /* ---------- generic section ---------- */
+  h2{
+    font-family:Newsreader,Georgia,serif; font-weight:600;
+    font-size:clamp(1.7rem,3.6vw,2.15rem); letter-spacing:-.015em;
+    margin:3.75rem 0 1.25rem; text-wrap:balance;
+  }
+  h3{
+    font-family:"Public Sans",sans-serif; font-weight:700; font-size:1.02rem;
+    margin:2rem 0 .6rem; letter-spacing:-.005em;
+  }
+  p{margin:0 0 1rem; max-width:64ch}
+
+  /* ---------- run of show ---------- */
+  .scroller{overflow-x:auto; margin:1.5rem 0 0; border:1px solid var(--rule); border-radius:6px; background:var(--surface)}
+  table{border-collapse:collapse; width:100%; min-width:36rem; font-size:.94rem}
+  th,td{text-align:left; padding:.72rem 1rem; border-bottom:1px solid var(--rule); vertical-align:top}
+  thead th{
+    font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.11em;
+    text-transform:uppercase; color:var(--muted); font-weight:500;
+    background:var(--accent-soft); border-bottom:1px solid var(--rule);
+  }
+  tbody tr:last-child td{border-bottom:none}
+  td.num{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; color:var(--accent); font-weight:600}
+  td.time{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; color:var(--muted); white-space:nowrap}
+
+  /* ---------- speaker blocks ---------- */
+  .turn{
+    display:grid; grid-template-columns:7.5rem 1fr; gap:0 2.5rem;
+    padding:2.75rem 0; border-top:1px solid var(--rule);
+  }
+  .turn:first-of-type{border-top:2px solid var(--ink)}
+  .rail{display:flex; flex-direction:column; gap:.5rem; position:sticky; top:1.5rem; align-self:start}
+  .rail .n{
+    font-family:Newsreader,Georgia,serif; font-size:3.5rem; line-height:.85;
+    color:var(--accent); font-variant-numeric:tabular-nums;
+  }
+  .rail .tag{
+    font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--muted); line-height:1.5;
+  }
+  .who{
+    font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--muted); margin:0 0 .4rem;
+  }
+  .turn h2{margin:0 0 1.4rem; font-size:clamp(1.5rem,3.2vw,1.95rem)}
+
+  /* ---------- spoken lines ---------- */
+  .say p{
+    font-size:1.14rem; line-height:1.78; color:var(--ink); max-width:60ch;
+    margin:0 0 1.05rem;
+  }
+  .say p strong{font-weight:700; color:var(--accent)}
+  .cue{
+    font-family:"IBM Plex Mono",monospace; font-size:.78rem; line-height:1.6;
+    color:var(--mark); background:var(--mark-soft);
+    border-left:2px solid var(--mark); padding:.45rem .8rem;
+    margin:1.35rem 0; max-width:56ch;
+  }
+  .handover{
+    margin:1.6rem 0 0; padding:.9rem 1.1rem; background:var(--accent-soft);
+    border-radius:5px; font-size:1rem; color:var(--ink-soft); max-width:56ch;
+  }
+  .handover b{color:var(--ink); font-weight:600}
+
+  /* ---------- q&a ---------- */
+  .qa{display:grid; gap:1rem; margin-top:1.5rem}
+  .qa article{
+    background:var(--surface); border:1px solid var(--rule); border-radius:6px;
+    padding:1.15rem 1.35rem; box-shadow:var(--shadow);
+  }
+  .qa h3{
+    margin:0 0 .5rem; font-family:Newsreader,Georgia,serif; font-weight:600;
+    font-size:1.14rem; color:var(--ink); line-height:1.35;
+  }
+  .qa p{margin:0; font-size:1rem; color:var(--ink-soft); max-width:70ch}
+  .qa p + p{margin-top:.55rem}
+
+  /* ---------- warnings ---------- */
+  .check{
+    border:1px solid var(--mark); border-radius:6px; padding:1.1rem 1.35rem;
+    background:var(--mark-soft); margin:1.25rem 0;
+  }
+  .check h3{margin:0 0 .45rem; color:var(--mark); font-size:.96rem}
+  .check p{margin:0; font-size:.98rem; color:var(--ink-soft); max-width:70ch}
+
+  ul{max-width:64ch; padding-left:1.15rem; margin:0 0 1rem}
+  li{margin-bottom:.45rem}
+  li::marker{color:var(--accent)}
+
+  footer{
+    margin-top:4rem; padding-top:1.5rem; border-top:1px solid var(--rule);
+    font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.06em;
+    color:var(--muted); text-transform:uppercase;
+  }
+
+  @media (max-width:760px){
+    .turn{grid-template-columns:1fr; gap:1rem}
+    .rail{position:static; flex-direction:row; align-items:baseline; gap:1rem}
+    .rail .n{font-size:2.4rem}
+    header.mast{padding-top:3rem}
+  }
+</style>
+
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">Smart India Hackathon 2026 &middot; SIH26102 &middot; TechBashers</p>
+  <h1>NidhiNetra<br>Pitch Script</h1>
+  <p class="standfirst">A five-speaker script for the six-slide idea presentation. Written to be read aloud, not read off a slide.</p>
+  <dl class="facts">
+    <div><dt>Speakers</dt><dd>5</dd></div>
+    <div><dt>Slides</dt><dd>6</dd></div>
+    <div><dt>Run time</dt><dd>6 min 10 s</dd></div>
+    <div><dt>Q&amp;A prep</dt><dd>7 questions</dd></div>
+  </dl>
+</header>
+
+<h2>Run of show</h2>
+<p>Each speaker owns one part of the argument. Nobody repeats what the person before them said. Practise the handover lines out loud, because that is where teams normally lose ten seconds each.</p>
+
+<div class="scroller">
+<table>
+  <thead>
+    <tr><th>#</th><th>Speaker</th><th>Slide</th><th>What they own</th><th>Time</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="num">1</td><td>[name]</td><td>1 &mdash; Title</td><td>The problem, and why it goes unnoticed</td><td class="time">70 s</td></tr>
+    <tr><td class="num">2</td><td>[name]</td><td>2 &mdash; Proposed solution</td><td>What the system does and what it refuses to do</td><td class="time">80 s</td></tr>
+    <tr><td class="num">3</td><td>[name]</td><td>3 &mdash; Technical approach</td><td>The five-step pipeline</td><td class="time">80 s</td></tr>
+    <tr><td class="num">4</td><td>[name]</td><td>4 &mdash; Feasibility</td><td>Why it is buildable, and the three honest risks</td><td class="time">75 s</td></tr>
+    <tr><td class="num">5</td><td>[name]</td><td>5 and 6 &mdash; Impact, sources</td><td>Who benefits, the evidence, the close</td><td class="time">65 s</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============ SPEAKER 1 ============ -->
+<section class="turn">
+  <div class="rail">
+    <span class="n">1</span>
+    <span class="tag">Slide 1<br>70 seconds</span>
+  </div>
+  <div>
+    <p class="who">Speaker 1 &mdash; [name]</p>
+    <h2>The money moves. Nobody is watching.</h2>
+
+    <div class="cue">Stand still. Do not read the slide. The slide is only the problem statement ID, so look at the judges instead.</div>
+
+    <div class="say">
+      <p>Good morning. We are team TechBashers, and our problem statement is SIH26102, from the Ministry of Statistics and Programme Implementation.</p>
+
+      <p>Every Member of Parliament gets a fund to build things in their own constituency. Roads, classrooms, water tanks, streetlights. The scheme is called MPLADS.</p>
+
+      <p>Here is how it works today. The money is released. The work is sanctioned. The bills are paid. And then, mostly, nobody looks closely until an audit arrives years later.</p>
+
+      <p>By that time, two things have already gone wrong. Some money has leaked out through inflated bills, or through works marked complete that were never actually built. And a much larger amount has simply sat there, unused. <strong>Public reports put roughly 1,729 crore rupees as lying unspent.</strong></p>
+
+      <p>Now here is the part that bothers us. The data needed to catch all of this already exists. It is sitting in the MPLADS portal right now. <strong>Nobody is reading it fast enough.</strong></p>
+
+      <p>So we built NidhiNetra. Nidhi means funds. Netra means eye. An eye on the money, while the money is still moving.</p>
+    </div>
+
+    <p class="handover">Handover &rarr; <b>&ldquo;[Name 2] will show you what the system actually does.&rdquo;</b></p>
+  </div>
+</section>
+
+<!-- ============ SPEAKER 2 ============ -->
+<section class="turn">
+  <div class="rail">
+    <span class="n">2</span>
+    <span class="tag">Slide 2<br>80 seconds</span>
+  </div>
+  <div>
+    <p class="who">Speaker 2 &mdash; [name]</p>
+    <h2>What goes in, what comes out</h2>
+
+    <div class="cue">Use your hand to show &ldquo;in&rdquo; and &ldquo;out&rdquo;. Slow down on the three categories. They are the spine of the whole pitch.</div>
+
+    <div class="say">
+      <p>NidhiNetra takes the raw MPLADS data and turns it into a ranked list of projects that deserve a closer look.</p>
+
+      <p>What goes in: fund release records, work sanction records, costs, and the geotagged photos of completed work.</p>
+
+      <p>What comes out: <strong>every project gets a risk score from 0 to 100, and one line of plain language saying why.</strong></p>
+
+      <p>We look for three kinds of trouble.</p>
+
+      <p>First, anomalies. A road that costs three times what the same road costs in the next district. A work sanctioned two years ago that has not moved. The same entry filed twice.</p>
+
+      <p>Second, fraud signals. Billing that looks inflated. A photo that is missing, or that does not match the location claimed. The same vendor winning again and again.</p>
+
+      <p>Third, inefficiency. Long delays, funds lying idle, and the SC and ST spending quota not being met.</p>
+
+      <p>One thing matters more than everything else on this slide. <strong>The system never accuses anyone.</strong> It produces a recommendation with a reason attached, and a human officer decides what happens next. Nothing is published automatically.</p>
+    </div>
+
+    <p class="handover">Handover &rarr; <b>&ldquo;[Name 3] will take you through how it works, step by step.&rdquo;</b></p>
+  </div>
+</section>
+
+<!-- ============ SPEAKER 3 ============ -->
+<section class="turn">
+  <div class="rail">
+    <span class="n">3</span>
+    <span class="tag">Slide 3<br>80 seconds</span>
+  </div>
+  <div>
+    <p class="who">Speaker 3 &mdash; [name]</p>
+    <h2>Ingest, standardize, detect, explain, review</h2>
+
+    <div class="cue">Point at each box on the flow diagram as you name it. Five steps, five points. Do not rush step two, it is the answer to a question judges love asking.</div>
+
+    <div class="say">
+      <p>Five steps. Ingest, standardize, detect, explain, review.</p>
+
+      <p><strong>Step one, ingest.</strong> We pull the records from the MPLADS portal and store them.</p>
+
+      <p><strong>Step two, standardize.</strong> Every state writes the same thing differently. One state writes &ldquo;Community Hall&rdquo;, another writes &ldquo;Comm. Hall&rdquo;. We map all of it into one common format. This step is unglamorous, and it is where most of the real work sits.</p>
+
+      <p><strong>Step three, detect.</strong> Four engines run in parallel. Isolation Forest finds numbers that do not belong, mainly cost outliers. DBSCAN groups similar projects together, so we compare like with like instead of comparing a hill road to a plains road. Sentence-BERT reads the work descriptions and catches duplicates written in different words. And OpenCV checks the geotagged photo against the location that was claimed.</p>
+
+      <p><strong>Step four, explain.</strong> This is the part we care about most. For every flag, we use SHAP or a plain rule trace to show exactly which fields pushed the score up. No black box. If we cannot explain a flag, we do not raise it.</p>
+
+      <p><strong>Step five, review.</strong> Everything lands on a dashboard where an officer records what the inspection actually found. And every recorded outcome becomes training data for the next round. <strong>The reviewers train the model, not the other way round.</strong></p>
+    </div>
+
+    <p class="handover">Handover &rarr; <b>&ldquo;[Name 4] will tell you why we think we can actually build this, and where it can go wrong.&rdquo;</b></p>
+  </div>
+</section>
+
+<!-- ============ SPEAKER 4 ============ -->
+<section class="turn">
+  <div class="rail">
+    <span class="n">4</span>
+    <span class="tag">Slide 4<br>75 seconds</span>
+  </div>
+  <div>
+    <p class="who">Speaker 4 &mdash; [name]</p>
+    <h2>Buildable, and honest about the risks</h2>
+
+    <div class="cue">Say &ldquo;now the honest part&rdquo; and pause for one beat. Judges remember teams that name their own weaknesses before being asked.</div>
+
+    <div class="say">
+      <p>Three reasons this is buildable.</p>
+
+      <p>One. Every model we named is open source and light. Isolation Forest, DBSCAN, rule engines. No GPU farm required. This can run on the infrastructure the government already has.</p>
+
+      <p>Two. We are not starting blind. CAG audit reports and RTI replies already describe real fraud patterns in this exact scheme. We use those as our test cases, before we ever touch a live dataset.</p>
+
+      <p>Three. MPLADS uses the same fields in every state. So <strong>one pipeline covers the whole country.</strong> We do not rebuild it twenty-eight times.</p>
+
+      <p>Now the honest part. Three real risks.</p>
+
+      <p>Confirmed fraud is rare, so the data is heavily imbalanced. Our answer is to lead with unsupervised detection, which needs no labels, and add supervised models later, once confirmed cases build up.</p>
+
+      <p>State and district formats disagree with each other. Our answer is to spend real hackathon hours on standardization, not only on the models.</p>
+
+      <p>And the third one we take most seriously. <strong>A false alarm against a named officer is not a small mistake. It damages a person.</strong> Our answer is the human reviewer on every single flag. The system recommends. It never accuses.</p>
+    </div>
+
+    <p class="handover">Handover &rarr; <b>&ldquo;[Name 5] will close with who this helps, and what it is built on.&rdquo;</b></p>
+  </div>
+</section>
+
+<!-- ============ SPEAKER 5 ============ -->
+<section class="turn">
+  <div class="rail">
+    <span class="n">5</span>
+    <span class="tag">Slides 5 &amp; 6<br>65 seconds</span>
+  </div>
+  <div>
+    <p class="who">Speaker 5 &mdash; [name]</p>
+    <h2>Who it helps, and what it stands on</h2>
+
+    <div class="cue">Move through slide 5 and 6 without stopping. The last three sentences are the close. Land them slowly, then stop talking.</div>
+
+    <div class="say">
+      <p>Who this helps.</p>
+
+      <p>The Ministry gets a live risk view. Today they wait for the next audit cycle, which can take years. With this, a problem shows up in weeks.</p>
+
+      <p>That 1,729 crore of unspent funds becomes visible <strong>early enough to actually spend it, inside the same financial year.</strong></p>
+
+      <p>And each user sees only what they need. An MP sees their own constituency. A district officer sees their district. The Ministry sees the country.</p>
+
+      <p>The benefits are three. Economic: less money lost to inflated bills and to works marked complete that were never built. Social: the SC and ST quota gets verified from the data, instead of being self-reported. Institutional: problem statement SIH26103 asks for an MPLADS monitoring portal. <strong>We are not competing with it. NidhiNetra is the intelligence layer that plugs into it.</strong></p>
+
+      <p>All of this is grounded in public sources. The official MPLADS dashboard at mplads.mospi.gov.in. CAG and RTI records. And reported cases, including three officers chargesheeted in an MPLAD funds case, which is exactly the pattern we want to catch earlier.</p>
+
+      <p>To close. The data already exists. The misuse already leaves a trail. <strong>NidhiNetra reads that trail while the money is still moving, and hands a ranked, explained list to a human who can act on it.</strong></p>
+
+      <p>Thank you. We are happy to take your questions.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ QA ============ -->
+<h2>Questions the judges will ask</h2>
+<p>Short answers. Whoever owned that slide answers the question, so nobody has to think about who speaks.</p>
+
+<div class="qa">
+  <article>
+    <h3>How is this different from SIH26103?</h3>
+    <p>26103 is a monitoring portal. It shows what happened. We are the layer that decides what deserves attention, and explains why. We plug in rather than compete. <em>(Speaker 5)</em></p>
+  </article>
+  <article>
+    <h3>Where does the data come from? Is there an API?</h3>
+    <p>The official MPLADS dashboard publishes state-level data through public endpoints, and we have tested them. Work-level detail is thinner than we need. So our ingest layer is built to accept an official feed the day it is available, and to work from published extracts until then. <em>(Speaker 3)</em></p>
+    <p>Do not oversell this. Saying &ldquo;we designed the ingest layer to swap sources&rdquo; is a stronger answer than pretending the API is complete.</p>
+  </article>
+  <article>
+    <h3>What if the model flags an honest officer?</h3>
+    <p>Three defences. Every flag carries a plain-language reason, so it can be argued with. Every flag goes to a human before anything is recorded. And we track precision on reviewed flags, so a noisy rule gets switched off. <em>(Speaker 4)</em></p>
+  </article>
+  <article>
+    <h3>Cost variation is normal. Hills cost more than plains.</h3>
+    <p>Agreed, which is why we never compare against a national average. DBSCAN clusters projects by work type and region first, and we only look for outliers inside a cluster. <em>(Speaker 3)</em></p>
+  </article>
+  <article>
+    <h3>With no labelled fraud data, how do you measure accuracy?</h3>
+    <p>Two ways. We replay known CAG and RTI cases and check whether our system would have ranked them highly. And in production, the measure is precision at the top of the list: of the flags a reviewer opens, how many were worth opening. <em>(Speaker 4)</em></p>
+  </article>
+  <article>
+    <h3>Why not deep learning?</h3>
+    <p>Because we have to explain every flag to a government officer, we have very few confirmed cases to learn from, and it has to run on existing infrastructure. Classical models win on all three. <em>(Speaker 3)</em></p>
+  </article>
+  <article>
+    <h3>What will you actually have built by the end of the hackathon?</h3>
+    <p>The full pipeline running end to end on real MPLADS data for a few states, a dashboard with ranked flags, and the explanation panel showing why each one was raised. <em>(Speaker 2)</em></p>
+  </article>
+</div>
+
+<!-- ============ CHECKS ============ -->
+<h2>Check these before you present</h2>
+
+<div class="check">
+  <h3>The 1,729 crore figure</h3>
+  <p>The deck cites it without a year or a source. Pin down which financial year it refers to and which report it comes from, and put that in your pocket. If a judge asks &ldquo;as of when?&rdquo; and nobody knows, the whole slide weakens.</p>
+</div>
+
+<div class="check">
+  <h3>The data access answer</h3>
+  <p>From earlier probing, the MPLADS state-level endpoint responds but the work-level detail you need is not fully exposed. Agree as a team on the exact wording of that answer before you walk in, so all five of you say the same thing.</p>
+</div>
+
+<!-- ============ DELIVERY ============ -->
+<h2>Delivery notes</h2>
+<ul>
+  <li>Speak slower than feels natural. At six minutes you have room. Rushing is the most common way teams lose this round.</li>
+  <li>Nobody reads the slide aloud. The slide is the evidence, you are the argument.</li>
+  <li>Every speaker starts by looking at the judges, not the screen.</li>
+  <li>Practise handovers as a chain, three times in a row, without the content. That alone saves half a minute.</li>
+  <li>If a judge interrupts mid-pitch, answer it, then say &ldquo;coming back to where we were&rdquo; and continue. Do not restart the section.</li>
+</ul>
+
+<h3>If you are cut to three minutes</h3>
+<p>Keep speaker 1 (drop the last two paragraphs), speaker 2 (keep the three trouble categories and the &ldquo;never accuses&rdquo; line), speaker 3 (name the five steps only, skip the model names), and speaker 5&rsquo;s closing three sentences. Speaker 4 becomes a single line: &ldquo;every model we use is open source, and every flag goes to a human.&rdquo;</p>
+
+<footer>NidhiNetra &middot; TechBashers &middot; SIH26102 &middot; Rehearsal script v1</footer>
+
+</div>
+
+</body>
+</html>

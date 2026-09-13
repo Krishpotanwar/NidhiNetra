@@ -1,0 +1,104 @@
+/* Shared shell for every filter control: the same box, the same focus ring,
+   so the four filters and the view options read as one family. */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  height: 2.375rem;
+  min-width: 11rem;
+  max-width: 16rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.narrow {
+  min-width: 7.5rem;
+}
+
+.wide {
+  min-width: 14rem;
+}
+
+.trigger:hover {
+  border-color: var(--control-border-hover);
+}
+
+.trigger:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 0 4px rgb(27 79 214 / 0.14);
+}
+
+.trigger[data-state="open"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.value {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.caret {
+  flex: none;
+  color: var(--ink-muted);
+}
+
+.content {
+  z-index: var(--z-popover);
+  min-width: var(--radix-select-trigger-width, 12rem);
+  max-height: min(22rem, var(--radix-select-content-available-height, 22rem));
+  padding: var(--space-2);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-raised);
+  overflow: auto;
+}
+
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-8);
+  border-radius: var(--radius-control);
+  font-size: var(--font-sm);
+  line-height: var(--leading-snug);
+  color: var(--ink);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+
+.item[data-highlighted] {
+  background: var(--row-hover);
+}
+
+.item[data-state="checked"] {
+  font-weight: 600;
+}
+
+.count {
+  font-family: var(--font-mono);
+  font-size: var(--font-2xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+
+.check {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--accent);
+}

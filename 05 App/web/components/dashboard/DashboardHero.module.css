@@ -1,0 +1,124 @@
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--paper);
+}
+
+.media {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.image {
+  object-fit: cover;
+  object-position: 70% 42%;
+}
+
+/* Left to right: paper over the text column, clearing by the time the
+   ribbon and the Chakra arrive. Bottom: the image dissolves into paper so
+   the summary cards sit on the page, not on a photograph. */
+.veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgb(248 250 252 / 0.95) 0%,
+      rgb(248 250 252 / 0.86) 26%,
+      rgb(248 250 252 / 0.34) 50%,
+      rgb(248 250 252 / 0) 66%
+    ),
+    linear-gradient(180deg, rgb(248 250 252 / 0) 52%, var(--paper) 100%);
+}
+
+.content {
+  position: relative;
+  padding-top: var(--space-8);
+  padding-bottom: calc(var(--space-20) + var(--space-4));
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.wordmark {
+  margin: var(--space-3) 0 0;
+  font-family: var(--font-serif);
+  font-size: var(--font-display);
+  font-weight: 700;
+  line-height: var(--leading-display);
+  letter-spacing: var(--track-display);
+  color: var(--ink);
+}
+
+.netra {
+  color: var(--netra);
+}
+
+.rule {
+  display: block;
+  width: 11.5rem;
+  height: 4px;
+  margin-top: var(--space-4);
+  border-radius: 2px;
+  background: var(--tricolour-rule);
+}
+
+.tagline {
+  margin: var(--space-5) 0 0;
+  font-size: var(--font-lg);
+  font-weight: 400;
+  letter-spacing: var(--track-heading);
+  color: var(--ink);
+}
+
+.body {
+  max-width: 40rem;
+  margin: var(--space-3) 0 0;
+  font-size: var(--font-md);
+  line-height: var(--leading-normal);
+  color: var(--ink-2);
+}
+
+.caption {
+  position: absolute;
+  right: var(--page-gutter);
+  bottom: calc(var(--space-20) + var(--space-2));
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-size: var(--font-md);
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.captionRule {
+  width: 3.5rem;
+  height: 3px;
+  margin-top: var(--space-2);
+  border-radius: 2px;
+  background: var(--tricolour-rule);
+}
+
+@media (max-width: 75rem) {
+  .caption {
+    display: none;
+  }
+}
+
+@media (max-width: 48rem) {
+  .image {
+    object-position: 76% 42%;
+  }
+  .veil {
+    background:
+      linear-gradient(90deg, rgb(248 250 252 / 0.96) 0%, rgb(248 250 252 / 0.8) 58%, rgb(248 250 252 / 0.3) 100%),
+      linear-gradient(180deg, rgb(248 250 252 / 0) 46%, var(--paper) 100%);
+  }
+  .body {
+    font-size: var(--font-sm);
+  }
+}

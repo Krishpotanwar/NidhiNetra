@@ -1,0 +1,36 @@
+# OS
+.DS_Store
+
+# secrets: never staged, never committed
+krish.txt
+krish.txt.pub
+*.pem
+*.key
+.env
+.env.*
+!.env.example
+
+# Obsidian per-machine UI state (vault config itself IS tracked)
+.obsidian/workspace.json
+.obsidian/app.json.bak
+
+# graphify derived artifacts (graph.json + report are kept)
+**/graphify-out/cache/
+**/graphify-out/.graphify_*
+
+# app: dependencies and derived data
+05 App/node_modules/
+05 App/web/node_modules/
+05 App/web/.next/
+05 App/.venv/
+05 App/.ruff_cache/
+05 App/.pytest_cache/
+05 App/data/raw/
+05 App/data/interim/
+05 App/.coverage
+05 App/web/coverage/
+__pycache__/
+*.pyc
+
+# design tool export (reference only, re-downloadable)
+Precision and research first (1).zip

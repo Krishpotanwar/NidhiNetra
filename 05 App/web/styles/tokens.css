@@ -1,0 +1,187 @@
+/*
+ * NidhiNetra design tokens, 2026-09-11 redesign.
+ *
+ * Every colour, size, radius, shadow and duration the interface uses. The
+ * rules for applying them live in DESIGN.md at the project root; this file
+ * is what the pages actually read. The visual world is the user's pinned
+ * reference (NidhiNetra_Vidhi.png): cool paper under a tricolour masthead,
+ * white ledger cards, ink-navy type, one interactive blue, a warm risk ramp.
+ *
+ * The type scale is still derived from two anchors, as the original design
+ * brief required: the table cell size and one ratio. Change either and every
+ * derived size moves with it. Colours were checked for WCAG AA against the
+ * backgrounds they sit on (2026-09-11); see DESIGN.md before changing one.
+ */
+
+:root {
+  /* ---------- Anchors ---------- */
+  --font-base: 0.875rem; /* the table cell: the most frequent size on screen */
+  --ratio: 1.2; /* minor third, tight enough for dense UI */
+  --ratio-half: 1.0954; /* square root of --ratio, for the one half step */
+  --space-unit: 0.25rem;
+
+  /* ---------- Type scale, derived ---------- */
+  --font-2xs: calc(var(--font-base) / var(--ratio) / var(--ratio));
+  --font-xs: calc(var(--font-base) / var(--ratio));
+  --font-note: calc(var(--font-base) / var(--ratio-half));
+  --font-sm: var(--font-base);
+  --font-md: calc(var(--font-base) * var(--ratio));
+  --font-lg: calc(var(--font-md) * var(--ratio));
+  --font-xl: calc(var(--font-lg) * var(--ratio));
+  --font-2xl: calc(var(--font-xl) * var(--ratio));
+  --font-3xl: calc(var(--font-2xl) * var(--ratio));
+  --font-display: clamp(2.75rem, 1.55rem + 2.95vw, 4.75rem);
+
+  /* ---------- Families (next/font variables set in app/layout.tsx) ---------- */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  --font-serif: var(--font-source-serif), "Iowan Old Style", Georgia, serif;
+  --font-deva: var(--font-noto-deva), "Kohinoor Devanagari", "Nirmala UI", Mangal, sans-serif;
+
+  /* ---------- Leading, inverse to size ---------- */
+  --leading-display: 1.02;
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-normal: 1.5;
+
+  /* ---------- Tracking, size-specific ---------- */
+  --track-display: -0.028em;
+  --track-heading: -0.012em;
+  --track-body: 0em;
+  --track-label: 0.06em;
+  --track-eyebrow: 0.14em;
+  --track-micro: var(--track-label);
+
+  /* ---------- Space scale, derived ---------- */
+  --space-1: var(--space-unit);
+  --space-2: calc(var(--space-unit) * 2);
+  --space-3: calc(var(--space-unit) * 3);
+  --space-4: calc(var(--space-unit) * 4);
+  --space-5: calc(var(--space-unit) * 5);
+  --space-6: calc(var(--space-unit) * 6);
+  --space-8: calc(var(--space-unit) * 8);
+  --space-10: calc(var(--space-unit) * 10);
+  --space-12: calc(var(--space-unit) * 12);
+  --space-16: calc(var(--space-unit) * 16);
+  --space-20: calc(var(--space-unit) * 20);
+  --space-24: calc(var(--space-unit) * 24);
+
+  /* ---------- Layout ---------- */
+  --page-max: 100rem;
+  --page-gutter: clamp(1rem, 2.4vw, 2.5rem);
+  --header-h: 4.75rem;
+  --panel-width: min(34rem, 42vw);
+  --measure-reason: 62ch;
+  --row-pad: var(--space-4);
+
+  /* ---------- Shape ---------- */
+  --radius-control: 0.5rem;
+  --radius-card: 0.75rem;
+  --radius-tile: 0.75rem;
+  --radius-panel: 1rem;
+  --radius-pill: 999px;
+  --radius-lg: var(--radius-card);
+
+  /* ---------- Neutrals ---------- */
+  --ink: #0f1b33;
+  --ink-2: #334262;
+  --ink-muted: #56617d;
+  --ink-faint: #5e6983;
+  --netra: #3b4c67;
+  --paper: #f4f7fa;
+  --surface: #ffffff;
+  --sunken: #f1f4f8;
+  --row-hover: #f6f8fc;
+  --hairline: #e3e9ef;
+  --hairline-strong: #d3dce6;
+  --control-border: #c5cfdb;
+  --control-border-hover: #97a4b7;
+
+  /* ---------- One accent: interactive only, never decorative ---------- */
+  --accent: #1b4fd6;
+  --accent-deep: #163fad;
+  --accent-hover: var(--accent-deep);
+  --accent-wash: #e7eefd;
+  --nav-pill: #dfe5f3;
+
+  /* ---------- Tricolour: identity only, never data ---------- */
+  --saffron: #ff9933;
+  --tricolour-white: #ffffff;
+  --tricolour-lower: #138808;
+  --tricolour-rule: linear-gradient(
+    90deg,
+    var(--saffron) 0 33.33%,
+    #d9dee5 33.33% 66.66%,
+    var(--tricolour-lower) 66.66% 100%
+  );
+
+  /* ---------- Risk ramp: warm, never the flag's lower band ---------- */
+  --risk-4: #c81e1e;
+  --risk-4-ink: #b42318;
+  --risk-4-wash: #fde8e8;
+  --risk-3: #d4540f;
+  --risk-3-ink: #b23f0b;
+  --risk-3-wash: #fdede3;
+  --risk-2: #c9760f;
+  --risk-2-ink: #92560a;
+  --risk-2-wash: #fcf1df;
+  --risk-1: #a8842a;
+  --risk-1-ink: #7a6414;
+  --risk-1-wash: #f6f0dc;
+  --risk-0: #8793a6;
+  --risk-0-ink: var(--ink-muted);
+  --risk-0-wash: #eef1f5;
+  --risk-ramp: linear-gradient(90deg, #b91c1c 0%, var(--risk-3) 55%, #e39a34 100%);
+
+  /* ---------- KPI tiles ---------- */
+  --kpi-works: var(--accent);
+  --kpi-works-tile: #e1ecfe;
+  --kpi-flagged: #d9480f;
+  --kpi-flagged-tile: #ffebdc;
+  --kpi-value: #be123c;
+  --kpi-value-tile: #fce7ec;
+  --kpi-idle: #5b3fd1;
+  --kpi-idle-tile: #eee9fe;
+
+  /* ---------- Elevation: tinted to the ink hue, never pure black ---------- */
+  --shadow-card: 0 1px 2px rgb(15 27 51 / 0.04), 0 6px 20px -4px rgb(15 27 51 / 0.06);
+  --shadow-raised: 0 2px 8px rgb(15 27 51 / 0.06), 0 16px 40px -8px rgb(15 27 51 / 0.12);
+  --shadow-panel: 0 12px 32px rgb(15 27 51 / 0.1), 0 40px 80px -16px rgb(15 27 51 / 0.18);
+  --shadow-header: 0 1px 0 rgb(15 27 51 / 0.06), 0 8px 24px -12px rgb(15 27 51 / 0.12);
+
+  /* ---------- Motion ---------- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 480ms;
+
+  /* ---------- Layers ---------- */
+  --z-sticky: 30;
+  --z-header: 50;
+  --z-panel: 60;
+  --z-popover: 70;
+
+  font-optical-sizing: auto;
+  font-synthesis: none;
+}
+
+/*
+ * Light only, deliberately: the pinned reference is a light surface, the
+ * primary scene is a desk or a projector in a lit room, and a system-dark
+ * viewer should see the same considered page as everyone else.
+ */
+
+/* Increased contrast: stronger rules and borders, shadows swapped for lines. */
+@media (prefers-contrast: more) {
+  :root {
+    --hairline: #b9c4d2;
+    --hairline-strong: #97a4b7;
+    --control-border: #6b778f;
+    --ink-muted: #3f4a64;
+    --ink-faint: #4a556d;
+    --shadow-card: 0 0 0 1px var(--hairline-strong);
+    --shadow-raised: 0 0 0 1px var(--hairline-strong);
+    --shadow-panel: 0 0 0 1px var(--hairline-strong);
+  }
+}

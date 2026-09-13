@@ -1,0 +1,145 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.canvasCard,
+.card {
+  padding: var(--space-6);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.canvasSkeleton {
+  height: 24rem;
+  border-radius: var(--radius-control);
+  background: var(--sunken);
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.note {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-note);
+  line-height: var(--leading-normal);
+  color: var(--ink-muted);
+}
+
+.clusterList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  max-height: 22rem;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.clusterButton {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.clusterButton:hover {
+  background: var(--row-hover);
+}
+
+.clusterButton[aria-current="true"] {
+  background: var(--accent-wash);
+}
+
+.clusterName {
+  overflow: hidden;
+  font-size: var(--font-note);
+  font-weight: 500;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clusterCount {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--font-note);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+
+.clusterCountLabel {
+  margin-left: var(--space-1);
+  font-family: var(--font-sans);
+  font-size: var(--font-2xs);
+  color: var(--ink-muted);
+}
+
+.deepLink {
+  margin: 0;
+  font-size: var(--font-sm);
+  color: var(--ink-2);
+}
+
+.caveat {
+  margin: 0;
+  font-size: var(--font-note);
+  color: var(--ink-muted);
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.stateBody {
+  margin: var(--space-3) 0 0;
+  font-size: var(--font-sm);
+  color: var(--ink-muted);
+}
+
+.action {
+  margin-top: var(--space-4);
+  height: 2.25rem;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+@media (max-width: 75rem) {
+  .layout {
+    /* minmax(0, ...), not a bare 1fr: a bare 1fr track's automatic minimum
+       is its content's min-content size, and the graph canvas is wide by
+       design, so without the explicit 0 floor this track (and the page
+       under it) would refuse to shrink below the canvas's natural width. */
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

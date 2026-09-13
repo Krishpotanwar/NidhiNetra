@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nidhinetra.local/contracts/risk_scored_record.schema.json",
+  "title": "RiskScoredRecord",
+  "description": "Execution Plan section 3.2. Produced by A2 risk engine, consumed by A4 API. peer_group is mandatory on every flagged record, not optional -- eng review enforces a minimum n of 30, below which the work is excluded from flagging rather than flagged on a meaningless z-score.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["work_id", "inspection_rank", "risk_score", "flags", "why_flagged"],
+  "properties": {
+    "work_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Matches normalized_record.work_id"
+    },
+    "inspection_rank": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "1 = inspect first. Must run 1..N with no gaps across the full scored set (Checkpoints CP2)."
+    },
+    "risk_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["cost_outlier", "stalled_work", "expenditure_mismatch", "agency_concentration"]
+      },
+      "uniqueItems": true,
+      "description": "No minimum count required (Checkpoints CP2, revised 2026-09-01: a minimum-count gate pays you to loosen thresholds until it passes). Empty array means unflagged, not clean."
+    },
+    "why_flagged": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "One key per entry in flags, each value a plain-language sentence from contracts/strings.json. No accusatory language, no em-dashes."
+    },
+    "peer_group": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["label", "n"],
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "e.g. 'Road works, Bihar, 2023-24'. Category, then state, then year, per NIDHINETRA-DESIGN-BRIEF.md."
+        },
+        "n": {
+          "type": "integer",
+          "minimum": 30,
+          "description": "Eng review minimum. Below 30 the work must not be flagged at all rather than carry a peer_group with a small n."
+        }
+      },
+      "description": "Mandatory (non-null) whenever flags is non-empty. Null only when flags is empty."
+    }
+  }
+}

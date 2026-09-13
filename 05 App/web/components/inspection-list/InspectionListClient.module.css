@@ -1,0 +1,11 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.standing {
+  margin: 0;
+  font-size: var(--font-note);
+  color: var(--ink-muted);
+}

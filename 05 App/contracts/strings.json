@@ -1,0 +1,894 @@
+{
+  "_meta": {
+    "contract": "strings",
+    "version": "1.0.0",
+    "status": "FROZEN AT CP0",
+    "owner": "A6",
+    "locale": "en-IN",
+    "authority": "NIDHINETRA-DESIGN-BRIEF.md sections 4, 5, 10, 11, 12. PRD section 4. Execution Plan section 3.2.",
+    "rule": "No user-visible string exists anywhere except this file. A2 selects a template_id and supplies params. A4 passes both through. A5 renders. No agent writes prose.",
+    "scope": "User-visible text only. Code identifiers, log lines, docstrings, test names and document titles are out of scope.",
+    "casing": "Strings are stored in sentence case. Uppercase micro labels get their casing from text-transform in CSS, never from this file.",
+    "amendment": "Raise with A6, land it here, append to Logbook.md. Never patch copy inside a component.",
+    "amendment_log": [
+      "2026-09-03: added detail_panel.breakdown_ensemble, .breakdown_ensemble_note and .breakdown_capped. The panel's risk breakdown previously divided risk_score evenly across the fired flags, which misstated the engine: rank.py weights them 30/25/25/20 and adds a separate ensemble component. Itemising the real weights leaves a remainder that needed a label, and a capped total needed a note. No existing string changed.",
+      "2026-09-03: reference-fidelity pass against Precision and research first/NidhiNetra.dc.html. Changed framing.premise and summary_strip.value_under_flagged/.idle_beyond_12_months to match the reference's exact wording (the second was also a real accuracy fix: idle_beyond_12_months sums sanctioned_amount_inr, and 'released, unspent' names that field correctly where 'idle' did not). Changed table.columns.agency from 'Agency' to 'Implementing agency' -- the fuller form already existed as column_tooltips.agency, now promoted to the visible header too. Added table.columns.days_stale and column_tooltips.days_stale for a column the reference has and the app did not. Added table.filtered_summary, a new sentence replacing quota_meter's bar-and-caption UI on the Inspection List: the reference has no bar, only this line, computed from the same real quota figures the bar used. Added nav.org_label, the ministry name the reference shows in a top bar above the title on every page; also corrected nav._note's path to the reference file, which had gone stale.",
+      "2026-09-03: added fund_flow.concentration_filter_label/.concentration_filter_description/.min_members_label/.show_non_matching/.hide_non_matching/.cluster_in_focus_label/.cluster_members/.cluster_works/.cluster_paid/.cluster_median_note/.member_singular/.member_plural for the Fund Flow view's threshold filter and cluster-in-focus panel, both new. Deliberately no 'Districts' figure: the reference's mockup shows one, but build_graph.py's own docstring says the graph carries no separate district node, and MP nodes are keyed by mp_name, not constituency -- a Districts count is not honestly computable from this schema without joining in the inspection list's rows, which this pass does not do. Named, not faked.",
+      "2026-09-04: added fund_flow.drawn_cap_note. Rung 1 landed 79,068 real works, and the Fund Flow view's threshold filter -- correct at fixture scale -- matched 4,845 of 16,854 vendors at national scale, rendering 5,695 SVG nodes in a 164,778px-tall graph. A graph that exists to surface concentration surfaces nothing at that size. The view now draws only the most concentrated clusters and says so, rather than silently truncating or rendering something unreadable.",
+      "2026-09-05: added inspection_capture, for Checkpoints CP8's on-screen recording of an inspection outcome. outcome_options mirrors the six-value enum in contracts/inspection_outcome.schema.json exactly (frozen the same eng-review session, see NEXT-STEPS.md item 4) -- every key here must match an enum value there, and neither list may drift from the other. No option reads as a verdict: no fraud, clean, verified or confirmed anywhere in this block, per lint.banned_literal.",
+      "2026-09-05: added inspection_capture.control_sample_label, same session, after an outside-voice review pass found CP8's precision-at-quota metric had no real comparison group (nothing is ever inspected outside the ranked list, so 'outside cutoff' would always be empty). This checkbox is how an officer marks an inspection as a deliberate random check rather than one from the ranked recommendation.",
+      "2026-09-05: added inspection_capture.inspector_id_label, same session, second outside-voice pass: the enum schema had no way to say WHICH reviewer recorded an outcome, quietly breaking the deck's own 'reviewers train the model' (plural) claim. No auth exists in this prototype, so this is self-reported initials, not a verified identity -- still required, so inter-rater disagreement is at least visible instead of invisible.",
+      "2026-09-11: redesign against the user's pinned reference (NidhiNetra_Vidhi.png). Added brand, dashboard, quota_card, view_options, presenter, pagination, search, specimen, reports and system_pages, and extended nav, filters, table, detail_panel and fund_flow. Changed table.columns.district from 'District' to 'Constituency': the column always showed the constituency and the source has no district field. Changed summary_strip.idle_beyond_12_months from 'Released, unspent beyond twelve months' to 'Sanctioned, unspent beyond twelve months': the figure sums sanctioned_amount_inr, and nothing in the source says the money was released. Changed table.column_tooltips.days_stale to say what last_updated actually is. The reference's 'across every district, every scheme, every citizen' was not adopted: this product covers one scheme, MPLADS.",
+      "2026-09-11: fund_flow.cluster_paid 'Paid' became 'Sanctioned value' and fund_flow.edge_label now ends in 'sanctioned': build_graph.py sums sanctioned_amount_inr onto every edge, so 'Paid' overstated what the figure is (ultra-review F10). Added filters.panel_label and detail_panel.source_labels (rung 1 is the MPLADS public dashboard pull; other rungs keep their number until they have agreed copy).",
+      "2026-09-12: removed the specimen sheet as a nav-reachable page and its whole string block (design brief section 4 material: type scale, swatches, elevation, shape, component samples). It was a live token inspector for development, not a product view for officers or judges; the user asked for it out of the shipped frontend. Four real tabs remain: Dashboard, Inspection list, Fund flow, Reports. nav.specimen is removed rather than left unused."
+    ]
+  },
+  "_measure": {
+    "reason_wrap_ch": 46,
+    "note": "46ch is the wrap measure from --measure-reason in design brief B1. It is not a truncation cap. The two reference examples in Execution Plan 3.2 are 53 and 52 characters and both wrap to two lines, so two lines is the intended normal.",
+    "reason_worst_case_max": 92,
+    "reason_hard_fail": 138,
+    "rule": "A template passes if its render at the declared maximum parameter lengths is 92 characters or fewer."
+  },
+  "why_flagged": {
+    "_rules": [
+      "State the measurement. Never state the inference.",
+      "Every reason carries at least one number, because the product promise in design brief section 1 is 'here is exactly why'.",
+      "Every reason ends in a full stop, matching both reference examples.",
+      "No verb of judgement. The reference examples use 'is' and 'recorded'.",
+      "Where a dash is wanted, use a comma. The reference example 'Sanctioned 14 months ago, zero expenditure recorded.' already demonstrates this."
+    ],
+    "cost_outlier": {
+      "params": {
+        "multiple": {
+          "type": "multiple",
+          "required": true,
+          "max_len": 5
+        },
+        "category": {
+          "type": "category_phrase",
+          "required": true,
+          "max_len": 14
+        },
+        "state": {
+          "type": "state_display",
+          "required": false,
+          "max_len": 20
+        }
+      },
+      "variants": {
+        "default": {
+          "text": "Cost is {multiple}x the median for {category} works in this state.",
+          "use_when": "Always, in the table reason line. This is the reference example from Execution Plan 3.2.",
+          "worst_case_len": 65
+        },
+        "named_state": {
+          "text": "Cost is {multiple}x the median for {category} works in {state}.",
+          "use_when": "Detail panel only, where the measure is wider and the state may not be on screen.",
+          "worst_case_len": 75,
+          "caution": "Do not use for states whose display name exceeds 20 characters. See number_format.state_display."
+        },
+        "no_multiple": {
+          "text": "Cost is above the usual range for {category} works here.",
+          "use_when": "The peer median is unavailable or zero, so a multiple cannot be computed honestly.",
+          "worst_case_len": 60
+        }
+      }
+    },
+    "stalled_work": {
+      "params": {
+        "months": {
+          "type": "integer",
+          "required": true,
+          "max_len": 3
+        },
+        "percent_spent": {
+          "type": "percent",
+          "required": false,
+          "max_len": 3
+        }
+      },
+      "variants": {
+        "zero_spend": {
+          "text": "Sanctioned {months} months ago, zero expenditure recorded.",
+          "use_when": "Expenditure is exactly zero. This is the reference example from Execution Plan 3.2.",
+          "worst_case_len": 53
+        },
+        "part_spend": {
+          "text": "Sanctioned {months} months ago, {percent_spent} percent spent.",
+          "use_when": "Expenditure is above zero but below the stall threshold.",
+          "worst_case_len": 45
+        },
+        "no_update": {
+          "text": "No expenditure update in {months} months.",
+          "use_when": "sanction_date is missing but last_updated is present. Never render a missing sanction date as a computed age.",
+          "worst_case_len": 36
+        }
+      }
+    },
+    "expenditure_mismatch": {
+      "params": {
+        "percent_over": {
+          "type": "percent",
+          "required": false,
+          "max_len": 4
+        },
+        "spent": {
+          "type": "currency_compact",
+          "required": false,
+          "max_len": 14
+        },
+        "sanctioned": {
+          "type": "currency_compact",
+          "required": false,
+          "max_len": 14
+        }
+      },
+      "variants": {
+        "over_sanction": {
+          "text": "Expenditure is {percent_over} percent above sanction.",
+          "use_when": "expenditure_amount_inr exceeds sanctioned_amount_inr.",
+          "worst_case_len": 43
+        },
+        "amounts": {
+          "text": "{spent} spent against {sanctioned} sanctioned.",
+          "use_when": "Detail panel, where the absolute figures are more useful than the ratio.",
+          "worst_case_len": 55
+        },
+        "full_spend_open": {
+          "text": "Full amount spent, work still under implementation.",
+          "use_when": "expenditure equals sanction while completion_status is not Completed.",
+          "worst_case_len": 51
+        }
+      }
+    },
+    "agency_concentration": {
+      "params": {
+        "mp_count": {
+          "type": "integer",
+          "required": false,
+          "max_len": 3
+        },
+        "district_count": {
+          "type": "integer",
+          "required": false,
+          "max_len": 3
+        },
+        "percent_share": {
+          "type": "percent",
+          "required": false,
+          "max_len": 3
+        }
+      },
+      "variants": {
+        "mps": {
+          "text": "Agency holds works from {mp_count} different MPs.",
+          "use_when": "Default. Concentration measured across MPs.",
+          "worst_case_len": 42
+        },
+        "districts_and_mps": {
+          "text": "Agency holds works in {district_count} districts, {mp_count} MPs.",
+          "use_when": "Both spans are unusual and the fund flow view is reachable from this row.",
+          "worst_case_len": 45
+        },
+        "vendor": {
+          "text": "Vendor appears in {district_count} districts this year.",
+          "use_when": "The concentrated node is a vendor rather than an implementing agency.",
+          "worst_case_len": 42
+        },
+        "share": {
+          "text": "Agency holds {percent_share} percent of works in this district.",
+          "use_when": "Share of a single district rather than a span across many.",
+          "worst_case_len": 51
+        }
+      },
+      "_note": "Neutral verb is 'holds'. 'Controls', 'dominates', 'captured', 'cornered' and 'monopolises' are banned. See lint.banned_derived."
+    }
+  },
+  "peer_group": {
+    "_note": "Design brief section 4 requires real visual weight here, not a caption. Two forms exist in the source documents; both are frozen with a stated rule for which to use.",
+    "params": {
+      "peer_n": {
+        "type": "count",
+        "required": true,
+        "max_len": 6
+      },
+      "category": {
+        "type": "category_phrase",
+        "required": true,
+        "max_len": 14
+      },
+      "state": {
+        "type": "state_display",
+        "required": false,
+        "max_len": 20
+      },
+      "year": {
+        "type": "financial_year",
+        "required": false,
+        "max_len": 7
+      }
+    },
+    "variants": {
+      "contextual": {
+        "text": "Compared against {peer_n} {category} works in this state for this year.",
+        "use_when": "Table row and detail panel, where the active state and year filters are already on screen.",
+        "source": "Design brief section 4, verbatim form.",
+        "worst_case_len": 73
+      },
+      "explicit": {
+        "text": "Compared against {peer_n} {category} works, {state}, {year}.",
+        "use_when": "Anywhere the state and year are not otherwise visible, and in any exported or screenshotted view.",
+        "source": "PRD must-ship item M3, verbatim form.",
+        "worst_case_len": 76
+      },
+      "thin": {
+        "text": "Compared against {peer_n} {category} works, a small group.",
+        "use_when": "peer_n is below 30. Saying the group is small is an honesty requirement, not a hedge.",
+        "worst_case_len": 60
+      }
+    },
+    "label": "Peer group",
+    "missing": "Peer group not available for this work."
+  },
+  "risk_labels": {
+    "_source": "Design brief B2, the comments on the --risk-0 through --risk-4 tokens.",
+    "0": "Not currently flagged",
+    "1": "Low",
+    "2": "Moderate",
+    "3": "High",
+    "4": "Highest priority",
+    "score_label": "Risk score",
+    "score_caption": "An ordering device, not a likelihood.",
+    "_note": "Level 0 is 'Not currently flagged' and never 'Clear', 'Clean', 'OK' or 'Verified'. Design brief section 6: nothing here is verified clean, only unflagged."
+  },
+  "framing": {
+    "premise": "District Authorities must physically inspect at least ten percent of works under implementation every year. This ranks the works by risk, so that ten percent is chosen rather than assumed.",
+    "premise_note": "Title block sentence. The 46ch reason measure does not apply here; --measure-reason governs .t-reason only.",
+    "standing_note": "Flags are recommendations to inspect, not findings.",
+    "standing_note_placement": "Persistent, below the table, in muted ink. Not a modal, not a dismissible banner.",
+    "method_link": "How the ranking is built",
+    "unflagged_caveat": "Unflagged does not mean inspected or verified."
+  },
+  "quota_meter": {
+    "label": "Annual inspection quota",
+    "value": "{quota_n} of {total_n} works, the 10 percent minimum.",
+    "cutoff_marker": "Quota cutoff at rank {cutoff_rank}",
+    "beyond_cutoff": "Beyond the annual quota",
+    "params": {
+      "quota_n": {
+        "type": "count",
+        "required": true
+      },
+      "total_n": {
+        "type": "count",
+        "required": true
+      },
+      "cutoff_rank": {
+        "type": "count",
+        "required": true
+      }
+    }
+  },
+  "summary_strip": {
+    "works_under_implementation": "Works under implementation",
+    "flagged_for_inspection": "Flagged for inspection",
+    "value_under_flagged": "Sanctioned under flagged works",
+    "idle_beyond_12_months": "Sanctioned, unspent beyond twelve months",
+    "_note": "Design brief section 4 names these four figures. Originally specified to render in crore for at-a-glance comparison (number_format.currency.summary_strip_override); reversed 2026-09-02 per direct request -- full rupee amounts, Indian-grouped, no abbreviation, so two figures can be compared exactly rather than approximately. See lib/format.ts formatCurrencyFull."
+  },
+  "table": {
+    "columns": {
+      "rank": "Rank",
+      "work": "Work",
+      "district": "Constituency",
+      "agency": "Implementing agency",
+      "sanctioned": "Sanctioned",
+      "spent": "Spent",
+      "days_stale": "Days stale",
+      "risk": "Risk"
+    },
+    "column_tooltips": {
+      "agency": "Implementing agency",
+      "days_stale": "Days since this record was last updated in the source data",
+      "risk": "Inspection priority, 0 to 100"
+    },
+    "row_action_hint": "Open the full record",
+    "sorted_by": "Sorted by inspection priority",
+    "result_count": "{shown_n} of {total_n} works",
+    "filtered_summary": "{total_n} works are under implementation in this filter. The ten percent obligation falls at rank {cutoff_rank}. Ranks 1 to {shown_n} are shown, ordered by risk score.",
+    "filtered_summary_short": "{total_n} works are under implementation in this filter. The ten percent obligation falls at rank {cutoff_rank}.",
+    "rank_order_hint": "Ranked by risk score, highest first",
+    "band_column": "Priority band"
+  },
+  "detail_panel": {
+    "title": "Work record",
+    "breakdown_title": "What contributed to this rank",
+    "breakdown_row": "{factor}, {weight} {point_word}",
+    "point_singular": "point",
+    "point_plural": "points",
+    "breakdown_ensemble": "Statistical pattern across all works",
+    "breakdown_ensemble_note": "A supporting signal, not one of the four named flags. It only adjusts position around them.",
+    "breakdown_capped": "Flags contribute at most {cap} points in total. Each line above shows the share that reached the score.",
+    "close": "Close",
+    "fund_flow_entry": "View fund flow",
+    "record_fields": {
+      "work_id": "Work ID",
+      "mp_name": "Member of Parliament",
+      "constituency": "Constituency",
+      "agency": "Implementing agency",
+      "vendor": "Vendor",
+      "category": "Category",
+      "sanctioned": "Sanctioned",
+      "spent": "Spent",
+      "sanction_date": "Sanction date",
+      "status": "Status",
+      "last_updated": "Last updated",
+      "source": "Source",
+      "state": "State",
+      "financial_year": "Financial year"
+    },
+    "why_title": "Why it is ranked here",
+    "record_title": "Record as published",
+    "rank_label": "Rank {rank}",
+    "within_quota": "Inside this year's quota",
+    "beyond_quota": "Past this year's quota cutoff",
+    "source_labels": {
+      "1": "MPLADS public dashboard"
+    }
+  },
+  "fund_flow": {
+    "title": "Fund flow",
+    "subtitle": "MPs, implementing agencies and vendors. Edges are money.",
+    "legend_mp": "Member of Parliament",
+    "legend_agency": "Implementing agency",
+    "legend_vendor": "Vendor",
+    "edge_label": "{work_count} works, {amount} sanctioned",
+    "expand": "Expand this cluster",
+    "collapse": "Collapse",
+    "reset": "Reset view",
+    "empty": "No connections in this filter.",
+    "empty_body": "Widen the filter or select a different agency.",
+    "scale_caveat": "Concentration patterns are only meaningful across many districts.",
+    "concentration_filter_label": "Filter",
+    "concentration_filter_description": "Showing vendors paid on works recommended by {threshold} or more Members of Parliament. {matching} of {total} vendors in this filter match. Everything else is held back so the cluster reads.",
+    "min_members_label": "Minimum Members per vendor",
+    "show_non_matching": "Show the vendors that do not match",
+    "hide_non_matching": "Hide the vendors that do not match",
+    "cluster_in_focus_label": "Cluster in focus",
+    "cluster_members": "Members",
+    "cluster_works": "Works",
+    "cluster_paid": "Sanctioned value",
+    "cluster_median_note": "The median vendor in this filter is paid on works from {median} {member_word}.",
+    "member_singular": "Member",
+    "member_plural": "Members",
+    "drawn_cap_note": "Drawing the {drawn} most concentrated. Raise the minimum to narrow further.",
+    "clusters_title": "Most concentrated vendors",
+    "clusters_note": "Ranked by how many Members of Parliament recommended the works each vendor is paid on.",
+    "cluster_pick": "Show this vendor's cluster",
+    "focus_title": "Cluster in focus",
+    "deep_link_title": "Fund flow for one implementing agency",
+    "back_to_clusters": "Back to the most concentrated vendors",
+    "column_mp": "Members of Parliament",
+    "column_agency": "Implementing agencies",
+    "column_vendor": "Vendor"
+  },
+  "filters": {
+    "state": "State",
+    "year": "Year",
+    "category": "Work category",
+    "flag": "Flag type",
+    "all": "All",
+    "clear": "Clear all filters",
+    "flag_names": {
+      "cost_outlier": "Cost outlier",
+      "stalled_work": "Stalled work",
+      "expenditure_mismatch": "Expenditure mismatch",
+      "agency_concentration": "Agency concentration"
+    },
+    "states": "States",
+    "all_states": "All states",
+    "all_years": "All years",
+    "all_categories": "All categories",
+    "all_flags": "All flags",
+    "states_count": "{n} states",
+    "state_find": "Find a state",
+    "state_none_found": "No state matches that name.",
+    "selection_clear": "Clear selection",
+    "done": "Done",
+    "panel_label": "Filters"
+  },
+  "actions": {
+    "flag_for_inspection": "Flag for inspection",
+    "retry": "Retry",
+    "try_again": "Try again",
+    "clear_filters": "Clear all filters",
+    "_note": "PRD section 4: buttons say 'Flag for inspection', never 'Report fraud'. 'Investigate', 'Report' and 'Escalate' are banned as button verbs.",
+    "back_to_inspection_list": "Back to inspection list",
+    "refresh_now": "Refresh now"
+  },
+  "data_states": {
+    "loading": {
+      "visible_text": null,
+      "screen_reader": "Loading the inspection list.",
+      "render": "Skeleton rows matching the real row geometry. Design brief section 11: never a spinner.",
+      "never": "Do not render a visible 'Loading...' label, a spinner, a progress percentage or a time estimate."
+    },
+    "empty_after_filter": {
+      "title": "No works match these filters.",
+      "body": "Widen the state, year or category filter.",
+      "action": "Clear all filters",
+      "render": "Composed in the table body at the same measure as a reason line, not centred in a large void.",
+      "never": "Do not write 'No issues found', 'All clear', 'Nothing to report' or 'You are all caught up'. Design brief section 10 bans 'No issues' by name.",
+      "no_flags_variant": {
+        "use_when": "The filter returns works, but none of them are flagged. Distinct from returning no works at all.",
+        "title": "No works in this filter are currently flagged.",
+        "body": "Unflagged does not mean inspected or verified."
+      }
+    },
+    "api_unreachable": {
+      "title": "Cannot reach the data service.",
+      "body": "Check that the service is running, then retry.",
+      "action": "Retry",
+      "render": "Replaces the table body. The filter bar and summary strip stay in place so the officer keeps their context.",
+      "never": "No 'Oops', no 'Something went wrong', no exclamation mark, no stack trace, no HTTP status code in the visible text. Log the status code instead.",
+      "precedence": "If a cached snapshot is available, render showing_cached_data instead of this state."
+    },
+    "showing_cached_data": {
+      "label": "Offline. Showing snapshot from {date}.",
+      "detail": "{record_count} records. No live connection in use.",
+      "render": "A single muted line above the filter bar. Provenance, not decoration.",
+      "params": {
+        "date": {
+          "type": "date",
+          "required": true
+        },
+        "record_count": {
+          "type": "count",
+          "required": true
+        }
+      },
+      "note": "Design brief section 12 bans version stamps and locale strips as decoration. This line is functional provenance required by PRD M6 and CP6, and is not covered by that ban.",
+      "demo_dataset_variant": {
+        "use_when": "source_rung is 5, the hand-curated seed dataset.",
+        "label": "Demo dataset. Not live MPLADS data.",
+        "detail": "Curated from published reports for demonstration.",
+        "render": "Same position, but always visible and never dismissible.",
+        "authority": "Execution Plan section 2, rung 5: clearly labelled in the UI as a demo dataset. Honest labelling is mandatory."
+      }
+    },
+    "refresh_in_progress": {
+      "label": "Refreshing. Showing the previous results.",
+      "screen_reader": "Refreshing the inspection list.",
+      "render": "The existing table stays fully visible and readable. A muted label in the filter bar only.",
+      "never": "Do not blank the table, do not overlay a scrim, do not show a spinner, do not disable the filters."
+    },
+    "refresh_failed": {
+      "label": "Refresh failed. Showing results from {time}.",
+      "body": "The previous results are still on screen.",
+      "action": "Try again",
+      "params": {
+        "time": {
+          "type": "time",
+          "required": true
+        }
+      },
+      "render": "The stale table stays. The label sits where refresh_in_progress sat.",
+      "never": "Do not clear the table on a failed refresh. Stale data with an honest timestamp beats an empty screen."
+    }
+  },
+  "missing_fields": {
+    "_authority": "Design brief section 11: vendor unknown, date absent, amount not yet recorded.",
+    "vendor": "Vendor not recorded",
+    "date": "Date not recorded",
+    "amount": "Amount not yet recorded",
+    "agency": "Agency not recorded",
+    "generic": "Not recorded",
+    "render": "Muted ink, one step down, left aligned even inside a numeric column, because it is text and not a number.",
+    "never": "A missing amount never renders as zero, as a dash, or as N/A. Rendering a missing amount as zero would make stalled_work appear to fire on absent data."
+  },
+  "number_format": {
+    "locale": "en-IN",
+    "grouping": {
+      "system": "indian",
+      "rule": "Last three digits, then pairs.",
+      "example": "1,72,961",
+      "never": "172,961",
+      "authority": "Design brief section 5: All rupee amounts use Indian numbering. Write 1,72,961 and not 172,961. Getting this wrong reads as a foreign product built by people who did not check.",
+      "applies_to": "Every integer on screen, including counts and peer_n, not only currency."
+    },
+    "currency": {
+      "symbol": "₹",
+      "space_after_symbol": false,
+      "thresholds": [
+        {
+          "up_to": 99999,
+          "form": "full",
+          "decimals": 0,
+          "example": "₹87,500"
+        },
+        {
+          "up_to": 9999999,
+          "form": "lakh",
+          "suffix": " L",
+          "decimals": 2,
+          "example": "₹12.40 L"
+        },
+        {
+          "up_to": null,
+          "form": "crore",
+          "suffix": " Cr",
+          "decimals": 2,
+          "example": "₹1,729.61 Cr"
+        }
+      ],
+      "trailing_zeros": "Always kept, never trimmed. A right aligned column of tabular figures breaks visually if the decimal count varies between rows.",
+      "integer_part": "The integer part keeps Indian grouping inside the compact form. Write 1,729.61 Cr and not 1729.61 Cr.",
+      "summary_strip_override": "All four summary figures render in crore regardless of magnitude, so the four values compare directly.",
+      "prose_form": "Inside a sentence, spell the unit: 12.40 lakh, 1,729.61 crore. Abbreviate to L and Cr only in table cells, the summary strip and the detail panel.",
+      "never_zero_for_missing": "A null amount renders missing_fields.amount. Never ₹0."
+    },
+    "multiple": {
+      "decimals": 1,
+      "always_show_decimal": true,
+      "suffix": "x",
+      "space_before_suffix": false,
+      "examples": [
+        "3.2x",
+        "3.0x",
+        "12.4x"
+      ],
+      "over_100": "Round to a whole number, for example 140x. One decimal at that magnitude is false precision.",
+      "authority": "Execution Plan 3.2 reference example: Cost is 3.2x the median.",
+      "never": "Do not write 3x for a value of 3.0. Do not write 3.24x. Do not put a space before the x."
+    },
+    "percent": {
+      "decimals": 0,
+      "in_sentences": "Spell the word percent.",
+      "in_numeric_columns": "Use the symbol with no space.",
+      "authority": "The design brief writes 10 percent, 38 percent and 90 percent in prose throughout."
+    },
+    "risk_score": {
+      "range": "0 to 100",
+      "decimals": 0,
+      "suffix": "none",
+      "never": "Never append a percent sign. Never label it confidence, probability, likelihood or accuracy. It orders a queue, it does not estimate a chance.",
+      "authority": "PRD section 4: Explainability beats accuracy theatre."
+    },
+    "rank": {
+      "decimals": 0,
+      "prefix": "none",
+      "never": "No hash symbol, no 'Rank 1' inside the cell.",
+      "authority": "Design brief section 4: Rank is narrow, fixed width, tabular numerals, muted. It orders the page; it does not shout."
+    },
+    "date": {
+      "display": "12 Aug 2026",
+      "months": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+      ],
+      "never": "Never 12/08/2026 or 08/12/2026. A slash date is ambiguous between Indian and American order.",
+      "financial_year": "2023-24, plain hyphen. Never an en dash, never an em dash."
+    },
+    "time": {
+      "display": "09:14",
+      "note": "24 hour, IST, no seconds, no timezone suffix in the interface."
+    },
+    "category_phrase": {
+      "_note": "Categories arrive from contract 3.1 in title case. Mid-sentence they render lowercase from this map. A1 extends the map when the real category list lands; unmapped values fall back to lowercasing the raw value.",
+      "Road": "road",
+      "Drinking Water": "drinking water",
+      "School": "school building",
+      "Health": "health centre"
+    },
+    "state_display": {
+      "rule": "Use the official state name as it arrives from contract 3.1.",
+      "max_len_for_reason_line": 20,
+      "open_item": "Two union territory names exceed 20 characters and have no agreed short form here. A1 confirms the official abbreviation before the named_state variant is used for them. Until then those rows use the default variant."
+    },
+    "tabular": {
+      "rule": "Every rendered number sits in a tabular figure font. No exception.",
+      "authority": "Design brief section 12 do-not-ship list: Any number without tabular figures."
+    }
+  },
+  "lint": {
+    "_note": "validate.py reads this block so the rules and the strings have one source of truth. Scope is this file plus text nodes in web/components. It does not scan code identifiers, log lines, docstrings, test names or markdown documents.",
+    "banned_literal": [
+      "fraud",
+      "fraudulent",
+      "detected",
+      "detect",
+      "detection",
+      "suspicious",
+      "suspect",
+      "corruption",
+      "corrupt",
+      "verified clean",
+      "verified",
+      "no issues",
+      "confirmed anomaly",
+      "confirmed",
+      "anomaly",
+      "anomalous"
+    ],
+    "banned_derived": [
+      "guilty",
+      "culprit",
+      "offender",
+      "violator",
+      "wrongdoing",
+      "misuse",
+      "misutilisation",
+      "embezzlement",
+      "siphoned",
+      "diverted",
+      "kickback",
+      "scam",
+      "bogus",
+      "ghost work",
+      "fake",
+      "irregularity",
+      "irregular",
+      "questionable",
+      "dubious",
+      "proven",
+      "conclusive",
+      "established",
+      "guaranteed",
+      "certified",
+      "evidence of",
+      "finding",
+      "findings",
+      "controls",
+      "dominates",
+      "captured",
+      "cornered",
+      "monopolises",
+      "clean",
+      "all clear",
+      "cleared",
+      "safe",
+      "healthy",
+      "compliant",
+      "passed",
+      "no problems",
+      "looks good",
+      "green",
+      "investigate",
+      "report fraud",
+      "escalate",
+      "prosecute",
+      "penalise",
+      "oops",
+      "uh oh",
+      "whoops",
+      "sorry",
+      "something went wrong",
+      "hang tight",
+      "just a sec",
+      "we found",
+      "our ai",
+      "the model says",
+      "algorithm found",
+      "accuracy",
+      "confidence",
+      "probability",
+      "likelihood"
+    ],
+    "banned_chars": {
+      "em_dash": "—",
+      "horizontal_bar": "―",
+      "two_em_dash": "⸺",
+      "three_em_dash": "⸻",
+      "_why_escaped": "Stored as escapes so this config file never contains the character it bans, and a repo wide grep for the em dash has no permanent false positive in its own rule file.",
+      "emoji_ranges": [
+        "1F300-1FAFF",
+        "2600-27BF",
+        "FE0F",
+        "1F1E6-1F1FF"
+      ]
+    },
+    "warn_chars": {
+      "en_dash": "–",
+      "double_hyphen": "--",
+      "exclamation": "!"
+    },
+    "allowed_terms": [
+      "flagged",
+      "flag",
+      "not currently flagged",
+      "unflagged",
+      "risk score",
+      "inspection priority",
+      "statistical outlier",
+      "high priority for review",
+      "flag for inspection",
+      "peer group",
+      "outlier",
+      "under implementation",
+      "recommendation"
+    ],
+    "negation_exemptions": [
+      "Flags are recommendations to inspect, not findings.",
+      "Unflagged does not mean inspected or verified.",
+      "An ordering device, not a likelihood."
+    ],
+    "_negation_note": "Found by running this lint against this file. A banned word used to deny a claim is the opposite of an overclaim, and these three strings are among the most load bearing in the product. Exempt them by exact whole string match, never by relaxing the word rule, so a new negated phrase has to be added here deliberately.",
+    "structural": {
+      "reason_worst_case_max_chars": 92,
+      "reason_hard_fail_chars": 138,
+      "reason_must_end_with_full_stop": true,
+      "reason_must_contain_a_number": true,
+      "every_declared_param_must_appear_in_its_template": true,
+      "every_placeholder_must_be_declared": true,
+      "no_string_may_be_empty": true,
+      "no_uppercase_only_strings": "Casing is presentation. Store sentence case."
+    }
+  },
+  "inspection_capture": {
+    "_authority": "Checkpoints CP8. An inspection outcome is an observed fact, never a verdict -- see lint.banned_literal for fraud/clean/verified/confirmed and why they are banned everywhere, including here.",
+    "cta": "Record inspection",
+    "outcome_label": "Outcome",
+    "outcome_options": {
+      "work_present_and_matches": "Work exists and matches the record",
+      "work_present_but_differs": "Work exists but differs from the record",
+      "work_not_found_at_site": "No work found at the site",
+      "documentation_incomplete": "Documentation incomplete",
+      "duplicate_of_another_work": "Duplicate of another recorded work",
+      "agency_unresponsive": "Agency did not provide access"
+    },
+    "date_label": "Inspection date",
+    "inspector_id_label": "Your initials",
+    "control_sample_label": "This is a random spot-check, not from the ranked list",
+    "notes_label": "Notes (optional)",
+    "submit": "Save inspection",
+    "cancel": "Cancel",
+    "saving": "Saving",
+    "success": "Inspection recorded.",
+    "error_duplicate": "An inspection for this work and date is already recorded.",
+    "error_stale_work": "This work is not in the current data. Refresh the page and try again.",
+    "error_generic": "Could not save the inspection.",
+    "never": "No outcome option may read as a verdict. Never fraud, clean, verified or confirmed -- see lint.banned_literal. No model retraining is implied anywhere in this copy -- Checkpoints CP8: no model changes in this checkpoint."
+  },
+  "nav": {
+    "_note": "New 2026-09-02: the app had no way to reach /fund-flow except a specific work row link. The Claude Design reference (Precision and research first/NidhiNetra.dc.html -- corrected 2026-09-03, an earlier path here was stale) had INSPECTION LIST / FUND FLOW / SPECIMEN SHEET as top-level tabs; this adds the two that exist as real views. Specimen Sheet is the design brief's own type/spacing/colour specimen page (design brief section 4), not a product view -- not built, not added here, rather than inventing a third view with no product spec behind it. 2026-09-11: all five of the reference's tabs are now real views, by the user's decision: Dashboard, Inspection list, Fund flow, Specimen sheet (the live design system, read from the same tokens the pages use) and Reports (recorded inspections).",
+    "inspection_list": "Inspection list",
+    "fund_flow": "Fund flow",
+    "org_label": "Ministry of Statistics and Programme Implementation",
+    "dashboard": "Dashboard",
+    "reports": "Reports",
+    "primary_label": "Main sections",
+    "menu_open": "Open the menu",
+    "menu_close": "Close the menu",
+    "search_label": "Search the inspection list",
+    "search_placeholder": "Search works, constituencies, agencies…",
+    "search_submit": "Search",
+    "search_shortcut": "Press slash to search",
+    "officer_button": "Officer initials",
+    "officer_title": "Officer initials",
+    "officer_body": "Self-reported and kept on this device. They are attached to inspections you record. Sign-in is not part of this prototype.",
+    "officer_field": "Initials",
+    "officer_save": "Save",
+    "officer_saved": "Saved.",
+    "officer_clear": "Clear",
+    "officer_none": "Not set"
+  },
+  "brand": {
+    "_note": "Identity and context marks from the pinned reference (NidhiNetra_Vidhi.png, 2026-09-11). Hindi strings render with lang=\"hi\". The State Emblem is not used: the State Emblem of India (Prohibition of Improper Use) Act, 2005 restricts it.",
+    "name": "NidhiNetra",
+    "name_part_1": "Nidhi",
+    "name_part_2": "Netra",
+    "ministry": "Ministry of Statistics and Programme Implementation",
+    "gov_hi": "भारत सरकार",
+    "gov_en": "Government of India",
+    "viksit_line_1": "विकसित भारत",
+    "viksit_line_2": "समृद्ध भारत",
+    "motto": "सत्यमेव जयते",
+    "logo_alt": "NidhiNetra logo, a tricolour eye with the Ashoka Chakra as its iris",
+    "tagline": "A closer look. A stronger India.",
+    "hero_body": "Transparent monitoring. Accountable implementation. Every MPLADS work under implementation, ranked for inspection.",
+    "hero_caption_1": "Data today.",
+    "hero_caption_2": "A stronger India tomorrow.",
+    "footer_credit": "Built for the Ministry of Statistics and Programme Implementation",
+    "footer_event": "Smart India Hackathon 2026 prototype",
+    "footer_tagline": "Data for people. Progress for India.",
+    "skip_link": "Skip to content"
+  },
+  "dashboard": {
+    "summary_label": "Summary of works under implementation",
+    "kpi_works_context": "Across {constituency_n} constituencies in {state_n} states and union territories",
+    "kpi_flagged_context": "{percent} percent of works under implementation",
+    "kpi_value_average": "{amount} average per flagged work",
+    "kpi_value_share": "{percent} percent of all value sanctioned under implementation",
+    "kpi_idle_context": "{work_n} works sanctioned over a year ago with zero expenditure recorded",
+    "table_title": "Top of the inspection list",
+    "view_full_list": "View the full inspection list"
+  },
+  "quota_card": {
+    "cutoff_tick": "Rank {cutoff_rank}, cutoff",
+    "bar_label": "{quota_n} of {total_n} works fall inside the ten percent quota.",
+    "explainer": "The bar is all {total_n} works under implementation in this filter, ordered by risk score. The filled segment is the ten percent minimum to inspect this year: {quota_n} works.",
+    "overflow": "A further {flagged_beyond_n} flagged works rank past the cutoff.",
+    "underfill": "Only {flagged_n} works in this filter carry a flag. The rest of the quota is ranked by the statistical pattern alone.",
+    "none_flagged": "No work in this filter carries a flag. The quota is ranked by the statistical pattern alone.",
+    "legend_quota": "Inside the quota",
+    "legend_flagged": "Flagged, past the cutoff",
+    "legend_rest": "Not currently flagged"
+  },
+  "view_options": {
+    "row_treatment": "Row treatment",
+    "two_line": "Two line",
+    "hover_reveal": "Hover reveal",
+    "data_state": "Data state",
+    "loaded": "Loaded",
+    "loading": "Loading",
+    "empty": "Empty"
+  },
+  "presenter": {
+    "_note": "Presenter mode (?present=1) is a demo device, confirmed with the user 2026-09-11. It never appears in the officer's default interface.",
+    "badge": "Presenter mode",
+    "exit": "Exit presenter mode",
+    "data_state_note": "Previews the designed loading and empty screens. The data does not change."
+  },
+  "pagination": {
+    "label": "Inspection list pages",
+    "showing": "Showing {from} to {to} of {total_n} works",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {page}",
+    "jump_to_cutoff": "Go to the quota cutoff"
+  },
+  "search": {
+    "results_for": "Showing works matching “{q}”.",
+    "clear": "Clear search"
+  },
+  "reports": {
+    "title": "Reports",
+    "lede": "Inspections recorded against this list, and how often each group observed an issue on site.",
+    "recorded": "Inspections recorded",
+    "amended_context": "{amended_n} earlier entries amended",
+    "ranked_group": "From the ranked list",
+    "spot_group": "Random spot-checks",
+    "reached": "{n} reached the work",
+    "within_quota": "{n} inside the quota at the time",
+    "issue_rate": "Issue observed",
+    "rate_value": "{percent} percent",
+    "interval": "Range {low} to {high} percent",
+    "not_enough": "Shown after {need} inspections that reached the work. {have} so far.",
+    "comparison_title": "Ranked list against random spot-checks",
+    "comparison_waiting": "The comparison appears once both groups have {need} inspections that reached the work.",
+    "comparison_ready": "Issues were observed at {ranked} percent of ranked inspections and {spot} percent of spot-checks.",
+    "method": "An issue is any outcome other than the work existing and matching the record. Agency did not provide access is left out, because the work was not seen. Ranges are 95 percent Wilson intervals. Spot-checks are marked by the officer when recording; a pre-assigned random sample is not built yet.",
+    "table_title": "Recorded inspections",
+    "col_date": "Date",
+    "col_work": "Work",
+    "col_rank": "Rank then",
+    "col_outcome": "Outcome",
+    "col_group": "Group",
+    "col_inspector": "Initials",
+    "group_ranked": "Ranked list",
+    "group_spot": "Spot-check",
+    "superseded": "Amended by a later entry",
+    "empty_title": "No inspections recorded yet.",
+    "empty_body": "Open any work from the inspection list and choose Record inspection. Each saved outcome appears here.",
+    "empty_action": "Open the inspection list"
+  },
+  "system_pages": {
+    "not_found_title": "There is no page at this address.",
+    "not_found_body": "The link may be old, or the address mistyped.",
+    "not_found_action": "Go to the dashboard",
+    "error_title": "This view could not load.",
+    "error_body": "Reload the page. If it happens again, check that the data service is running.",
+    "error_action": "Reload"
+  }
+}

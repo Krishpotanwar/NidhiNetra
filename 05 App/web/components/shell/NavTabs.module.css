@@ -1,0 +1,124 @@
+.nav {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 2.5rem;
+  padding-inline: var(--space-4);
+  border-radius: var(--radius-control);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--ink-2);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+}
+
+.tab:hover {
+  color: var(--ink);
+  background: var(--row-hover);
+}
+
+.tab[aria-current="page"] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.tab[aria-current="page"]:hover {
+  background: transparent;
+}
+
+.pill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--nav-pill);
+}
+
+.icon,
+.label {
+  position: relative;
+}
+
+/* Stored in sentence case (strings.json _meta.casing); the reference sets
+   the tabs in title case, which is presentation. */
+.label {
+  text-transform: capitalize;
+}
+
+.menuButton {
+  display: none;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.menu {
+  z-index: var(--z-popover);
+  width: min(22rem, calc(100vw - 1.5rem));
+  padding: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-raised);
+}
+
+.menuList {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-control);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.menuItem:hover {
+  background: var(--row-hover);
+  color: var(--ink);
+}
+
+.menuItem[aria-current="page"] {
+  background: var(--nav-pill);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+@media (max-width: 61.25rem) {
+  .nav {
+    display: none;
+  }
+  .menuButton {
+    display: grid;
+    margin-left: auto;
+  }
+}

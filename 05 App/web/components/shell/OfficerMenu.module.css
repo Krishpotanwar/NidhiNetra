@@ -1,0 +1,118 @@
+.trigger {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  background: #eef2f7;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+}
+
+.trigger:hover {
+  border-color: var(--control-border-hover);
+  background: var(--surface);
+}
+
+.trigger[data-state="open"] {
+  border-color: var(--accent);
+}
+
+.initials {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.content {
+  z-index: var(--z-popover);
+  width: 19rem;
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-raised);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.body {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-note);
+  line-height: var(--leading-normal);
+  color: var(--ink-muted);
+}
+
+.label {
+  display: block;
+  margin-top: var(--space-4);
+}
+
+.input {
+  width: 100%;
+  height: 2.5rem;
+  margin-top: var(--space-2);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: var(--font-sm);
+  text-transform: uppercase;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 0 4px rgb(27 79 214 / 0.14);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.primary,
+.secondary {
+  height: 2.25rem;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-control);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+
+.primary {
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+}
+
+.primary:hover {
+  background: var(--accent-deep);
+}
+
+.secondary {
+  border: 1px solid var(--control-border);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.secondary:hover {
+  border-color: var(--control-border-hover);
+}
+
+.primary:active,
+.secondary:active {
+  transform: scale(0.98);
+}

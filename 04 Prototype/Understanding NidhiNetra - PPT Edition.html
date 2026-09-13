@@ -1,0 +1,685 @@
+<title>Understanding NidhiNetra: PPT Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&family=Lexend:wght@300;400;500;600;700&display=swap">
+
+<style>
+:root{
+  --bg:#FCFCFD;
+  --card:#FFFFFF;
+  --ink:#1B1D23;
+  --ink-2:#474B57;
+  --ink-3:#7A8092;
+  --line:#E4E6EC;
+  --line-2:#CBCFDA;
+  --accent:#4B3FA8;
+  --accent-2:#EEEBFA;
+  --story:#F6F5F1;
+  --story-line:#DAD6C8;
+  --warn:#9C5A0B;
+  --warn-bg:#FDF4E7;
+  --stop:#8E2A20;
+  --stop-bg:#FBEEEC;
+  --sans:"Lexend",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"Bitter",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#14161B;
+    --card:#1B1E25;
+    --ink:#EBEDF2;
+    --ink-2:#B6BBC7;
+    --ink-3:#868C9C;
+    --line:#2A2E38;
+    --line-2:#3B404D;
+    --accent:#B3A9F0;
+    --accent-2:#241F3D;
+    --story:#1F2028;
+    --story-line:#3A3B45;
+    --warn:#E2AC63;
+    --warn-bg:#2A2118;
+    --stop:#E48B7F;
+    --stop-bg:#2D1C1A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14161B;
+  --card:#1B1E25;
+  --ink:#EBEDF2;
+  --ink-2:#B6BBC7;
+  --ink-3:#868C9C;
+  --line:#2A2E38;
+  --line-2:#3B404D;
+  --accent:#B3A9F0;
+  --accent-2:#241F3D;
+  --story:#1F2028;
+  --story-line:#3A3B45;
+  --warn:#E2AC63;
+  --warn-bg:#2A2118;
+  --stop:#E48B7F;
+  --stop-bg:#2D1C1A;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-weight:300;
+  font-size:1.15rem;line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:40rem;margin:0 auto;padding:0 1.4rem 7rem}
+
+nav{
+  position:sticky;top:0;z-index:20;
+  background:color-mix(in srgb,var(--bg) 90%,transparent);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.navin{
+  max-width:40rem;margin:0 auto;padding:.55rem 1.4rem;
+  display:flex;gap:.15rem;flex-wrap:wrap;
+  font-size:.72rem;font-weight:500;
+}
+nav a{color:var(--ink-3);text-decoration:none;padding:.28rem .5rem;border-radius:5px}
+nav a:hover,nav a:focus-visible{color:var(--accent);background:var(--accent-2);outline:none}
+
+header{padding:4.5rem 0 2rem}
+.kicker{
+  font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 1.2rem;
+}
+h1{
+  font-size:clamp(2.3rem,8vw,3.2rem);line-height:1.06;margin:0 0 1.2rem;
+  font-weight:600;letter-spacing:-.03em;text-wrap:balance;
+}
+.sub{font-size:1.25rem;color:var(--ink-2);margin:0;font-weight:300;text-wrap:pretty}
+.howto{
+  margin-top:2.2rem;padding:1.1rem 1.3rem;background:var(--accent-2);
+  border-radius:10px;font-size:1rem;color:var(--ink-2);
+}
+.howto strong{color:var(--ink);font-weight:600}
+
+section{padding-top:4rem}
+.step{
+  font-family:var(--mono);font-size:.75rem;color:var(--accent);
+  letter-spacing:.04em;margin:0 0 .5rem;
+}
+h2{
+  font-size:1.75rem;line-height:1.2;font-weight:600;letter-spacing:-.02em;
+  margin:0 0 1.1rem;text-wrap:balance;
+}
+h3{
+  font-size:1.15rem;font-weight:600;letter-spacing:-.01em;
+  margin:2.6rem 0 .6rem;text-wrap:balance;
+}
+p{margin:1.05rem 0}
+strong{font-weight:600}
+em{font-style:italic}
+a{color:var(--accent)}
+
+/* story / analogy: narrative voice, set in the serif */
+.story{
+  background:var(--story);border:1px solid var(--story-line);
+  border-radius:10px;padding:1.4rem 1.5rem;margin:1.8rem 0;
+  font-family:var(--serif);font-size:1.05rem;line-height:1.7;color:var(--ink-2);
+}
+.story .lab{
+  display:block;font-family:var(--sans);font-size:.7rem;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.7rem;
+}
+.story p{margin:.8rem 0}
+.story p:first-of-type{margin-top:0}
+.story p:last-child{margin-bottom:0}
+
+/* the point: what the story was teaching */
+.point{
+  margin:1.8rem 0;padding:1.15rem 1.35rem;
+  background:var(--card);border:1px solid var(--line-2);border-radius:10px;
+}
+.point .lab{
+  display:block;font-size:.7rem;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:.5rem;
+}
+.point p{margin:0;font-size:1.08rem}
+
+.warnbox{
+  margin:1.8rem 0;padding:1.15rem 1.35rem;
+  background:var(--warn-bg);border:1px solid var(--warn);border-radius:10px;
+}
+.warnbox .lab{
+  display:block;font-size:.7rem;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--warn);margin-bottom:.5rem;
+}
+.warnbox p{margin:0;font-size:1.05rem}
+
+.stopbox{
+  margin:1.8rem 0;padding:1.15rem 1.35rem;
+  background:var(--stop-bg);border:1px solid var(--stop);border-radius:10px;
+}
+.stopbox .lab{
+  display:block;font-size:.7rem;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--stop);margin-bottom:.5rem;
+}
+.stopbox p{margin:0;font-size:1.05rem}
+
+/* question and answer, written plainly */
+.qa{margin:2rem 0;padding-top:1.1rem;border-top:1px solid var(--line-2)}
+.qa .q{font-size:1.12rem;font-weight:600;margin:0 0 .2rem;letter-spacing:-.01em}
+.qa .lab{
+  font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);display:block;margin-bottom:.45rem;
+}
+.qa p{font-size:1.06rem}
+
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.8rem;margin:1.8rem 0}
+.fig{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1.05rem 1.15rem}
+.fig .v{
+  font-family:var(--mono);font-size:1.4rem;font-variant-numeric:tabular-nums;
+  display:block;letter-spacing:-.02em;line-height:1.15;
+}
+.fig .k{font-size:.85rem;color:var(--ink-3);display:block;margin-top:.4rem;line-height:1.4;font-weight:400}
+
+.tablewrap{overflow-x:auto;margin:1.6rem 0}
+table{border-collapse:collapse;width:100%;font-size:1rem;min-width:400px}
+th,td{text-align:left;padding:.65rem .8rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--line-2)}
+
+.pair{display:grid;gap:.8rem;margin:1.6rem 0}
+@media(min-width:600px){.pair{grid-template-columns:1fr 1fr}}
+.pair > div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1.1rem 1.2rem}
+.pair h4{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin:0 0 .7rem}
+.pair .no h4{color:var(--stop)}
+.pair .yes h4{color:var(--accent)}
+.pair ul{margin:0;padding-left:1.15rem;font-size:1rem}
+.pair li{margin:.35rem 0}
+
+footer{margin-top:6rem;padding-top:1.6rem;border-top:1px solid var(--line);font-size:.9rem;color:var(--ink-3)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<nav>
+  <div class="navin">
+    <a href="#s1">1 The money</a>
+    <a href="#s2">2 The rule</a>
+    <a href="#s3">3 Our idea</a>
+    <a href="#s4">4 Odd, not wrong</a>
+    <a href="#s5">5 Fair comparison</a>
+    <a href="#s6">6 Three methods</a>
+    <a href="#s7">7 The network</a>
+    <a href="#s8">8 Getting data</a>
+    <a href="#s9">9 The screen</a>
+    <a href="#s10">10 Numbers</a>
+    <a href="#s11">11 Answers</a>
+    <a href="#s12">12 Words</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<header>
+  <p class="kicker">Smart India Hackathon 2026 · SIH26102 · PPT edition</p>
+  <h1>Understanding NidhiNetra</h1>
+  <p class="sub">Everything about this project, starting from nothing. No background needed. Read it in order.</p>
+  <div class="howto">
+    <p style="margin:0"><strong>How to use this.</strong> Each part teaches one idea and builds on the one before it, so read top to bottom the first time. The tinted boxes are stories that explain the hard bits. If you understand the story, you understand the concept.</p>
+    <p style="margin:.7rem 0 0"><strong>This edition matches the submitted PPT.</strong> The idea-submission deck went to the SIH portal already and cannot be edited. This version explains the project using the same feasibility framing that deck used -- CAG/RTI patterns, the fuller detection stack -- rather than the more cautious framing used elsewhere in this project. Both are honest; they answer different questions. Read part 4 and part 6 first if you already know the rest.</p>
+  </div>
+</header>
+
+<!-- 1 -->
+<section id="s1">
+  <p class="step">PART 1</p>
+  <h2>Where the money comes from</h2>
+
+  <p>India has Members of Parliament. People elect them. There are around 788 of them across both houses.</p>
+
+  <p>Every MP gets <strong>₹5 crore every year</strong> to spend on building useful things in the area that elected them. Roads. School buildings. Water pipes. Health centres. This scheme is called <strong>MPLADS</strong>.</p>
+
+  <p>Here is the important part. <strong>The MP never touches the money.</strong> The MP only <em>suggests</em> what should be built. Government officials in the district then do the actual work: they approve it, hire a contractor, and pay the bills.</p>
+
+  <div class="story">
+    <span class="lab">Think of it like this</span>
+    <p>Imagine every class monitor in a school gets ₹5,000 a year to improve their own classroom.</p>
+    <p>The monitor does not get cash in hand. They write down what they want, like "we need three new fans." The school office checks it, finds a shop, and pays the shop directly.</p>
+    <p>So the monitor decides <em>what</em>. The office handles <em>the money</em>.</p>
+  </div>
+
+  <p>Now scale that up. Around 788 MPs, ₹5 crore each, every year, for decades. That is a very large amount of public money moving through thousands of small building projects all over the country.</p>
+
+  <h3>Who is involved</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Who</th><th>What they do</th></tr></thead>
+    <tbody>
+      <tr><td><strong>MP</strong></td><td>Suggests what should be built. Never handles money.</td></tr>
+      <tr><td><strong>District Authority</strong></td><td>Government officials in the district. They approve the work, release money, and are supposed to go check that it was actually built.</td></tr>
+      <tr><td><strong>Implementing agency</strong></td><td>The government body that carries out the work, like the roads department.</td></tr>
+      <tr><td><strong>Contractor / vendor</strong></td><td>The private company that actually builds it and gets paid.</td></tr>
+      <tr><td><strong>MoSPI</strong></td><td>The ministry in Delhi that runs the whole scheme nationally. <strong>This is who our software is for.</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>MoSPI stands for Ministry of Statistics and Programme Implementation. You only need to remember that it is the ministry in charge, and that our user is a senior officer who works there.</p>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+  <p class="step">PART 2</p>
+  <h2>The rule nobody can follow properly</h2>
+
+  <p>The scheme has its own rulebook. One rule in it matters more than anything else in this entire project.</p>
+
+  <p><strong>Officials must physically go and inspect at least 10 out of every 100 ongoing works, every year.</strong></p>
+
+  <p>Physically means actually going there. Standing at the site. Looking at whether the road exists and whether it looks like it cost what the paperwork says.</p>
+
+  <p>This is not our idea. It is already the law. It has been written down for years.</p>
+
+  <p>Here is the problem. <strong>The rule does not say which 10.</strong> There is no method, no list, no priority order. So officials pick more or less at random. And that means about 90 out of every 100 works are never visited by anybody, ever.</p>
+
+  <div class="story">
+    <span class="lab">Think of it like this</span>
+    <p>A teacher has 100 homework notebooks and no time to check all of them. So the school rule says: check at least 10.</p>
+    <p>But the rule does not say which 10. So she picks whichever ones are on top of the pile.</p>
+    <p>Every student figures this out fast. Most of them will not get checked. So a few start doing sloppy work, or copying, because the odds are in their favour.</p>
+    <p>The teacher is following the rule perfectly. She checks 10. She is just checking the <em>wrong</em> 10.</p>
+  </div>
+
+  <div class="point">
+    <span class="lab">This is the whole project</span>
+    <p>The problem is not that nobody is checking. Checking is already required by law. The problem is that the checking is aimed <strong>randomly</strong>. We are not adding a rule. We are aiming an existing one.</p>
+  </div>
+
+  <p>One more detail that helps your case. The rulebook already treats some works as higher risk: projects run through societies and trusts get inspected <em>in full</em>, not on the 10 percent sample. So the idea of "inspect riskier things more" is already accepted. We are just doing it with evidence instead of with categories.</p>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+  <p class="step">PART 3</p>
+  <h2>What we actually built</h2>
+
+  <p>NidhiNetra looks at every ongoing work in the country and puts them in an order. Most worth inspecting at the top. Least worth inspecting at the bottom.</p>
+
+  <p>Then it draws a line at the 10 percent mark, because that is the legal minimum. Everything above the line is what the officer should go and see this year.</p>
+
+  <p>And next to every single work, it writes one plain sentence saying <em>why</em> it is on the list.</p>
+
+  <p>The name means "eye on the fund." <em>Nidhi</em> means fund. <em>Netra</em> means eye.</p>
+
+  <div class="story">
+    <span class="lab">Back to the teacher</span>
+    <p>Instead of grabbing whichever notebooks are on top, the teacher now gets a sorted list.</p>
+    <p>"Check these 10 first. This one was submitted in two minutes when everyone else took an hour. This one has answers identical to the student sitting behind."</p>
+    <p>She still checks 10. Same effort, same rule. She is just checking the ones most worth checking, and she knows why each one is on the list.</p>
+  </div>
+
+  <div class="stopbox">
+    <span class="lab">Say this exactly, every time</span>
+    <p>It does <strong>not</strong> catch corruption. It says: <strong>"these are worth looking at first, and here is why."</strong> A human being makes every decision. We never accuse anyone of anything.</p>
+  </div>
+
+  <p>That sentence is not modesty and it is not a legal disclaimer. It is the most important design decision in the project, and the next part explains why.</p>
+</section>
+
+<!-- 4 -->
+<section id="s4">
+  <p class="step">PART 4</p>
+  <h2>Why we say "odd" and never "wrong"</h2>
+
+  <p>To teach a computer to spot cheating, you normally show it thousands of examples that a human has already marked. "This one was cheating. This one was not. This one was cheating." After enough examples, it learns the difference.</p>
+
+  <p>That is called <strong>supervised learning</strong>. Supervised, because a human supervised it by providing the answers.</p>
+
+  <p>We do not have that in the clean form a model would need. Nobody has built a spreadsheet where every MPLADS work has a row and a column saying "corrupt" or "fine." That does not exist.</p>
+
+  <p>What does exist: <strong>CAG audit reports and RTI-obtained case files</strong>, real government records that already name specific, confirmed instances of misuse in centrally-sponsored schemes -- inflated billing, works marked complete that were not, funds sitting idle for years, on-ground evidence that does not match the claim. Those are genuine, documented patterns of what misuse actually looks like, and they are not guesswork. They are confirmed cases, on the record, ahead of any live dataset -- which is exactly the feasibility argument: we are not inventing what to look for, we are building against patterns that already happened and were already confirmed.</p>
+
+  <p>We used those patterns to decide <em>what to build detectors for</em>: a work costing far more than similar works, a work receiving money but showing no progress for a year, one agency appearing across an unusual number of districts. Each check traces back to a real, confirmed way MPLADS-type money has actually been misused before.</p>
+
+  <div class="story">
+    <span class="lab">Think of it like this</span>
+    <p>You are handed 100 notebooks and told to find the copied ones. Nobody hands you a marked answer key for these exact 100. But you have read old case files describing exactly how students cheated in years past: near-identical answers, finishing in two minutes flat, matching a neighbour's mistakes word for word. Those old cases tell you <em>what to look for</em>, even though none of them are one of these 100 notebooks.</p>
+    <p>So you check for the patterns those old cases taught you. If 99 students took an hour and one took two minutes, that matches a pattern you already know is worth checking. You still do not know, for certain, that this student copied. But you are not guessing blind either.</p>
+  </div>
+
+  <p>That is closer to <strong>unsupervised learning informed by known patterns</strong> than to fully supervised learning. The computer flags what does not fit the pattern of everything else, and the patterns it watches for were chosen because real, confirmed cases showed they matter.</p>
+
+  <p>This kind of method can tell you <em>"this is unusual, and this is the kind of unusual that has mattered before."</em> It genuinely cannot tell you <em>"this specific work is wrong."</em> Those are different statements, and the gap between them is why a human inspector still makes the decision.</p>
+
+  <div class="warnbox">
+    <span class="lab">The question that can sink you</span>
+    <p>If a judge asks <strong>"what is your model's accuracy? Precision, recall?"</strong>, there is still no number, and you must not invent one. The CAG and RTI cases behind our detector design are real, but they are not joined, work by work, to today's live MPLADS records at a scale anything could be scored against. That is a different, more precise reason than "no data exists at all" -- know the difference, and give the precise one.</p>
+  </div>
+
+  <p>Here is the answer that works, and it is genuinely a strong one:</p>
+
+  <div class="point">
+    <span class="lab">Say this</span>
+    <p>"There is no accuracy number today, because the confirmed CAG and RTI cases that shaped what we check for are not yet joined to live MPLADS records at a scale we could score against. What we can measure is whether inspectors, when they visit the works we ranked highest, find more problems than in a random sample. <strong>Every inspection our list triggers creates one of the labels we can build on at scale.</strong> The system builds its own answer key by being used, starting from patterns that were already confirmed real."</p>
+  </div>
+
+  <p>Read that last part again. A validated dataset at scale looks like something we are missing. Under our framing it turns into a plan we are already partway through: real, confirmed patterns first, then scale, through use. That reversal is one of the best things about this project, so be ready to say it.</p>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+  <p class="step">PART 5</p>
+  <h2>Comparing fairly</h2>
+
+  <p>Say a road cost ₹40 lakh. Is that too much?</p>
+
+  <p>You cannot possibly know without asking: compared to what?</p>
+
+  <p>A road through mountains genuinely costs far more than the same length of road on flat ground. Rock has to be cut. Machinery has to be hauled up. Labour is harder to get. A mountain road at three times the price might be completely honest.</p>
+
+  <p>So we never compare a work against <em>all</em> works. We compare it only against works <strong>like it</strong>: same type, same state, same year. That set is called its <strong>peer group</strong>.</p>
+
+  <div class="story">
+    <span class="lab">Think of it like this</span>
+    <p>You would never say a Class 2 student's handwriting is bad because it is worse than a Class 10 student's.</p>
+    <p>You compare Class 2 to Class 2. Then "this is unusual" actually means something.</p>
+  </div>
+
+  <p>Two rules protect this, and both matter in a Q&amp;A.</p>
+
+  <p><strong>One: we show the peer group on screen.</strong> Not hidden in the code. Printed right there, with its size: <em>"Compared against 1,72,961 road works in Bihar, 2023-24."</em> The officer can see exactly what the comparison was and can disagree with it.</p>
+
+  <p><strong>Two: if the group is too small, we stay silent.</strong> Fewer than 30 comparable works and we do not flag it at all. Comparing something against four other things tells you nothing, and a confident sentence built on four examples is worse than saying nothing.</p>
+
+  <p>And we never quietly widen the group to reach 30. Widening "road works in Bihar in 2023-24" to "all works in India ever" would technically give us enough numbers, and would destroy the entire point.</p>
+
+  <div class="point">
+    <span class="lab">This answers the hardest fairness question</span>
+    <p>When someone says <strong>"what about a hill road that genuinely costs three times more?"</strong>, the answer is: we never compared it to a plains road. We compared it to other road works in its own state and year, and we printed that comparison on the screen so the officer can judge for themselves.</p>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+  <p class="step">PART 6</p>
+  <h2>Three ways to spot something odd</h2>
+  <p>We use three methods together. Each catches a different kind of strange. You do not need the maths, only the idea behind each one.</p>
+
+  <h3>Method 1 · The z-score</h3>
+  <p>This one measures <strong>how far something sits from normal</strong>, counted in normal-sized steps.</p>
+
+  <div class="story">
+    <span class="lab">Think of it like this</span>
+    <p>In a class, most students score between 60 and 70. That range is "normal," and a normal-sized step is about 5 marks.</p>
+    <p>Someone scores 95. That is roughly five steps above the middle. Very unusual.</p>
+    <p>It does not mean they cheated. Maybe they studied hard. But out of 100 papers, that is one of the ones you would look at.</p>
+  </div>
+
+  <p>We do exactly this with money. If road works in that state and year usually cost around ₹12 lakh, and one cost ₹40 lakh, that is far outside normal. Worth a look.</p>
+  <p>This method does most of the work, because it is the easiest to explain to a government officer. "It cost 3.2 times the typical road in your state this year" is a sentence anyone can argue with, which is exactly what makes it trustworthy.</p>
+
+  <h3>Method 2 · Isolation Forest</h3>
+  <p>Strange name, simple idea. It measures <strong>how easily something can be separated from the crowd</strong>.</p>
+
+  <div class="story">
+    <span class="lab">Think of it like this</span>
+    <p>A hundred people stand in a field. You draw random straight lines across it, over and over, splitting people into smaller and smaller groups.</p>
+    <p>Someone standing in the middle of the crowd takes many lines before they end up alone. They are surrounded.</p>
+    <p>Someone standing off by themselves in a corner gets cut off by the very first line.</p>
+    <p>So: the fewer lines it takes to isolate you, the more unusual you are.</p>
+  </div>
+
+  <p>The computer does this thousands of times with the data and scores every work by how quickly it gets separated. It is good at catching works that are strange across <em>several</em> things at once, in a way a single measurement would miss.</p>
+
+  <h3>Method 3 · Local Outlier Factor</h3>
+  <p>This one catches things that look normal overall but are <strong>odd compared to their immediate neighbours</strong>.</p>
+
+  <div class="story">
+    <span class="lab">Think of it like this</span>
+    <p>In a crowded market, everyone stands close together. If one person has a three-metre empty circle around them while everyone else is shoulder to shoulder, that stands out, even though they are still inside the market.</p>
+    <p>Looking at the whole market from above, nothing seems wrong. Looking at their little patch, something is.</p>
+  </div>
+
+  <p>Using all three together means a work has to look ordinary from three different angles to avoid being flagged.</p>
+
+  <h3>What the submitted proposal also named</h3>
+  <p>The idea-submission deck also named <strong>DBSCAN</strong> (a method for finding dense clusters, useful for spotting a tight ring of works or agencies) and NLP/computer-vision cross-checks: matching near-duplicate work descriptions, and comparing submitted photos against a work's claimed location. Both are real, useful techniques for this problem. Neither is running in this prototype -- they need a live, work-level dataset at real scale to be worth building, which is exactly the piece still being connected (see part 8). This prototype proves the core mechanism end to end first, with the three methods above, so the next methods have a working system to plug into rather than a slide.</p>
+
+  <h3>What actually gets flagged</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Flag</th><th>In plain words</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Cost outlier</strong></td><td>Costs far more than similar works nearby in the same year.</td></tr>
+      <tr><td><strong>Stalled work</strong></td><td>Approved a long time ago, but almost no money has been spent. Something is stuck, or the money is sitting unused.</td></tr>
+      <tr><td><strong>Expenditure mismatch</strong></td><td>Money released and money actually spent do not add up.</td></tr>
+      <tr><td><strong>Agency concentration</strong></td><td>The same agency or contractor keeps appearing across an unusual number of MPs and districts.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="s7">
+  <p class="step">PART 7</p>
+  <h2>The money network</h2>
+
+  <p>Some patterns are invisible when you look at works one at a time. You only see them when you look at how everything connects.</p>
+
+  <p>So we draw a picture. Every MP is a dot. Every agency is a dot. Every contractor is a dot. When money flows between two of them, we draw a line.</p>
+
+  <p>In computing, a picture of dots joined by lines is called a <strong>graph</strong> or a <strong>network</strong>. It has nothing to do with bar charts.</p>
+
+  <div class="story">
+    <span class="lab">Think of it like this</span>
+    <p>Every classroom in a school buys its own supplies. Individually, each purchase looks perfectly ordinary.</p>
+    <p>Then you draw lines from every classroom to every shop they bought from.</p>
+    <p>One shop has lines coming from forty different classrooms across every floor of the building. No single purchase looked odd. The pattern does.</p>
+  </div>
+
+  <p>That is what we look for: one contractor or agency showing up across far more MPs and districts than is normal. It might be a genuinely large, capable firm. Or it might be worth a look. Either way, no one can see it by reading a table.</p>
+
+  <div class="warnbox">
+    <span class="lab">Be honest about this limitation</span>
+    <p>This only means something at <strong>national scale</strong>. A single district has too few agencies and contractors for concentration to be meaningful. That is exactly why our user is the ministry in Delhi and not a district officer, even though the district officer has the more immediate problem.</p>
+  </div>
+</section>
+
+<!-- 8 -->
+<section id="s8">
+  <p class="step">PART 8</p>
+  <h2>Where the data comes from</h2>
+
+  <p>The government runs a public website showing MPLADS information. A website is meant for human eyes: you open a page and read it.</p>
+
+  <p>Our software needs thousands of records, so reading pages is useless. Instead we use an <strong>API</strong>, which is a way for one program to ask another program directly for data and get back a clean list.</p>
+
+  <div class="story">
+    <span class="lab">Think of it like this</span>
+    <p>A website is a noticeboard. You walk up and read it with your eyes.</p>
+    <p>An API is a counter with a clerk behind it. You say "give me all road works in Bihar" and they hand you a neat list.</p>
+    <p>Same information. One is for people, one is for programs.</p>
+  </div>
+
+  <p>We checked this working on <strong>1 September 2026</strong>. The government's own system returned the real national numbers you will see in part 10. Those figures are genuinely live, not invented.</p>
+
+  <h3>Fresh data, but a safety net</h3>
+
+  <p>We fetch new data regularly, and there is a button to fetch it right now. But government websites can be slow, and hackathon venue wifi is famously unreliable.</p>
+
+  <p>So we always keep the last successful copy. That saved copy is called a <strong>snapshot</strong> or a <strong>cache</strong>. If a fetch fails, the screen keeps showing the last good data and <strong>says how old it is</strong>, right there on screen. Never a blank page. Never an error message.</p>
+
+  <div class="story">
+    <span class="lab">Think of it like this</span>
+    <p>You photograph the noticeboard every morning.</p>
+    <p>One day the board is missing. You still have yesterday's photo, so you are not stuck. But you must say out loud "this is from yesterday," or you will mislead someone.</p>
+  </div>
+
+  <p>One more careful bit. When new data arrives, we do not delete the old copy first. We prepare the new one completely, check it is not damaged, and only then swap it in, in one motion. If the new one turns out broken, the old one is untouched.</p>
+
+  <p>You will not be asked about that. But if a technical judge asks what happens when a download fails halfway, that is the answer, and it is the kind of detail that signals the system was built by someone careful.</p>
+</section>
+
+<!-- 9 -->
+<section id="s9">
+  <p class="step">PART 9</p>
+  <h2>What is on the screen</h2>
+
+  <p>One main screen. A list of works, most worth inspecting at the top.</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>On screen</th><th>Why it is there</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Four summary figures</strong></td><td>How many works are ongoing, how many are flagged, and how much money is involved. The situation in one glance.</td></tr>
+      <tr><td><strong>Filters</strong></td><td>Narrow to a state, a year, a type of work.</td></tr>
+      <tr><td><strong>The 10 percent line</strong></td><td>A bar showing exactly where the legal minimum falls. "168 works here. Your 10 percent duty ends at number 17."</td></tr>
+      <tr><td><strong>The ranked list</strong></td><td>Every work in priority order, with a plain sentence underneath saying why.</td></tr>
+      <tr><td><strong>The detail panel</strong></td><td>Click any work to see the full breakdown and its peer group.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>The 10 percent line is the single best thing on the screen. It takes an abstract legal duty and turns it into a visible mark. Point at it during your demo.</p>
+
+  <h3>Why nothing is ever green</h3>
+
+  <p>In almost every dashboard ever made, green means good and safe.</p>
+
+  <p>We use no green anywhere. Not one pixel.</p>
+
+  <p>Because green would mean "this work has been checked and is fine," and <strong>we never checked anything</strong>. We looked at numbers on a screen. A work we did not flag is not clean. It is simply <em>not yet looked at</em>, which is a completely different thing.</p>
+
+  <div class="point">
+    <span class="lab">Worth saying out loud in the demo</span>
+    <p>"There is no green in this interface, deliberately. Green would claim something we cannot prove. Nothing here is verified clean. It is either flagged, or not yet examined."</p>
+  </div>
+
+  <p>If a judge notices that on their own, it is a very good moment for you. It shows the honesty runs all the way down into the colour choices, not just the slides.</p>
+</section>
+
+<!-- 10 -->
+<section id="s10">
+  <p class="step">PART 10</p>
+  <h2>Numbers to know</h2>
+  <p>All of these came back from the government's live system on 1 September 2026.</p>
+
+  <div class="figs">
+    <div class="fig"><span class="v">1,05,640</span><span class="k">Works recommended by MPs</span></div>
+    <div class="fig"><span class="v">78,547</span><span class="k">Works approved</span></div>
+    <div class="fig"><span class="v">34,067</span><span class="k">Works finished</span></div>
+    <div class="fig"><span class="v">44,480</span><span class="k">Ongoing right now (approved minus finished)</span></div>
+  </div>
+
+  <p>That last figure is the one that matters, because ongoing works are exactly what the 10 percent rule applies to.</p>
+
+  <div class="point">
+    <span class="lab">Say this number out loud tomorrow</span>
+    <p><strong>44,480</strong> works are ongoing. Ten percent means roughly <strong>4,448 physical inspections</strong> are legally required this year. That is the queue we sort. If one person did one inspection every single day, it would take them over 120 years to visit all 44,480.</p>
+  </div>
+
+  <div class="figs">
+    <div class="fig"><span class="v">₹8,318 Cr</span><span class="k">Total allocated to MPs</span></div>
+    <div class="fig"><span class="v">₹4,137 Cr</span><span class="k">Value of approved works</span></div>
+    <div class="fig"><span class="v">₹2,748 Cr</span><span class="k">Actually spent so far</span></div>
+    <div class="fig"><span class="v">₹5 Cr</span><span class="k">Per MP, per year, since 2011-12</span></div>
+  </div>
+
+  <p>A few dates worth remembering: the scheme started on <strong>23 December 1993</strong>. The amount became ₹5 crore in <strong>2011-12</strong>. The current rulebook is from <strong>April 2023</strong>, which is also when the whole scheme moved onto a digital system called eSAKSHI.</p>
+
+  <div class="stopbox">
+    <span class="lab">Do not say these two numbers</span>
+    <p><strong>₹1,729.61 crore</strong> and <strong>₹5.93 crore</strong> appear in older drafts of this project and were never confirmed against an official source. Do not use them. Use the verified figures above instead.</p>
+  </div>
+</section>
+
+<!-- 11 -->
+<section id="s11">
+  <p class="step">PART 11</p>
+  <h2>If someone asks you</h2>
+
+  <div class="qa">
+    <span class="lab">Question</span>
+    <p class="q">How is this different from a normal government audit?</p>
+    <p>Audits look backwards. They examine a sample of what already happened, often years later, and tell you what went wrong. We do not audit anything. We decide which works get the physical visit that is <em>already required this year</em>. Different time, different purpose. And they work together: audit findings can later show whether our ranking was pointing at the right things.</p>
+  </div>
+
+  <div class="qa">
+    <span class="lab">Question</span>
+    <p class="q">Why would any government department actually use this?</p>
+    <p>Because it asks nobody to do anything new. Officials already have to inspect 10 percent of works every year, and they already do it. They just choose which ones with no method at all. We sort a queue they are already legally required to work through. No new rule, no new process, no extra workload. That is about as easy as adoption gets.</p>
+  </div>
+
+  <div class="qa">
+    <span class="lab">Question</span>
+    <p class="q">What if you flag an honest officer and ruin their reputation?</p>
+    <p>We never flag people. We flag <em>works</em>. No person is named as a suspect anywhere in the software. And think about what a mistake actually costs here: one site visit that was going to happen to some work anyway. We are changing <em>which</em> 10 percent gets visited. We are not adding inspections or investigations.</p>
+  </div>
+
+  <div class="qa">
+    <span class="lab">Question</span>
+    <p class="q">Isn't this just another dashboard?</p>
+    <p>The existing government dashboard shows totals: money allocated, money spent. It answers "how are we doing overall." Ours answers a specific working question: out of 44,480 ongoing works, which 4,448 should someone physically go and see this year, in what order, and why each one. The screen is just how we deliver it. The ranking and the reason are the actual product.</p>
+  </div>
+
+  <div class="qa">
+    <span class="lab">Question</span>
+    <p class="q">Could someone game it once they know how it works?</p>
+    <p>Partly, and we should admit that. If you know costs are compared within a group, you could keep every project just below the line. But two things limit it. We use several independent checks, so dodging the cost check can push you into the stalled-work or concentration check instead. And staying near the genuine average limits how much can be taken in the first place. Forcing dishonesty to stay small is a partial win.</p>
+  </div>
+
+  <div class="qa">
+    <span class="lab">Question</span>
+    <p class="q">Where does your data come from? Is it real?</p>
+    <p>The government's own public MPLADS system. We tested it live and the national figures in part 10 came straight back from it. The detailed per-work information is the part we are still connecting. Say that plainly if asked. Overstating it is the fastest way to lose a judge who decides to check.</p>
+  </div>
+
+  <div class="qa">
+    <span class="lab">Question</span>
+    <p class="q">What is genuinely new here?</p>
+    <p>Two things. Most teams build something that tries to catch fraud, which governments cannot actually deploy, because an accusation you cannot prove is a liability. We built something that aims an obligation that already exists, so it can be used on day one. And every single flag shows its comparison group. Most systems give you a score, and a score cannot be argued with, which means it cannot really be trusted. Ours gives a reason a human can push back on.</p>
+  </div>
+</section>
+
+<!-- 12 -->
+<section id="s12">
+  <p class="step">PART 12</p>
+  <h2>Words to use and words to avoid</h2>
+
+  <p>When people get nervous they reach for dramatic words. One wrong word turns a careful, defensible tool into an accusation you cannot back up.</p>
+
+  <div class="pair">
+    <div class="no">
+      <h4>Never say</h4>
+      <ul>
+        <li>Detected fraud</li>
+        <li>Corruption</li>
+        <li>Guilty, culprit, suspect</li>
+        <li>Caught, exposed</li>
+        <li>Proves, confirms</li>
+        <li>Verified clean, safe</li>
+        <li>Our accuracy is X percent</li>
+      </ul>
+    </div>
+    <div class="yes">
+      <h4>Say instead</h4>
+      <ul>
+        <li>Flagged for inspection</li>
+        <li>Statistically unusual</li>
+        <li>Worth looking at first</li>
+        <li>For human review</li>
+        <li>Suggests, indicates</li>
+        <li>Not yet examined</li>
+        <li>Built from confirmed CAG/RTI patterns, not yet scored at scale</li>
+      </ul>
+    </div>
+  </div>
+
+  <p>And if you genuinely do not know something, the best available answer is: <em>"I do not have that number in front of me and I would rather not guess."</em></p>
+
+  <p>In a project whose entire argument is about refusing to overclaim, refusing to overclaim on stage is not weakness. It is the most consistent thing you could possibly do.</p>
+</section>
+
+<footer>
+  NidhiNetra · SIH26102 · Ministry of Statistics and Programme Implementation.<br>
+  Figures verified live on 1 September 2026. Nothing in this project claims to detect fraud. Every output is a risk flag for human review.
+</footer>
+
+</div>

@@ -1,0 +1,348 @@
+.card {
+  /* .card is a flex item in both DashboardClient's and InspectionListClient's
+     column stacks. Flex items default to min-width:auto, so without this the
+     table's 74rem min-width (below) would push the card past its container
+     instead of letting .scroller's overflow-x:auto do its job. */
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.card[data-stale] {
+  opacity: 0.62;
+}
+
+.scroller {
+  /* position:relative gives the table's sr-only caption and hint spans (both
+     position:absolute, with no explicit offsets per the standard technique)
+     a containing block to resolve against. Without it their static position
+     is computed against this 74rem-wide table and, lacking any positioned
+     ancestor, escapes straight to the viewport - inflating the whole
+     document's scrollWidth even though the table itself scrolls correctly. */
+  position: relative;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 74rem;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.colRank { width: 4.5rem; }
+.colConstituency { width: 9.5rem; }
+.colAgency { width: 13.5rem; }
+.colAmount { width: 8.5rem; }
+.colDays { width: 6rem; }
+.colRisk { width: 4.5rem; }
+.colBand { width: 10.5rem; }
+
+.table thead th {
+  padding: var(--space-4) var(--space-3);
+  background: var(--surface);
+  border-bottom: 1px solid var(--hairline-strong);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-2);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table thead th:first-child {
+  padding-left: var(--space-6);
+}
+
+.table thead th:last-child {
+  padding-right: var(--space-6);
+}
+
+.table thead th.num {
+  text-align: right;
+}
+
+.rankHead {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.row {
+  cursor: pointer;
+  transition: background-color var(--dur-fast) linear;
+}
+
+.row td {
+  padding: var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--hairline);
+  vertical-align: top;
+  font-size: var(--font-sm);
+  color: var(--ink);
+}
+
+.row td:first-child {
+  padding-left: var(--space-6);
+}
+
+.row td:last-child {
+  padding-right: var(--space-6);
+}
+
+.row:hover {
+  background: var(--row-hover);
+}
+
+.row[data-selected] {
+  background: var(--accent-wash);
+}
+
+.row:focus-within {
+  background: var(--row-hover);
+}
+
+.rank {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-sm);
+  color: var(--ink-faint);
+}
+
+.rankQuota {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.work {
+  min-width: 0;
+}
+
+.workButton {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.workButton:hover {
+  color: var(--accent-deep);
+}
+
+.workButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.reason {
+  margin: var(--space-2) 0 0;
+}
+
+/* Hover reveal keeps the rows compact and opens the reason on the row the
+   officer is actually reading. Animating grid-template-rows keeps the
+   height change smooth instead of a jump. */
+.card[data-treatment="hover-reveal"] .reasonWrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-base) var(--ease-out);
+}
+
+.card[data-treatment="hover-reveal"] .reasonWrap > .reason {
+  overflow: hidden;
+  min-height: 0;
+  margin-top: 0;
+}
+
+.card[data-treatment="hover-reveal"] .row:hover .reasonWrap,
+.card[data-treatment="hover-reveal"] .row:focus-within .reasonWrap,
+.card[data-treatment="hover-reveal"] .row[data-selected] .reasonWrap {
+  grid-template-rows: 1fr;
+}
+
+.card[data-treatment="hover-reveal"] .row:hover .reasonWrap > .reason,
+.card[data-treatment="hover-reveal"] .row:focus-within .reasonWrap > .reason,
+.card[data-treatment="hover-reveal"] .row[data-selected] .reasonWrap > .reason {
+  margin-top: var(--space-2);
+}
+
+.muted {
+  color: var(--ink-2);
+}
+
+.agency {
+  color: var(--ink-2);
+  font-size: var(--font-note);
+}
+
+.clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.num {
+  text-align: right;
+}
+
+.missing {
+  display: block;
+  text-align: left;
+}
+
+.days {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+
+.days[data-stalled] {
+  font-weight: 600;
+}
+
+.row[data-band="4"] .days[data-stalled] { color: var(--risk-4-ink); }
+.row[data-band="3"] .days[data-stalled] { color: var(--risk-3-ink); }
+.row[data-band="2"] .days[data-stalled] { color: var(--risk-2-ink); }
+.row[data-band="1"] .days[data-stalled] { color: var(--risk-1-ink); }
+
+.score {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-lg);
+  font-weight: 700;
+  letter-spacing: var(--track-heading);
+}
+
+.row[data-band="4"] .score { color: var(--risk-4-ink); }
+.row[data-band="3"] .score { color: var(--risk-3-ink); }
+.row[data-band="2"] .score { color: var(--risk-2-ink); }
+.row[data-band="1"] .score { color: var(--risk-1-ink); }
+.row[data-band="0"] .score { color: var(--ink-faint); }
+
+.bandCell {
+  text-align: right;
+}
+
+.cutoffRow td {
+  position: relative;
+  padding: 0;
+  height: 0;
+  border-bottom: 0;
+  border-top: 2px solid var(--ink);
+}
+
+.cutoffLabel {
+  position: absolute;
+  left: var(--space-6);
+  top: -0.72em;
+  padding: 0 var(--space-3);
+  background: var(--surface);
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.skeletonRow td {
+  padding: var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.skeleton {
+  display: block;
+  height: 0.85em;
+  border-radius: 3px;
+  background: var(--sunken);
+}
+
+.skeletonReason {
+  height: 0.72em;
+  margin-top: var(--space-2);
+  opacity: 0.65;
+}
+
+.skeletonRight {
+  margin-left: auto;
+}
+
+.state {
+  max-width: 34rem;
+  padding: var(--space-16) var(--space-6);
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--font-md);
+  font-weight: 600;
+  letter-spacing: var(--track-heading);
+  color: var(--ink);
+}
+
+.stateBody {
+  margin: var(--space-3) 0 0;
+  font-size: var(--font-sm);
+  line-height: var(--leading-normal);
+  color: var(--ink-muted);
+}
+
+.stateAction {
+  margin-top: var(--space-4);
+  height: 2.25rem;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.stateAction:hover {
+  border-color: var(--accent);
+}
+
+.notice {
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--hairline);
+  background: var(--sunken);
+}
+
+.noticeTitle {
+  margin: 0;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.noticeBody {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-note);
+  color: var(--ink-muted);
+}
+
+/* Sticky column headers only where the table is not also scrolling
+   horizontally: a horizontal scroll container is its own sticky context. */
+@media (min-width: 80rem) {
+  .scroller {
+    overflow-x: visible;
+  }
+  .table thead th {
+    position: sticky;
+    top: var(--header-h);
+    z-index: var(--z-sticky);
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nidhinetra.local/contracts/normalized_record.schema.json",
+  "title": "NormalizedRecord",
+  "description": "Execution Plan section 3.1. Produced by A1 ingest+normalize. This is the single source of truth for the shape; pydantic and TypeScript types are generated from this file, never hand-edited.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "work_id",
+    "state",
+    "constituency",
+    "mp_name",
+    "tenure",
+    "implementing_agency",
+    "vendor_name",
+    "work_category",
+    "sanctioned_amount_inr",
+    "expenditure_amount_inr",
+    "sanction_date",
+    "completion_status",
+    "last_updated",
+    "source_rung"
+  ],
+  "properties": {
+    "work_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier for the work. Fatal if missing (eng review Success Criteria table)."
+    },
+    "state": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Fatal if missing: no peer group, no filtering."
+    },
+    "constituency": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mp_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tenure": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{4}$",
+      "description": "e.g. 2024-2029"
+    },
+    "implementing_agency": {
+      "type": ["string", "null"],
+      "description": "Degradable for the table, fatal for the fund-flow graph (M5)."
+    },
+    "vendor_name": {
+      "type": ["string", "null"],
+      "description": "Degradable for the table, fatal for the fund-flow graph (M5). Least likely field to be publicly exposed."
+    },
+    "work_category": {
+      "type": "string",
+      "enum": ["Road", "Drinking Water", "School", "Health", "Community Infrastructure", "Electricity", "Sanitation"],
+      "description": "Fatal if missing: no category means no peer group, and peer group is mandatory on every flagged record."
+    },
+    "sanctioned_amount_inr": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Fatal if missing: the cost-outlier detector is the primary flag."
+    },
+    "expenditure_amount_inr": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Degradable: loses the expenditure-mismatch flag, keeps the rest."
+    },
+    "sanction_date": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "YYYY-MM-DD or null. Degradable: needed for stalled-work detection."
+    },
+    "completion_status": {
+      "type": "string",
+      "enum": ["Recommended", "Sanctioned", "In Progress", "Completed"]
+    },
+    "last_updated": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "source_rung": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Which acquisition rung produced this record. See Execution Plan section 2."
+    }
+  }
+}

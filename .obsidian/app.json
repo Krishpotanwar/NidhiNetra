@@ -1,0 +1,17 @@
+{
+  "useMarkdownLinks": false,
+  "newLinkFormat": "shortest",
+  "attachmentFolderPath": "Attachments",
+  "alwaysUpdateLinks": true,
+  "userIgnoreFilters": [
+    "05 App/node_modules",
+    "05 App/web/node_modules",
+    "05 App/.venv",
+    "05 App/web/.next",
+    "05 App/data",
+    "05 App/.ruff_cache",
+    "05 App/.pytest_cache",
+    "graphify-out",
+    "05 Design Reference/support.js"
+  ]
+}

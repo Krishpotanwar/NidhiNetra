@@ -1,0 +1,38 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  height: 1.5rem;
+  padding: 0 0.6rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pill[data-band="4"] {
+  background: var(--risk-4-wash);
+  color: var(--risk-4-ink);
+}
+
+.pill[data-band="3"] {
+  background: var(--risk-3-wash);
+  color: var(--risk-3-ink);
+}
+
+.pill[data-band="2"] {
+  background: var(--risk-2-wash);
+  color: var(--risk-2-ink);
+}
+
+.pill[data-band="1"] {
+  background: var(--risk-1-wash);
+  color: var(--risk-1-ink);
+}
+
+.pill[data-band="0"] {
+  background: var(--risk-0-wash);
+  color: var(--ink-muted);
+  font-weight: 600;
+}

@@ -1,0 +1,69 @@
+.masthead {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--paper);
+}
+
+.media {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.image {
+  object-fit: cover;
+  object-position: 72% 46%;
+}
+
+.veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgb(248 250 252 / 0.96) 0%,
+      rgb(248 250 252 / 0.88) 34%,
+      rgb(248 250 252 / 0.4) 58%,
+      rgb(248 250 252 / 0) 74%
+    ),
+    linear-gradient(180deg, rgb(248 250 252 / 0) 40%, var(--paper) 100%);
+}
+
+.content {
+  position: relative;
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-8);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.title {
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-serif);
+  font-size: var(--font-3xl);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  letter-spacing: var(--track-heading);
+  color: var(--ink);
+}
+
+.rule {
+  display: block;
+  width: 7rem;
+  height: 3px;
+  margin-top: var(--space-3);
+  border-radius: 2px;
+  background: var(--tricolour-rule);
+}
+
+.lede {
+  max-width: 62ch;
+  margin: var(--space-4) 0 0;
+  font-size: var(--font-md);
+  line-height: var(--leading-normal);
+  color: var(--ink-2);
+}

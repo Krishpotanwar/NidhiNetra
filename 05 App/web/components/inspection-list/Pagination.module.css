@@ -1,0 +1,84 @@
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+  flex-wrap: wrap;
+}
+
+.showing {
+  margin: 0;
+  font-size: var(--font-note);
+  color: var(--ink-muted);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.pages {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step,
+.page,
+.jump {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.page {
+  min-width: 2.25rem;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.jump {
+  border-color: transparent;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.step:hover:not(:disabled),
+.page:hover,
+.jump:hover {
+  border-color: var(--accent);
+  color: var(--accent-deep);
+}
+
+.step:disabled {
+  color: var(--ink-faint);
+  cursor: default;
+  opacity: 0.7;
+}
+
+.page[aria-current="page"] {
+  background: var(--accent-wash);
+  border-color: var(--accent);
+  color: var(--accent-deep);
+  font-weight: 700;
+}
+
+.gap {
+  padding: 0 var(--space-1);
+  color: var(--ink-faint);
+}
