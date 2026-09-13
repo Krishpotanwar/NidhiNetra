@@ -32,7 +32,9 @@ def test_every_edge_endpoint_matches_a_real_node_id(works_fixture, scored_fixtur
         assert edge["target"] in node_ids, edge
 
 
-def test_real_fixture_produces_one_mp_node_per_distinct_mp_name(works_fixture, scored_fixture) -> None:
+def test_real_fixture_produces_one_mp_node_per_distinct_mp_name(
+    works_fixture, scored_fixture
+) -> None:
     graph = build_fund_flow_graph(works_fixture, scored_fixture)
     expected_mp_count = len({w["mp_name"] for w in works_fixture})
     actual_mp_nodes = [n for n in graph["nodes"] if n["type"] == "MP"]
@@ -81,6 +83,7 @@ def test_agency_present_vendor_null_gives_mp_agency_edge_but_no_agency_vendor_ed
     assert edge["source"] == "mp_some_mp"
     assert edge["target"] == "agency_some_agency"
     assert edge["work_count"] == 1
+    assert edge["work_ids"] == ["W1"]
 
 
 def test_vendor_present_agency_null_creates_vendor_node_but_no_edges() -> None:
@@ -134,6 +137,41 @@ def test_edges_aggregate_work_count_amount_and_flagged_count_across_records() ->
     assert agency_vendor["work_count"] == 2
     assert agency_vendor["total_amount_inr"] == pytest.approx(3_500_000.5)
     assert agency_vendor["flagged_work_count"] == 1
+
+
+def test_edge_work_ids_are_every_contributing_work_id_sorted_and_deduplicated() -> None:
+    """F-02, fixed 2026-09-14: adjacency alone (sharing an agency) is not
+    evidence of a real fund-flow path -- only a work_id common to both an
+    MP->Agency edge and an Agency->Vendor edge is. Two MPs funding the same
+    agency, which pays one shared vendor, must each carry only THEIR OWN
+    work's id on their own edge -- not each other's -- even though both
+    edges point at the same agency.
+    """
+    records = [
+        make_normalized(
+            work_id="W1",
+            mp_name="MP One",
+            implementing_agency="Shared Agency",
+            vendor_name="Shared Vendor",
+        ),
+        make_normalized(
+            work_id="W2",
+            mp_name="MP Two",
+            implementing_agency="Shared Agency",
+            vendor_name="Shared Vendor",
+        ),
+    ]
+    graph = build_fund_flow_graph(records, [])
+
+    mp_one_edge = next(e for e in graph["edges"] if e["source"] == "mp_mp_one")
+    mp_two_edge = next(e for e in graph["edges"] if e["source"] == "mp_mp_two")
+    agency_vendor_edge = next(e for e in graph["edges"] if e["target"] == "vendor_shared_vendor")
+
+    assert mp_one_edge["work_ids"] == ["W1"]
+    assert mp_two_edge["work_ids"] == ["W2"]
+    # Both W1 and W2 really do pay the shared vendor -- the agency-vendor
+    # edge legitimately carries both, unlike either MP's own edge.
+    assert agency_vendor_edge["work_ids"] == ["W1", "W2"]
 
 
 def test_risk_weight_counts_one_per_flagged_work_touching_the_node() -> None:

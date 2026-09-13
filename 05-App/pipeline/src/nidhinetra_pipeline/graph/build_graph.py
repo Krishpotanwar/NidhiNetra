@@ -85,7 +85,7 @@ def _node_id(node_type: str, label: str) -> str:
 
 
 def _new_edge_agg() -> dict[str, Any]:
-    return {"work_count": 0, "total_amount_inr": 0.0, "flagged_work_count": 0}
+    return {"work_count": 0, "total_amount_inr": 0.0, "flagged_work_count": 0, "work_ids": set()}
 
 
 def build_fund_flow_graph(
@@ -102,12 +102,21 @@ def build_fund_flow_graph(
 
     Edges: MP -> Agency and Agency -> Vendor, each aggregating work_count,
     total_amount_inr (sum of sanctioned_amount_inr across every
-    contributing record), and flagged_work_count across every normalized
-    record connecting that pair. A leg is skipped entirely when the
-    relevant field is null: a record with an agency but no vendor
-    contributes only the MP->Agency edge; a record with no agency
-    contributes neither edge (but its MP and, if present, Vendor node are
-    still created).
+    contributing record), flagged_work_count, and work_ids (every work_id
+    backing that edge) across every normalized record connecting that
+    pair. A leg is skipped entirely when the relevant field is null: a
+    record with an agency but no vendor contributes only the MP->Agency
+    edge; a record with no agency contributes neither edge (but its MP
+    and, if present, Vendor node are still created).
+
+    work_ids exists because adjacency alone is not evidence of a real fund
+    flow (F-02, nemotronreview.md, fixed 2026-09-14): an MP->Agency edge
+    and an Agency->Vendor edge sharing an agency does not mean any money
+    from that MP ever reached that vendor -- the agency may pay the vendor
+    entirely out of a different MP's works. Only a work_id present in BOTH
+    edges' work_ids proves a real path; consumers (web/lib/vendor-
+    concentration.ts) must check that intersection rather than inferring a
+    path from source/target adjacency.
 
     A record counts as flagged -- for both edge flagged_work_count and
     node risk_weight -- if its matching scored_record (matched by
@@ -120,9 +129,7 @@ def build_fund_flow_graph(
     it: 1.0 for every flagged record whose MP/Agency/Vendor this node is,
     summed.
     """
-    flagged_work_ids = {
-        record["work_id"] for record in scored_records if record.get("flags")
-    }
+    flagged_work_ids = {record["work_id"] for record in scored_records if record.get("flags")}
 
     # node id -> (type, label). A plain dict preserves first-seen order,
     # but the final node list is sorted by id anyway for determinism that
@@ -154,6 +161,7 @@ def build_fund_flow_graph(
             edge = mp_agency_edges.setdefault((mp_id, agency_id), _new_edge_agg())
             edge["work_count"] += 1
             edge["total_amount_inr"] += amount
+            edge["work_ids"].add(work_id)
             if is_flagged:
                 edge["flagged_work_count"] += 1
 
@@ -169,6 +177,7 @@ def build_fund_flow_graph(
             edge = agency_vendor_edges.setdefault((agency_id, vendor_id), _new_edge_agg())
             edge["work_count"] += 1
             edge["total_amount_inr"] += amount
+            edge["work_ids"].add(work_id)
             if is_flagged:
                 edge["flagged_work_count"] += 1
 
@@ -197,11 +206,15 @@ def _rounded(agg: dict[str, Any]) -> dict[str, Any]:
     # Round to paise (2 decimal places) for a clean, currency-appropriate
     # output. Summation order is fixed by normalized_records' own order,
     # so this is deterministic across repeated calls regardless of
-    # rounding -- the rounding is purely for readability.
+    # rounding -- the rounding is purely for readability. work_ids is
+    # built as a set (insertion order is irrelevant and work_id is unique
+    # per record, so no dedup ambiguity) and sorted here for the same
+    # determinism guarantee as everything else this function returns.
     return {
         "work_count": agg["work_count"],
         "total_amount_inr": round(agg["total_amount_inr"], 2),
         "flagged_work_count": agg["flagged_work_count"],
+        "work_ids": sorted(agg["work_ids"]),
     }
 
 
@@ -232,9 +245,7 @@ def _validate(graph: dict[str, Any]) -> None:
         )
 
 
-def find_concentration_clusters(
-    graph: dict, min_work_count: int = 5
-) -> list[dict]:
+def find_concentration_clusters(graph: dict, min_work_count: int = 5) -> list[dict]:
     """Identifies agencies or vendors connected to an unusually high
     number of distinct MPs, the "money network" pattern from part 7 of
     Understanding NidhiNetra.html: "one contractor or agency showing up
@@ -311,8 +322,7 @@ def find_concentration_clusters(
         eligible = [
             node
             for node in nodes_by_id.values()
-            if node["type"] == node_type
-            and work_count_by_node.get(node["id"], 0) >= min_work_count
+            if node["type"] == node_type and work_count_by_node.get(node["id"], 0) >= min_work_count
         ]
         if len(eligible) < 2:
             continue

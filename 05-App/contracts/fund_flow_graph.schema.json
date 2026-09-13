@@ -26,13 +26,27 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["source", "target", "work_count", "total_amount_inr", "flagged_work_count"],
+        "required": [
+          "source",
+          "target",
+          "work_count",
+          "total_amount_inr",
+          "flagged_work_count",
+          "work_ids"
+        ],
         "properties": {
           "source": { "type": "string", "minLength": 1, "description": "Must match a node id" },
           "target": { "type": "string", "minLength": 1, "description": "Must match a node id" },
           "work_count": { "type": "integer", "minimum": 1 },
           "total_amount_inr": { "type": "number", "minimum": 0 },
-          "flagged_work_count": { "type": "integer", "minimum": 0 }
+          "flagged_work_count": { "type": "integer", "minimum": 0 },
+          "work_ids": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "minItems": 1,
+            "uniqueItems": true,
+            "description": "F-02 (nemotronreview.md), fixed 2026-09-14: every real work_id backing this edge. An MP->Agency and an Agency->Vendor edge represent a real fund-flow path only if their work_ids intersect -- consumers must never infer a path from source/target adjacency alone (see web/lib/vendor-concentration.ts)."
+          }
         }
       }
     }

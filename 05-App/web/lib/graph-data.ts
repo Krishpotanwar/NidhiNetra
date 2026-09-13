@@ -15,6 +15,13 @@ export interface GraphEdge {
   work_count: number;
   total_amount_inr: number;
   flagged_work_count: number;
+  /**
+   * Every real work_id backing this edge (F-02, fixed 2026-09-14). Adjacency
+   * between an MP->Agency edge and an Agency->Vendor edge is NOT evidence of
+   * a real fund-flow path -- only a work_id shared by both edges' work_ids
+   * is. See vendor-concentration.ts, the one place that two-hop walk happens.
+   */
+  work_ids: string[];
 }
 
 export interface FundFlowGraph {

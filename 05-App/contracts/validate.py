@@ -15,6 +15,10 @@ Checks, in order:
   6. Cross-file: peer_group.n >= 30 whenever flags is non-empty (eng review rule)
   7. Cross-file: peer_group is null whenever flags is empty
   8. Cross-file: every graph edge source/target matches a node id
+  9. Cross-file: every graph edge work_id is a real works.fixture.json work_id
+     (F-02, nemotronreview.md: an edge with no real work behind it, or one
+     backed by a work_id that does not exist, is exactly the false-path
+     failure mode this check exists to catch)
 """
 import argparse
 import json
@@ -94,6 +98,12 @@ def validate_all(works_path: Path, scored_path: Path, graph_path: Path) -> list[
             errors.append(f"[cross-file] graph edge source {e.get('source')!r} matches no node id")
         if e.get("target") not in node_ids:
             errors.append(f"[cross-file] graph edge target {e.get('target')!r} matches no node id")
+        for wid in e.get("work_ids", []):
+            if wid not in work_ids:
+                errors.append(
+                    f"[cross-file] graph edge {e.get('source')!r}->{e.get('target')!r} "
+                    f"claims work_id {wid!r}, which has no matching row in works.fixture.json"
+                )
 
     return errors
 

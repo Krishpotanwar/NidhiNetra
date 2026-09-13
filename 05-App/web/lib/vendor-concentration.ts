@@ -39,22 +39,43 @@ export interface VendorConcentration {
 }
 
 /**
+ * True when a and b share at least one element. Iterates the smaller set
+ * first (a lightweight optimization, not load-bearing at today's scale) so
+ * the check is at worst O(min(|a|, |b|)).
+ */
+function hasSharedWork(a: Set<string>, b: Set<string>): boolean {
+  const [smaller, larger] = a.size <= b.size ? [a, b] : [b, a];
+  for (const workId of smaller) {
+    if (larger.has(workId)) return true;
+  }
+  return false;
+}
+
+/**
  * One entry per Vendor node in the graph, regardless of any threshold --
  * filtering by threshold is the caller's job (matchingVendors below), so
  * this stays the one place the two-hop walk happens.
+ *
+ * F-02 (nemotronreview.md), fixed 2026-09-14: an MP is credited to a vendor
+ * only when a real work_id backs BOTH hops -- the MP's own edge into the
+ * agency, and that agency's edge into the vendor. Before this fix, every MP
+ * touching an agency was credited to every vendor that agency paid, whether
+ * or not a single real work connected them; the audit measured this
+ * false-path rate at 97.8%. Sharing only an agency, with no work in common,
+ * is not a fund-flow path.
  */
 export function allVendorConcentrations(graph: FundFlowGraph): VendorConcentration[] {
   const byId = new Map<string, GraphNode>(graph.nodes.map((n) => [n.id, n]));
 
-  // agency id -> set of MP ids with a direct MP -> Agency edge into it.
-  const mpsOfAgency = new Map<string, Set<string>>();
+  // agency id -> (MP id -> that MP's own work_ids into this agency).
+  const mpWorkIdsOfAgency = new Map<string, Map<string, Set<string>>>();
   for (const edge of graph.edges) {
     const source = byId.get(edge.source);
     const target = byId.get(edge.target);
     if (source?.type === "MP" && target?.type === "Agency") {
-      const set = mpsOfAgency.get(edge.target) ?? new Set<string>();
-      set.add(edge.source);
-      mpsOfAgency.set(edge.target, set);
+      const byMp = mpWorkIdsOfAgency.get(edge.target) ?? new Map<string, Set<string>>();
+      byMp.set(edge.source, new Set(edge.work_ids));
+      mpWorkIdsOfAgency.set(edge.target, byMp);
     }
   }
 
@@ -69,7 +90,11 @@ export function allVendorConcentrations(graph: FundFlowGraph): VendorConcentrati
       if (source?.type !== "Agency" || edge.target !== vendor.id) continue;
       workCount += edge.work_count;
       paidInr += edge.total_amount_inr;
-      for (const mpId of mpsOfAgency.get(edge.source) ?? []) members.add(mpId);
+
+      const agencyVendorWorkIds = new Set(edge.work_ids);
+      for (const [mpId, mpWorkIds] of mpWorkIdsOfAgency.get(edge.source) ?? []) {
+        if (hasSharedWork(mpWorkIds, agencyVendorWorkIds)) members.add(mpId);
+      }
     }
     result.push({ vendorId: vendor.id, vendorLabel: vendor.label, memberCount: members.size, workCount, paidInr });
   }
@@ -118,19 +143,40 @@ export function highlightedNodeIds(graph: FundFlowGraph, vendorId: string): Set<
  * to the graph data itself rather than dimming nodes in place, so a
  * held-back MP or agency that happens to also feed a matching vendor via
  * a different path is correctly kept, not dropped.
+ *
+ * F-02, fixed 2026-09-14: an MP is kept only if a work_id it shares with
+ * the agency is one of the SAME work_ids that agency used to reach one of
+ * `vendorIds` -- not merely any MP touching an agency that happens to also
+ * pay one of these vendors via unrelated works. Same false-path fix as
+ * allVendorConcentrations above, applied to the highlighted subgraph
+ * instead of the concentration count.
  */
 export function subgraphFor(graph: FundFlowGraph, vendorIds: Set<string>): FundFlowGraph {
   const byId = new Map<string, GraphNode>(graph.nodes.map((n) => [n.id, n]));
-  const keepAgencies = new Set<string>();
+
+  // agency id -> the union of work_ids on this agency's edges into any of
+  // vendorIds specifically -- not every work_id touching the agency, which
+  // would let an MP whose own work has nothing to do with these vendors
+  // ride along on the agency's unrelated business.
+  const relevantWorkIdsOfAgency = new Map<string, Set<string>>();
   for (const edge of graph.edges) {
     const source = byId.get(edge.source);
-    if (source?.type === "Agency" && vendorIds.has(edge.target)) keepAgencies.add(edge.source);
+    if (source?.type === "Agency" && vendorIds.has(edge.target)) {
+      const set = relevantWorkIdsOfAgency.get(edge.source) ?? new Set<string>();
+      for (const workId of edge.work_ids) set.add(workId);
+      relevantWorkIdsOfAgency.set(edge.source, set);
+    }
   }
+  const keepAgencies = new Set(relevantWorkIdsOfAgency.keys());
+
   const keepMps = new Set<string>();
   for (const edge of graph.edges) {
     const target = byId.get(edge.target);
-    if (target?.type === "Agency" && keepAgencies.has(edge.target)) keepMps.add(edge.source);
+    if (target?.type !== "Agency" || !keepAgencies.has(edge.target)) continue;
+    const relevant = relevantWorkIdsOfAgency.get(edge.target) ?? new Set<string>();
+    if (hasSharedWork(new Set(edge.work_ids), relevant)) keepMps.add(edge.source);
   }
+
   const keepNodes = new Set<string>([...vendorIds, ...keepAgencies, ...keepMps]);
   return {
     nodes: graph.nodes.filter((n) => keepNodes.has(n.id)),
