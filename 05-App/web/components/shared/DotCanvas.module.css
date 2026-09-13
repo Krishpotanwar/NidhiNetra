@@ -21,13 +21,17 @@
   opacity: 0.7;
 }
 
-/* The hover highlight: a soft circle of accent light that tracks the
-   cursor. `inset: 0` sizes this pseudo-element to exactly this card's
-   own box, so the circle cannot leak past this one card's edges. */
+/* The hover effect: the same dot grid, drawn darker, masked to a soft
+   circle that tracks the cursor. Dots near the pointer stand out; there is
+   no colour and no glow, only more of the same dots (2026-09-13: an accent
+   blue radial here read as a glow effect and was dropped). */
 .canvas::after {
-  background: radial-gradient(
-    220px circle at var(--dot-x, 50%) var(--dot-y, 50%),
-    rgb(27 79 214 / 0.16),
+  background-image: radial-gradient(var(--ink-faint) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(160px circle at var(--dot-x, 50%) var(--dot-y, 50%), black, transparent 70%);
+  -webkit-mask-image: radial-gradient(
+    160px circle at var(--dot-x, 50%) var(--dot-y, 50%),
+    black,
     transparent 70%
   );
   opacity: 0;
