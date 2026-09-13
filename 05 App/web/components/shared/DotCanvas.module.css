@@ -1,0 +1,45 @@
+.canvas {
+  position: relative;
+  isolation: isolate;
+}
+
+.canvas::before,
+.canvas::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* The fixed grid: always present, so an empty card never reads as bare
+   white space, at rest or on hover. */
+.canvas::before {
+  background-image: radial-gradient(var(--hairline-strong) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.7;
+}
+
+/* The hover highlight: a soft circle of accent light that tracks the
+   cursor. `inset: 0` sizes this pseudo-element to exactly this card's
+   own box, so the circle cannot leak past this one card's edges. */
+.canvas::after {
+  background: radial-gradient(
+    220px circle at var(--dot-x, 50%) var(--dot-y, 50%),
+    rgb(27 79 214 / 0.16),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.canvas:hover::after {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas::after {
+    display: none;
+  }
+}

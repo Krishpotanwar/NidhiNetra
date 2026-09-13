@@ -6,6 +6,7 @@ import { renderTemplate, STRINGS } from "@/lib/strings";
 import { formatCroreParts, formatCurrencyFull, formatIndianInt } from "@/lib/format";
 import type { SummaryFigures } from "@/lib/data";
 import type { ResourceStatus } from "@/lib/use-api-resource";
+import { DotCanvas } from "@/components/shared/DotCanvas";
 import styles from "./KpiCards.module.css";
 
 const labels = STRINGS.summary_strip;
@@ -84,7 +85,7 @@ export function KpiCards({ figures, status, onRetry }: KpiCardsProps) {
   if (status === "error" && !figures) {
     const copyError = STRINGS.data_states.api_unreachable;
     return (
-      <section className={styles.errorCard} aria-label={copy.summary_label}>
+      <DotCanvas as="section" className={styles.errorCard} aria-label={copy.summary_label}>
         <div>
           <p className={styles.errorTitle}>{copyError.title}</p>
           <p className={styles.errorBody}>{copyError.body}</p>
@@ -92,7 +93,7 @@ export function KpiCards({ figures, status, onRetry }: KpiCardsProps) {
         <button type="button" onClick={onRetry} className={styles.retry}>
           {copyError.action}
         </button>
-      </section>
+      </DotCanvas>
     );
   }
 

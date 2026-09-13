@@ -13,6 +13,7 @@ import {
   subgraphFor,
 } from "@/lib/vendor-concentration";
 import { GraphView } from "./GraphView";
+import { DotCanvas } from "@/components/shared/DotCanvas";
 import { ClusterInFocus } from "./ClusterInFocus";
 import { ConcentrationFilter } from "./ConcentrationFilter";
 import styles from "./FundFlowClient.module.css";
@@ -70,13 +71,13 @@ export function FundFlowClient() {
     const error = STRINGS.data_states.api_unreachable;
     return (
       <div className={`page ${styles.stack}`}>
-        <section className={styles.card}>
+        <DotCanvas as="section" className={styles.card}>
           <p className={styles.stateTitle}>{error.title}</p>
           <p className={styles.stateBody}>{error.body}</p>
           <button type="button" className={styles.action} onClick={graph.reload}>
             {error.action}
           </button>
-        </section>
+        </DotCanvas>
       </div>
     );
   }

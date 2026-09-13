@@ -15,6 +15,7 @@ import {
 import { workTitle } from "@/lib/data";
 import type { InspectionRow } from "@/lib/types";
 import type { RowTreatment } from "@/lib/preferences";
+import { DotCanvas } from "@/components/shared/DotCanvas";
 import { BandPill } from "./BandPill";
 import { MissingField } from "./MissingField";
 import styles from "./InspectionTable.module.css";
@@ -295,7 +296,7 @@ function SkeletonRow() {
 function EmptyState({ filtered, onClearFilters }: { filtered: boolean; onClearFilters?: () => void }) {
   const copy = STRINGS.data_states.empty_after_filter;
   return (
-    <div className={styles.state}>
+    <DotCanvas className={styles.state}>
       <p className={styles.stateTitle}>{copy.title}</p>
       <p className={styles.stateBody}>{copy.body}</p>
       {filtered && onClearFilters && (
@@ -303,14 +304,14 @@ function EmptyState({ filtered, onClearFilters }: { filtered: boolean; onClearFi
           {copy.action}
         </button>
       )}
-    </div>
+    </DotCanvas>
   );
 }
 
 function ErrorState({ onRetry }: { onRetry?: () => void }) {
   const copy = STRINGS.data_states.api_unreachable;
   return (
-    <div className={styles.state}>
+    <DotCanvas className={styles.state}>
       <p className={styles.stateTitle}>{copy.title}</p>
       <p className={styles.stateBody}>{copy.body}</p>
       {onRetry && (
@@ -318,7 +319,7 @@ function ErrorState({ onRetry }: { onRetry?: () => void }) {
           {copy.action}
         </button>
       )}
-    </div>
+    </DotCanvas>
   );
 }
 

@@ -1,0 +1,31 @@
+# Render Blueprint for the NidhiNetra API (FastAPI + DuckDB + the
+# nidhinetra_pipeline workspace package). Vercel hosts the frontend
+# separately; this is the backend the frontend's NEXT_PUBLIC_API_BASE_URL
+# must point at once this service is live.
+#
+# Deploy: Render dashboard -> New -> Blueprint -> pick this repository.
+# Render reads this file and provisions the service below.
+#
+# `05 App` is a uv workspace (pipeline + api as members); `uv sync
+# --package nidhinetra-api` resolves nidhinetra-api's own dependency on
+# the local nidhinetra-pipeline package correctly, which a plain `pip
+# install` from api/ alone cannot do. `uv run --package nidhinetra-api`
+# then runs uvicorn inside that same resolved environment.
+services:
+  - type: web
+    name: nidhinetra-api
+    runtime: python
+    plan: free
+    rootDir: 05 App
+    buildCommand: pip install uv && uv sync --package nidhinetra-api --locked
+    startCommand: uv run --package nidhinetra-api uvicorn nidhinetra_api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/stats/summary
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      # Set this once the frontend's Vercel domain is known, e.g.
+      # "https://nidhinetra.vercel.app,https://nidhinetra-<hash>.vercel.app"
+      # (comma-separated, exact origins, no trailing slash). Unset by
+      # default: main.py's CORS then allows local dev only.
+      - key: ALLOWED_ORIGINS
+        value: ""

@@ -8,6 +8,7 @@ import { fetchInspectionsReport } from "@/lib/data";
 import { useApiResource } from "@/lib/use-api-resource";
 import { displayName, formatDate, formatIndianInt, formatPercent } from "@/lib/format";
 import type { GroupSummary, InspectionOutcome } from "@/lib/types";
+import { DotCanvas } from "@/components/shared/DotCanvas";
 import styles from "./ReportsClient.module.css";
 
 const copy = STRINGS.reports;
@@ -27,13 +28,13 @@ export function ReportsClient() {
     const error = STRINGS.data_states.api_unreachable;
     return (
       <div className={`page ${styles.stack}`}>
-        <section className={styles.card}>
+        <DotCanvas as="section" className={styles.card}>
           <p className={styles.stateTitle}>{error.title}</p>
           <p className={styles.stateBody}>{error.body}</p>
           <button type="button" className={styles.action} onClick={report.reload}>
             {error.action}
           </button>
-        </section>
+        </DotCanvas>
       </div>
     );
   }
@@ -79,14 +80,14 @@ export function ReportsClient() {
       <section className={styles.card}>
         <h2 className={styles.cardTitle}>{copy.table_title}</h2>
         {data && data.outcomes.length === 0 ? (
-          <div className={styles.empty}>
+          <DotCanvas className={styles.empty}>
             <p className={styles.stateTitle}>{copy.empty_title}</p>
             <p className={styles.stateBody}>{copy.empty_body}</p>
             <Link href="/inspections" className={styles.action}>
               {copy.empty_action}
               <ArrowRight size={14} weight="bold" aria-hidden="true" />
             </Link>
-          </div>
+          </DotCanvas>
         ) : (
           <div className={styles.scroller}>
             <table className={styles.table}>

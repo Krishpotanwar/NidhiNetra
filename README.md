@@ -97,6 +97,12 @@ npm run dev
 
 The frontend talks to `http://localhost:8000` by default (override with `NEXT_PUBLIC_API_BASE_URL`). See [`05 App/README.md`](05%20App/README.md) for the full command set, including `make validate`, `make contracts`, and `make demo`.
 
+## Deploying it
+
+**Frontend (Vercel):** import this repository and set **Root Directory** to `05 App/web` and **Framework Preset** to `Next.js` (a monorepo, so neither is auto-detected correctly by default). Add an environment variable `NEXT_PUBLIC_API_BASE_URL` pointing at wherever the backend below ends up.
+
+**Backend (Render, or any host that runs a Dockerfile-free Python web service):** [`render.yaml`](render.yaml) at the repo root is a Render Blueprint — Render dashboard → New → Blueprint → pick this repository, and it provisions the service from that file. It builds and runs from the `05 App` workspace with `uv` (`uv sync --package nidhinetra-api --locked`, then `uv run --package nidhinetra-api uvicorn nidhinetra_api.main:app --host 0.0.0.0 --port $PORT`), which is the one command that correctly resolves `nidhinetra-api`'s workspace dependency on `nidhinetra-pipeline` — a plain `pip install` from `api/` alone cannot do that. Set the deployed service's `ALLOWED_ORIGINS` environment variable to the frontend's exact Vercel origin(s) (comma-separated, e.g. `https://nidhinetra.vercel.app`) once that URL is known; unset, the API accepts only local dev origins by design (`05 App/api/src/nidhinetra_api/main.py`).
+
 ## Status
 
 Frontend redesign complete against the pinned reference: all four real pages ship, `tsc`, ESLint, and the Vitest suite pass clean, and `next build` produces a clean static production build. Backend: works listing (search, facets, scope, pagination), stats summary, inspections/outcomes reporting with Wilson intervals, and the fund-flow graph are all implemented and tested.

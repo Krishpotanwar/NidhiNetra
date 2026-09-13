@@ -14,6 +14,7 @@ route code below and cannot drift from what the API really does.
 from __future__ import annotations
 
 import logging
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -69,13 +70,23 @@ app = FastAPI(
 # on both ports without enumerating four strings, and stays anchored so it
 # cannot match a hostile origin that merely *contains* localhost
 # (http://localhost.attacker.example would not match -- the $ anchor is
-# what stops it). Still local-development-only by construction; a
-# deployed origin is a deliberate, separate change, not something this
-# pattern quietly permits.
+# what stops it). This regex alone is local-development-only by
+# construction; a deployed frontend's origin is admitted only by explicit
+# opt-in below, never by loosening this pattern.
 _LOCAL_DEV_ORIGIN = r"^http://(localhost|127\.0\.0\.1):(3000|3001)$"
+
+# The deployed frontend's exact origin(s), comma-separated, e.g.
+# "https://nidhinetra.vercel.app,https://nidhinetra-<hash>.vercel.app".
+# Unset by default, so a host with no ALLOWED_ORIGINS configured behaves
+# exactly as before: local dev only. Exact strings, not a regex, so a
+# production value can never accidentally admit more than it lists.
+_PRODUCTION_ORIGINS = [
+    origin.strip() for origin in os.environ.get("ALLOWED_ORIGINS", "").split(",") if origin.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=_PRODUCTION_ORIGINS,
     allow_origin_regex=_LOCAL_DEV_ORIGIN,
     allow_credentials=True,
     allow_methods=["*"],

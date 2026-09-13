@@ -290,6 +290,6 @@ Gently rounded and consistent: controls 8px, cards and icon tiles 12px, the deta
 ### Don't:
 - **Don't** use the flag's lower-band colour for risk, status, success or data.
 - **Don't** show trend deltas or sparklines; there is one snapshot and no time series.
-- **Don't** use glass, blur, glow, gradient text, or a pointer-following effect.
+- **Don't** use glass, blur, glow, gradient text, or a page-wide pointer-following effect. The one exception: a fixed dot-grid texture confined to an already-empty card (an error state, an empty result, the fund-flow graph with nothing to draw) may brighten near the cursor, so it never reads as bare white space; it never leaves that card's own edges and never sits behind live content.
 - **Don't** use the State Emblem of India; its use is restricted by law.
 - **Don't** put an em dash anywhere in the interface.

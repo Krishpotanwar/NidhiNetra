@@ -5,6 +5,7 @@ import { renderTemplate, STRINGS } from "@/lib/strings";
 import { displayName, formatCurrencyFull, formatIndianInt } from "@/lib/format";
 import type { FundFlowGraph, GraphNode, GraphNodeType } from "@/lib/graph-data";
 import { highlightedNodeIds } from "@/lib/vendor-concentration";
+import { DotCanvas } from "@/components/shared/DotCanvas";
 import styles from "./GraphView.module.css";
 
 const s = STRINGS.fund_flow;
@@ -76,10 +77,10 @@ export function GraphView({ graph, highlightVendorId }: GraphViewProps) {
 
   if (graph.nodes.length === 0) {
     return (
-      <div className={styles.empty}>
+      <DotCanvas className={styles.empty}>
         <p className={styles.emptyTitle}>{s.empty}</p>
         <p className={styles.emptyBody}>{s.empty_body}</p>
-      </div>
+      </DotCanvas>
     );
   }
 
