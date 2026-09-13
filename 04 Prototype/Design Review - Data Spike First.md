@@ -36,7 +36,7 @@ Five premises tested. Three failed against live evidence.
 
 - **P1. The MPLADS REST API makes data acquisition low-risk. FALSE.** Live probes on 2026-09-01: `getStateData` returns 36 states (a dropdown lookup); `getTenureData` returns `[]` for every payload tried; `getTilesData` and `getMpNameByStates` return ZK framework HTML, not JSON; `getReviewDetailsByWork` returns four citizen reviews and ignores its parameters entirely. Zero of the nine product-critical fields in contract 3.1 (`work_id`, `state`, `work_category`, `sanctioned_amount_inr`, `expenditure_amount_inr`, `sanction_date`, `completion_status`, `implementing_agency`, `vendor_name`) are confirmed retrievable. The Logbook's HIGH to LOW risk downgrade was not earned and is reverted.
 - **P2. Data acquisition can run as a parallel Wave 1 workstream. FALSE.** It is a precondition. If A1 fails, A2 scores nothing real and A5 demos fixtures. CP1 is the project's single point of failure and the plan schedules its discovery during the parallel phase rather than before it.
-- **P3. Code in `05 App/` yields a deliverable repo. FALSE.** `git rev-parse --show-toplevel` returns `/Users/krish/Desktop/study/project`. SIH is not its own repo; it shares a git history with WorldPolicy, MoodTune, disasterman and unrelated deleted files. There is no clone URL to hand a judge.
+- **P3. Code in `05-App/` yields a deliverable repo. FALSE.** `git rev-parse --show-toplevel` returns `/Users/krish/Desktop/study/project`. SIH is not its own repo; it shares a git history with WorldPolicy, MoodTune, disasterman and unrelated deleted files. There is no clone URL to hand a judge.
 - **P4. The fund-flow graph earns its place. UNRESOLVED.** PRD.md:40 states the graph is "structurally meaningless below national scale." The rendered design filters to Bihar, Odisha and Jharkhand. PRD.md:82 names the graph as one of only two mitigations for the saturated-archetype risk. Load-bearing for differentiation, and only honest at a scale the demo does not run at.
 - **P5. Port to React now. HOLDS.** Forced by the Claude Design limit rather than chosen, but sound. The `.dc.html` becomes a read-only reference.
 
@@ -57,7 +57,7 @@ Build 500 to 2,000 curated rows from whichever rungs work; cut M5 because it can
 
 **A.** One day of certainty before committing five streams. It discards nothing and refuses to build on an unverified foundation. C stays available on day two, and A produces the evidence needed to choose C without guessing.
 
-**Reversal, stated plainly.** Build plan section 0 row 1 locked "code lives in `05 App/`, non-negotiable." That row is now partly reversed. The *location* stands: `05 App/` inside the vault. What changes is that `SIH/` must become its own git repo, because it currently is not one. A nested `git init` alone is not enough, the parent repo keeps tracking the paths. The full move is three commands, in the parent repo then the vault:
+**Reversal, stated plainly.** Build plan section 0 row 1 locked "code lives in `05-App/`, non-negotiable." That row is now partly reversed. The *location* stands: `05-App/` inside the vault. What changes is that `SIH/` must become its own git repo, because it currently is not one. A nested `git init` alone is not enough, the parent repo keeps tracking the paths. The full move is three commands, in the parent repo then the vault:
 
 ```
 git rm -r --cached SIH
@@ -108,7 +108,7 @@ Local demo, run from a cloned repo with wifi off. `make demo` starts FastAPI ove
 
 ## Next Steps
 
-1. **Extract the repo** using the exact three commands in Recommended Approach above. Not a bare `git init`, which leaves the parent still tracking the paths. `05 App/` stays where it is. Until this is done there is no artifact to hand anyone.
+1. **Extract the repo** using the exact three commands in Recommended Approach above. Not a bare `git init`, which leaves the parent still tracking the paths. `05-App/` stays where it is. Until this is done there is no artifact to hand anyone.
 2. **Revert the risk downgrade in all three places**, with the probe results as the reason: the Logbook entry, the PRD open-risks table (PRD.md:80, still reads LOW), and build plan section 7, which still orders Execution Plan section 2 rewritten "around the confirmed REST endpoints" that P1 just disproved. Also raise PRD M1 to match the CP1 bar set below.
 3. **Patch `.obsidian/app.json`** with `userIgnoreFilters` before any `npm install`.
 4. **Run the spike.** Browser open on the eSAKSHI dashboard, network tab recording, click through to a single work's detail view and capture the request that populates it. That request is the whole ballgame. If it does not exist, the ladder continues: rung 2 Playwright against the live UI, rung 3 Empowered Indian, rung 4 data.gov.in, rung 5 a labelled seed set. Full definitions in Execution Plan section 2.

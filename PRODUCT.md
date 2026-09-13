@@ -30,7 +30,7 @@ It never accuses anyone. Every flag is a recommendation to inspect, never a find
 ## Capabilities and Constraints
 
 - Four surfaces, all real, none showing fabricated data: Dashboard, Inspection List, Fund Flow, Reports (recorded inspections). Confirmed 2026-09-11, revised 2026-09-12: the Specimen Sheet (a live design-token inspector) shipped as a fifth nav tab was a development aid, not a product view for an officer or a judge, and was removed from the frontend on request. The design system it displayed still lives in `DESIGN.md`.
-- Every user-visible string lives in `05 App/contracts/strings.json`. Its lint lists are binding: never fraud, suspicious, corruption, verified, clean, confirmed anomaly, detected, and the rest of `lint.banned_*`. No em dash characters anywhere in the interface.
+- Every user-visible string lives in `05-App/contracts/strings.json`. Its lint lists are binding: never fraud, suspicious, corruption, verified, clean, confirmed anomaly, detected, and the rest of `lint.banned_*`. No em dash characters anywhere in the interface.
 - Indian digit grouping on every number (1,72,961). Tabular figures on every number. The risk score (0 to 100) orders a queue; it is never a probability.
 - The source has constituency, not district, and sanctioned value, not released value. Labels say what the field actually is.
 - Work descriptions are not in the source data yet. Titles are composed from category and constituency and are never invented.
@@ -48,8 +48,8 @@ It never accuses anyone. Every flag is a recommendation to inspect, never a find
 
 ## Evidence on Hand
 
-- Real snapshot: `05 App/data/snapshot/` (manifest 2026-09-04T11:37Z, source `mplads_live_api`).
-- Risk engine, peer groups and fund-flow graph: `05 App/pipeline/`. API: `05 App/api/`.
+- Real snapshot: `05-App/data/snapshot/` (manifest 2026-09-04T11:37Z, source `mplads_live_api`).
+- Risk engine, peer groups and fund-flow graph: `05-App/pipeline/`. API: `05-App/api/`.
 - Earlier design brief: `NIDHINETRA-DESIGN-BRIEF.md`. Its product rules (framing, words, numbers, states, accessibility) still bind. Its visual prescriptions are superseded by the 2026-09-11 reference.
 - No inspection outcomes are recorded yet. Reports must say so rather than show a number.
 - There is one snapshot and no time series, so no trend deltas may be shown.

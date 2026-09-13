@@ -160,7 +160,7 @@ body: {"combo": <int>, "key": "<string>"}
 
 **Repo extracted.** `SIH/` is a git repo at last, 42 files, clean tree. The design doc had prescribed `git rm -r --cached SIH` in the parent first; that turned out to be unnecessary because the parent tracked **zero** SIH files. It was simply never committed, showing as `?? SIH/`. One graphify cache blob slipped into the first commit and was untracked in a follow-up. Worth remembering why the first `git check-ignore` reported "no rule": gitignore patterns never apply to files already in the index, so the rule was correct all along and only `--no-index` revealed it.
 
-**Obsidian filters set before anything installs.** `.obsidian/app.json` now carries `userIgnoreFilters` for `05 App/node_modules`, `.venv`, `.next`, `data`, the caches, and the Claude Design export folder. Backup at `app.json.bak`, which is gitignored. Doing this after an `npm install` would have meant opening a vault trying to index roughly forty thousand files.
+**Obsidian filters set before anything installs.** `.obsidian/app.json` now carries `userIgnoreFilters` for `05-App/node_modules`, `.venv`, `.next`, `data`, the caches, and the Claude Design export folder. Backup at `app.json.bak`, which is gitignored. Doing this after an `npm install` would have meant opening a vault trying to index roughly forty thousand files.
 
 **The live-data reversal propagated.** Seven references across PRD and Checkpoints still demanded a wifi-off demo after the constraint was withdrawn. All reconciled:
 - PRD M6 is now "live data with a resilient fallback", and the definition of done runs the demo twice, once on the network and once with it disabled.
@@ -185,7 +185,7 @@ body: {"combo": <int>, "key": "<string>"}
 **Verification:** all three commits made, working tree clean, em-dash count 0 in the design brief and the plan. Every checkpoint edit re-read after writing. Nothing here depended on the spike, which is why it could proceed while work-level data is still unresolved.
 
 ### [2026-09-01 21:05] [Agent tag: A6] [Type: build]
-**What:** CP0 done. Repo scaffolded at `05 App/`, three JSON Schemas written from Execution Plan section 3, 20-row fixtures generated for all three contracts, `contracts/strings.json` promoted from the copy research draft, and a validator with a real self-test.
+**What:** CP0 done. Repo scaffolded at `05-App/`, three JSON Schemas written from Execution Plan section 3, 20-row fixtures generated for all three contracts, `contracts/strings.json` promoted from the copy research draft, and a validator with a real self-test.
 
 **Why the validator has a self-test, not just a happy-path run.** "A script, not eyeballing" (Checkpoints CP0) is easy to satisfy with a script that always prints OK. `validate.py --self-test` deliberately corrupts three copies of the fixtures (bad enum value, a duplicated inspection_rank, a peer_group.n of 3) and asserts the validator actually rejects each one, then confirms the real fixtures still pass. All four checks passed. The validator has teeth, not just a green light.
 
@@ -362,7 +362,7 @@ Published as a new artifact (separate URL, old one untouched, per the user's exp
 
 ### 2026-09-03, 11:40 -- Frontend pass against the Claude Design reference: the filter bar that never existed, and a risk breakdown that was quietly wrong
 
-The user asked for two things: move the app to Next.js, and match the frontend to `Precision and research first/NidhiNetra.dc.html`. The first was already true and was said so plainly rather than performed as work: `05 App/web/package.json` has pinned `next` since Wave 1 (16.3.4, React 19.2.8 underneath it). There was no React-only build to migrate off.
+The user asked for two things: move the app to Next.js, and match the frontend to `Precision and research first/NidhiNetra.dc.html`. The first was already true and was said so plainly rather than performed as work: `05-App/web/package.json` has pinned `next` since Wave 1 (16.3.4, React 19.2.8 underneath it). There was no React-only build to migrate off.
 
 **The filter bar, element three of the design brief's page order, had never been built.** `contracts/strings.json` has carried a full `filters` block (state / year / category / flag / flag_names / clear) since CP0, and `data_states.empty_after_filter` describes what the table shows when a filter returns nothing. Neither had a UI. The empty state was literally unreachable: nothing in the app could narrow the list to zero. New `web/lib/filters.ts` and `web/components/filters/FilterBar.tsx` close that, plus `web/styles/filters.css`.
 
@@ -502,7 +502,7 @@ Two things the user themselves might reasonably want next, both starter tasks, n
 - `"Expenditure on Completed and On-going Works as on Date"` -> 72,660+ rows, per-expenditure-event (multiple rows per work_id)
 - `"Allocated Limit for Hon'ble MPs"` -> per-MP allocated amounts
 
-**Files sitting on disk (all in `05 App/data/raw/`, gitignored):**
+**Files sitting on disk (all in `05-App/data/raw/`, gitignored):**
 ```
 mplads-sanctioned.json           62M    79,068 rows   clean
 mplads-completed.json            22M    34,258 rows   clean
@@ -768,7 +768,7 @@ The actual fix needed no cookie-copying at all, which was the explicit, non-nego
 
 **Research agents lost to session limits, twice**, after they had downloaded the primary sources but before they wrote their reports; the scratchpad was then wiped. The MPLADS clauses survived because they had been read and quoted directly into the working transcript before the loss. `mplads.gov.in` also times out from this environment -- the same network-origin block CP6 diagnosed for the API -- so the guidelines PDF could not be re-fetched here and should be re-downloaded from the user's own network as backup evidence.
 
-**Verification:** all 18 slides rendered to PNG and inspected individually; three layout bugs found visually and fixed (two-line kickers colliding with the rule, a clipped final table row, a bullet grazing the footer); programmatic geometry check clean apart from one harmless full-bleed divider; `scripts/deck_figures.py` reproduces every deck number exactly; both analysis scripts run green from `05 App/`.
+**Verification:** all 18 slides rendered to PNG and inspected individually; three layout bugs found visually and fixed (two-line kickers colliding with the rule, a clipped final table row, a bullet grazing the footer); programmatic geometry check clean apart from one harmless full-bleed divider; `scripts/deck_figures.py` reproduces every deck number exactly; both analysis scripts run green from `05-App/`.
 
 **Still open:** the live `pull-live` confirmation from a real network (unchanged), a second person for the dry run, one full timed run against the 10-minute slot, the Team ID on slide 1, and whether [[NidhiNetra-Pitch-Script]] is now retired outright given this deck supersedes it.
 
@@ -813,6 +813,6 @@ Back to [[PRD]] · [[Execution Plan]] · [[Checkpoints]] · [[00 Dashboard|Dashb
 
 **`DESIGN.md` was audited against the shipped CSS and corrected where it had drifted:** the display-font clamp, the KPI tile size (52px, not the documented 48px) and its icon size, the active nav tab's icon-fill rule (undocumented until now), and two responsive breakpoint numbers (1200px and 1280px, not 1100px and 1024px) were all brought in line with what actually renders.
 
-**The project was prepared for its first push to `github.com/Krishpotanwar/NidhiNetra`.** `krish.txt`/`krish.txt.pub` were not in `.gitignore` and showed as untracked; that was the first fix, before anything else, since a stray broad `git add` would have staged a private key into a public repository. The key was then moved out of the working tree entirely (never read or printed) and confirmed working against GitHub before the repository's own remote was configured. A root `README.md` was written (problem statement, ranking method, full tech stack, screenshots, run instructions) alongside a corrected `05 App/README.md` (the old one described CP0-era status and a `make demo` target that called a script which no longer exists anywhere in the tree -- `demo` now runs the API and web servers directly instead).
+**The project was prepared for its first push to `github.com/Krishpotanwar/NidhiNetra`.** `krish.txt`/`krish.txt.pub` were not in `.gitignore` and showed as untracked; that was the first fix, before anything else, since a stray broad `git add` would have staged a private key into a public repository. The key was then moved out of the working tree entirely (never read or printed) and confirmed working against GitHub before the repository's own remote was configured. A root `README.md` was written (problem statement, ranking method, full tech stack, screenshots, run instructions) alongside a corrected `05-App/README.md` (the old one described CP0-era status and a `make demo` target that called a script which no longer exists anywhere in the tree -- `demo` now runs the API and web servers directly instead).
 
 **Verification:** `tsc --noEmit`, ESLint, and Vitest (14/14) all clean; `next build` produces 7 static routes with zero errors; a Web Interface Guidelines pass (icon-only buttons, `outline: none` replacements, `<div onClick>`, raw `<img>`, `transition: all`) found no violations; total production JS is 1.1MB across chunks, 2.5MB static output overall.

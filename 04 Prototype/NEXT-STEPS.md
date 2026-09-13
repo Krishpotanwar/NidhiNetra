@@ -29,7 +29,7 @@ Answered for good: it is not a cookie or login problem, it is this machine's net
 
 ## 3. Run the live pull from your own laptop (5 minutes, do this before the demo)
 
-This is the one thing nobody has been able to test from my side, because this environment is network-blocked from that endpoint. From `05 App/pipeline`:
+This is the one thing nobody has been able to test from my side, because this environment is network-blocked from that endpoint. From `05-App/pipeline`:
 
 ```
 uv run python -m nidhinetra_pipeline.cli pull-live

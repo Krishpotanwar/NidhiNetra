@@ -17,9 +17,9 @@ solution_name: NidhiNetra
 ## CP0 — Contracts frozen ✅ 2026-09-01
 **Owner:** A6 · **Blocks:** everyone
 - [x] All agents have read [[Execution Plan]] §3, no open objections. The eng review (see plan `.claude/plan/nidhinetra-app-build.md`) resolved every open question on the shape itself; §3 stands as written.
-- [x] Fixture JSON exists for §3.1, §3.2, §3.3 (20 realistic rows). `05 App/contracts/fixtures/{works,scored,graph}.fixture.json`
-- [x] **A schema validator script exists and runs.** `05 App/contracts/validate.py`. `make validate` passes on real fixtures and its own self-test proves it rejects 3 classes of deliberately broken data (bad enum, rank gap, peer_group.n below 30).
-- [x] Repo scaffolded. `05 App/{contracts,pipeline,api,web,data,scripts}` per the plan's section 1.2 tree.
+- [x] Fixture JSON exists for §3.1, §3.2, §3.3 (20 realistic rows). `05-App/contracts/fixtures/{works,scored,graph}.fixture.json`
+- [x] **A schema validator script exists and runs.** `05-App/contracts/validate.py`. `make validate` passes on real fixtures and its own self-test proves it rejects 3 classes of deliberately broken data (bad enum, rank gap, peer_group.n below 30).
+- [x] Repo scaffolded. `05-App/{contracts,pipeline,api,web,data,scripts}` per the plan's section 1.2 tree.
 - [x] Bonus, not in the original checklist: `contracts/strings.json` frozen too (eng review T24-T26), so the no-accusatory-language rule is enforced by a lint, not a convention.
 
 ## CP1 — Real data flowing ◐ 2026-09-04, 4 of 5

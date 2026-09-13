@@ -169,7 +169,7 @@ The Design Review dated 2026-09-01 chose Approach A, which halts all streams pen
 
 ## 2. `contracts/strings.json`
 
-Draft, ready to land at `05 App/contracts/strings.json`. Every string was measured. No em-dash characters, no en dashes, no emoji, no banned vocabulary.
+Draft, ready to land at `05-App/contracts/strings.json`. Every string was measured. No em-dash characters, no en dashes, no emoji, no banned vocabulary.
 
 ```json
 {

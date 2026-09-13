@@ -19,16 +19,16 @@ krish.txt.pub
 **/graphify-out/.graphify_*
 
 # app: dependencies and derived data
-05 App/node_modules/
-05 App/web/node_modules/
-05 App/web/.next/
-05 App/.venv/
-05 App/.ruff_cache/
-05 App/.pytest_cache/
-05 App/data/raw/
-05 App/data/interim/
-05 App/.coverage
-05 App/web/coverage/
+05-App/node_modules/
+05-App/web/node_modules/
+05-App/web/.next/
+05-App/.venv/
+05-App/.ruff_cache/
+05-App/.pytest_cache/
+05-App/data/raw/
+05-App/data/interim/
+05-App/.coverage
+05-App/web/coverage/
 __pycache__/
 *.pyc
 

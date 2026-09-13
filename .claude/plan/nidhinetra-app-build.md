@@ -20,7 +20,7 @@ created: 2026-09-01
 
 | Question | Answer | Consequence |
 |---|---|---|
-| Where does code live | Subfolder in the vault: `05 App/` | Obsidian must be told to ignore it, see §1.3. Non-negotiable, or the vault hangs. |
+| Where does code live | Subfolder in the vault: `05-App/` | Obsidian must be told to ignore it, see §1.3. Non-negotiable, or the vault hangs. |
 | Database | DuckDB + Parquet | Parquet is the artifact of record and is committed. DuckDB is built at boot and is gitignored. |
 | Claude Design output | Port to React now | `NidhiNetra.dc.html` becomes a read-only reference. All further visual work happens in the real stack. |
 
@@ -42,7 +42,7 @@ Three constraints drove it:
 
 ```
 SIH/
-└── 05 App/
+└── 05-App/
     ├── README.md                    # how to run it, first thing a judge opens
     ├── Makefile                     # make demo  <- the whole product, one command
     ├── pyproject.toml               # uv workspace root
@@ -126,13 +126,13 @@ SIH/
   "attachmentFolderPath": "Attachments",
   "alwaysUpdateLinks": true,
   "userIgnoreFilters": [
-    "05 App/node_modules",
-    "05 App/.venv",
-    "05 App/web/.next",
-    "05 App/web/node_modules",
-    "05 App/data",
-    "05 App/.ruff_cache",
-    "05 App/.pytest_cache"
+    "05-App/node_modules",
+    "05-App/.venv",
+    "05-App/web/.next",
+    "05-App/web/node_modules",
+    "05-App/data",
+    "05-App/.ruff_cache",
+    "05-App/.pytest_cache"
   ]
 }
 ```
@@ -489,7 +489,7 @@ After any checkpoint, fix, or decision: update [[04 Prototype/Checkpoints|Checkp
 | [[04 Prototype/Execution Plan]] | section 2 rewritten around the confirmed REST endpoints; section 7 stack narrowed to DuckDB | 0 |
 | [[04 Prototype/Checkpoints]] | ticked and unticked live | every |
 | [[04 Prototype/Logbook]] | appended after every decision | every |
-| [[00 Dashboard]] | link to `05 App/README.md` | 0 |
+| [[00 Dashboard]] | link to `05-App/README.md` | 0 |
 
 ---
 

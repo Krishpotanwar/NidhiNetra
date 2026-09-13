@@ -27,7 +27,7 @@ Every work under implementation is scored against up to four independent, named 
 
 A fifth, smaller signal (a statistical pattern across the full population) adjusts position without being one of the four named, explained flags. The result is a **risk score from 0 to 100**, presented everywhere in the product as *"an ordering device, not a probability"* — it is never rendered as a likelihood, a verdict, or a confidence level.
 
-The 10% quota line itself is one formula, in one file (`05 App/api/src/nidhinetra_api/policy.py`), imported by every server that needs it, so the ceiling can never drift between the dashboard, the inspections API, and the frontend:
+The 10% quota line itself is one formula, in one file (`05-App/api/src/nidhinetra_api/policy.py`), imported by every server that needs it, so the ceiling can never drift between the dashboard, the inspections API, and the frontend:
 
 ```python
 def quota_for(population_n: int) -> int:
@@ -43,14 +43,14 @@ Recorded inspection outcomes are compared against the ranked list with a **Wilso
 | Layer | Technology |
 |---|---|
 | Frontend framework | Next.js 16.3.4 (App Router, Turbopack), React 19.2, TypeScript |
-| Frontend styling | CSS Modules over a hand-built token system (`05 App/web/styles/tokens.css`); no CSS framework |
+| Frontend styling | CSS Modules over a hand-built token system (`05-App/web/styles/tokens.css`); no CSS framework |
 | Frontend motion & UI primitives | Motion (`motion/react`), Radix UI (Select, Popover, Dialog, Tooltip), Phosphor Icons |
 | Frontend testing | Vitest, Testing Library |
 | Backend framework | FastAPI (Python 3.11+), Pydantic v2 |
 | Backend data engine | DuckDB over Parquet snapshots for the ranked work population; SQLite for recorded inspection outcomes |
 | Data pipeline | A dedicated `nidhinetra_pipeline` package: ingest → normalize → risk-score → fund-flow graph → snapshot, run via `uv` as a workspace package the API imports in-process (never shells out) |
 | Package management | `uv` (Python workspace: `api` + `pipeline`), `npm` (web) |
-| Contracts | `05 App/contracts/` — JSON Schemas generate both the Pydantic models and the TypeScript types, and `05 App/contracts/strings.json` is the single source of every user-visible string in the product, in English and Hindi (Devanagari, correctly tagged `lang="hi"`) |
+| Contracts | `05-App/contracts/` — JSON Schemas generate both the Pydantic models and the TypeScript types, and `05-App/contracts/strings.json` is the single source of every user-visible string in the product, in English and Hindi (Devanagari, correctly tagged `lang="hi"`) |
 
 ## Screenshots
 
@@ -67,7 +67,7 @@ The design system lives in [`DESIGN.md`](DESIGN.md) (tokens, type scale, colour,
 ## Repository layout
 
 ```
-05 App/                    the application
+05-App/                    the application
 ├── api/                   FastAPI backend (routers: works, stats, inspections, graph, refresh)
 ├── pipeline/               ingest, normalize, risk scoring, fund-flow graph, snapshot builder
 ├── web/                    Next.js frontend
@@ -80,28 +80,28 @@ PRODUCT.md                 product truth: users, constraints, brand commitments
 04 Prototype/Logbook.md    append-only build log for this project
 ```
 
-The numbered `01`–`05` top-level folders outside `05 App/` are the Smart India Hackathon working documents (problem statement, research, build plan, prototype notes, design references) kept alongside the app for the competition record.
+The numbered `01`–`05` top-level folders outside `05-App/` are the Smart India Hackathon working documents (problem statement, research, build plan, prototype notes, design references) kept alongside the app for the competition record.
 
 ## Running it locally
 
 ```bash
 # Backend
-cd "05 App/api"
+cd "05-App/api"
 uv run uvicorn nidhinetra_api.main:app --reload --port 8000
 
 # Frontend, in a second terminal
-cd "05 App/web"
+cd "05-App/web"
 npm install
 npm run dev
 ```
 
-The frontend talks to `http://localhost:8000` by default (override with `NEXT_PUBLIC_API_BASE_URL`). See [`05 App/README.md`](05%20App/README.md) for the full command set, including `make validate`, `make contracts`, and `make demo`.
+The frontend talks to `http://localhost:8000` by default (override with `NEXT_PUBLIC_API_BASE_URL`). See [`05-App/README.md`](05-App/README.md) for the full command set, including `make validate`, `make contracts`, and `make demo`.
 
 ## Deploying it
 
-**Frontend (Vercel):** import this repository and set **Root Directory** to `05 App/web` and **Framework Preset** to `Next.js` (a monorepo, so neither is auto-detected correctly by default). Add an environment variable `NEXT_PUBLIC_API_BASE_URL` pointing at wherever the backend below ends up.
+**Frontend (Vercel):** import this repository and set **Root Directory** to `05-App/web` and **Framework Preset** to `Next.js` (a monorepo, so neither is auto-detected correctly by default). Add an environment variable `NEXT_PUBLIC_API_BASE_URL` pointing at wherever the backend below ends up.
 
-**Backend (Render, or any host that runs a Dockerfile-free Python web service):** [`render.yaml`](render.yaml) at the repo root is a Render Blueprint — Render dashboard → New → Blueprint → pick this repository, and it provisions the service from that file. It builds and runs from the `05 App` workspace with `uv` (`uv sync --package nidhinetra-api --locked`, then `uv run --package nidhinetra-api uvicorn nidhinetra_api.main:app --host 0.0.0.0 --port $PORT`), which is the one command that correctly resolves `nidhinetra-api`'s workspace dependency on `nidhinetra-pipeline` — a plain `pip install` from `api/` alone cannot do that. Set the deployed service's `ALLOWED_ORIGINS` environment variable to the frontend's exact Vercel origin(s) (comma-separated, e.g. `https://nidhinetra.vercel.app`) once that URL is known; unset, the API accepts only local dev origins by design (`05 App/api/src/nidhinetra_api/main.py`).
+**Backend (Render, or any host that runs a Dockerfile-free Python web service):** [`render.yaml`](render.yaml) at the repo root is a Render Blueprint — Render dashboard → New → Blueprint → pick this repository, and it provisions the service from that file. It builds and runs from the `05-App` workspace with `uv` (`uv sync --package nidhinetra-api --locked`, then `uv run --package nidhinetra-api uvicorn nidhinetra_api.main:app --host 0.0.0.0 --port $PORT`), which is the one command that correctly resolves `nidhinetra-api`'s workspace dependency on `nidhinetra-pipeline` — a plain `pip install` from `api/` alone cannot do that. Set the deployed service's `ALLOWED_ORIGINS` environment variable to the frontend's exact Vercel origin(s) (comma-separated, e.g. `https://nidhinetra.vercel.app`) once that URL is known; unset, the API accepts only local dev origins by design (`05-App/api/src/nidhinetra_api/main.py`).
 
 ## Status
 
