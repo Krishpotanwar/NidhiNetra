@@ -17,15 +17,35 @@ let a stale or spoofed value corrupt precision-at-quota later; looking it
 up server-side and freezing it into the stored row is what makes that
 figure honest.
 
-cutoff_rank_at_time / population_n_at_time exist because of a 2026-09-05
-outside-voice finding: inspection_rank is drawn from ALL 79,068 works
-(rank.py has no completion_status filter) but the 10 percent quota cutoff is
-drawn from only the 44,810 works under implementation (routers/stats.py,
-web/lib/data.ts) -- two different populations, only comparable if a row
-freezes both at once. _lookup_work_context() below mirrors stats.py's
-UNDER_IMPLEMENTATION population and data.ts's getQuotaFigures formula
-exactly, so this endpoint's frozen cutoff can never drift from what the
-quota meter shows on screen the same moment.
+cutoff_rank_at_time / population_n_at_time / inspection_rank_at_time
+together freeze a work's rank against a genuinely comparable population and
+cutoff, because two separate mismatches would otherwise corrupt any later
+precision-at-quota calculation:
+
+- inspection_rank (rank.py, all 79,068 works, completed and recommended
+  included, Checkpoints CP2) is drawn from a different, larger population
+  than any quota cutoff, which only ever covers works under implementation
+  (2026-09-05 outside-voice finding). Freezing the raw global rank next to
+  an under-implementation-scoped cutoff, as this endpoint did until
+  2026-09-13, made the two numbers reproducible but still not comparable --
+  a work ranked, say, 5000th nationally could still be the single
+  highest-priority under-implementation work in its own district.
+- Clause 4.5.2 is a per-District-Authority obligation, not a national one
+  (F-03, nemotronreview.md): a district with zero of its own works
+  inspected this year is a real compliance gap even when the national
+  aggregate looks satisfied by some other district's surplus.
+
+_district_population_and_rank() below fixes both at once (2026-09-14):
+population_n_at_time and cutoff_rank_at_time are this work's own District
+Authority's (works.implementing_agency) under-implementation population and
+policy.quota_for() of it, not the national ones, and inspection_rank_at_time
+is this work's rank strictly within that same district-scoped population,
+re-deriving rank.py's own tie-break (risk_score descending, work_id
+ascending) in SQL rather than reading the unrelated global
+scored.inspection_rank value. The two figures are now drawn from the same
+population by construction, so inspection_rank_at_time <= cutoff_rank_at_time
+(the Reports page's within_quota check, _group_summary below) is finally a
+true apples-to-apples comparison.
 
 The denormalized context fields exist because of a second outside-voice
 finding, same session: work_id "stability across pulls" is asserted in
@@ -54,8 +74,7 @@ router = APIRouter(prefix="/api/inspections", tags=["inspections"])
 _CONTEXT_SELECT = """
     SELECT
         works.state, works.constituency, works.implementing_agency,
-        works.work_category, works.sanctioned_amount_inr,
-        scored.inspection_rank, scored.risk_score
+        works.work_category, works.sanctioned_amount_inr, scored.risk_score
     FROM works
     JOIN scored USING (work_id)
     WHERE works.work_id = ?
@@ -98,25 +117,69 @@ def _lookup_work_context(con: duckdb.DuckDBPyConnection, work_id: str) -> dict[s
     return rows[0]
 
 
-def _population_and_cutoff(con: duckdb.DuckDBPyConnection) -> tuple[int, int]:
+def _district_population_and_rank(
+    con: duckdb.DuckDBPyConnection,
+    implementing_agency: str | None,
+    risk_score: float,
+    work_id: str,
+) -> tuple[int, int, int]:
+    """This work's District Authority's under-implementation population,
+    this work's rank strictly within that population, and that district's
+    own quota (F-03/F-04, 2026-09-14 -- see the module docstring). Recording
+    an outcome does not require the work itself to be under implementation
+    (an officer may verify a Completed work too), so district_rank is
+    computed as "where this work WOULD fall" among its district's
+    under-implementation peers by risk_score, rather than left undefined for
+    a work outside that population.
+
+    implementing_agency is compared with an explicit IS NULL branch, not a
+    parameterised `= ?`, because SQL's `NULL = NULL` is UNKNOWN, not true --
+    a plain `=?` would silently and wrongly report population 0 for every
+    work with a null agency instead of grouping them together.
+    """
+    if implementing_agency is None:
+        agency_clause, agency_params = "works.implementing_agency IS NULL", []
+    else:
+        agency_clause, agency_params = "works.implementing_agency = ?", [implementing_agency]
     placeholders = ", ".join("?" for _ in UNDER_IMPLEMENTATION)
-    rows = db.rows_as_dicts(
+
+    population_rows = db.rows_as_dicts(
         con,
-        f"SELECT COUNT(*) AS n FROM works WHERE completion_status IN ({placeholders})",
-        list(UNDER_IMPLEMENTATION),
+        f"SELECT COUNT(*) AS n FROM works "
+        f"WHERE {agency_clause} AND completion_status IN ({placeholders})",
+        [*agency_params, *UNDER_IMPLEMENTATION],
     )
-    population_n = rows[0]["n"]
+    population_n = population_rows[0]["n"]
+
+    # Same tie-break as rank.py's assign_ranks (risk_score descending,
+    # work_id ascending), re-applied here rather than imported: that
+    # function ranks a Python list already in memory, and re-running it over
+    # every under-implementation work on every POST would be real, avoidable
+    # work this single COUNT already does inside DuckDB.
+    better_rows = db.rows_as_dicts(
+        con,
+        f"SELECT COUNT(*) AS n FROM works JOIN scored USING (work_id) "
+        f"WHERE {agency_clause} AND works.completion_status IN ({placeholders}) "
+        "AND (scored.risk_score > ? OR (scored.risk_score = ? AND works.work_id < ?))",
+        [*agency_params, *UNDER_IMPLEMENTATION, risk_score, risk_score, work_id],
+    )
+    district_rank = better_rows[0]["n"] + 1
+
     # policy.quota_for owns the ceiling rule and the zero-population special
     # case (found live 2026-09-02: without it, a population of 0 renders a
     # nonsensical "at least 1 of 0 works").
-    return population_n, quota_for(population_n)
+    return population_n, district_rank, quota_for(population_n)
 
 
 @router.post("")
 def record_inspection(payload: InspectionOutcomeRequest) -> Envelope:
     con = db.connect()
     context = _lookup_work_context(con, payload.work_id)
-    population_n_at_time, cutoff_rank_at_time = _population_and_cutoff(con)
+    population_n_at_time, inspection_rank_at_time, cutoff_rank_at_time = (
+        _district_population_and_rank(
+            con, context["implementing_agency"], context["risk_score"], payload.work_id
+        )
+    )
 
     try:
         outcome_id = store.record_outcome(
@@ -130,7 +193,7 @@ def record_inspection(payload: InspectionOutcomeRequest) -> Envelope:
             implementing_agency=context["implementing_agency"],
             work_category=context["work_category"],
             sanctioned_amount_inr=context["sanctioned_amount_inr"],
-            inspection_rank_at_time=context["inspection_rank"],
+            inspection_rank_at_time=inspection_rank_at_time,
             risk_score_at_time=context["risk_score"],
             cutoff_rank_at_time=cutoff_rank_at_time,
             population_n_at_time=population_n_at_time,
@@ -151,7 +214,7 @@ def record_inspection(payload: InspectionOutcomeRequest) -> Envelope:
             "outcome": payload.outcome,
             "notes": payload.notes,
             "inspector_id": payload.inspector_id,
-            "inspection_rank_at_time": context["inspection_rank"],
+            "inspection_rank_at_time": inspection_rank_at_time,
             "risk_score_at_time": context["risk_score"],
             "cutoff_rank_at_time": cutoff_rank_at_time,
             "population_n_at_time": population_n_at_time,

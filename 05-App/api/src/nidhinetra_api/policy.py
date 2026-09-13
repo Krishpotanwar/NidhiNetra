@@ -9,6 +9,8 @@ ceiling rule. They live here now, and everything server-side imports them.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 # Recommended works are not yet sanctioned; Completed works are done. Neither
 # is inspected under clause 4.5.2 (04 Prototype/Logbook.md, 2026-08-31).
 UNDER_IMPLEMENTATION: tuple[str, ...] = ("Sanctioned", "In Progress")
@@ -30,4 +32,18 @@ def quota_for(population_n: int) -> int:
     return max(1, -(-population_n * QUOTA_PERCENT // 100))
 
 
-__all__ = ["QUOTA_PERCENT", "UNDER_IMPLEMENTATION", "quota_for"]
+def quota_by_group(population_by_group: Mapping[str, int]) -> dict[str, int]:
+    """quota_for(), applied once per District Authority instead of once
+    nationally (F-03, nemotronreview.md, fixed 2026-09-14). Clause 4.5.2 is
+    a per-authority obligation: a district with zero of its own works
+    inspected this year is a real compliance gap even when one other
+    district's surplus makes a single national quota_for() call look
+    satisfied. `population_by_group` is each District Authority's own count
+    of works under implementation (UNDER_IMPLEMENTATION), keyed however the
+    caller identifies a district -- today that is `works.implementing_agency`
+    (already IDA-shaped; F-01's later rename does not change this key).
+    """
+    return {group: quota_for(n) for group, n in population_by_group.items()}
+
+
+__all__ = ["QUOTA_PERCENT", "UNDER_IMPLEMENTATION", "quota_by_group", "quota_for"]
