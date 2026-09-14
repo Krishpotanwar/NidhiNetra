@@ -1,15 +1,34 @@
 # Render's free tier spins the API down after ~15 minutes with no traffic
-# and takes 30-60+ seconds to wake on the next request -- comfortably past
-# the frontend's 20-second fetch timeout (05-App/web/lib/api-client.ts).
-# A visitor who hits a cold instance sees a slow load or, if they happen to
-# click "Refresh now" at that moment, a failed refresh (2026-09-13 incident).
-# Pinging the zero-I/O /health endpoint often enough that the service never
-# goes idle for 15 minutes keeps it permanently warm, for free.
+# and takes 30-60+ seconds to wake on the next request. The frontend's own
+# fetch timeout was raised to 60s to tolerate that
+# (05-App/web/lib/api-client.ts, 2026-09-14) -- this workflow is the other
+# half: pinging the zero-I/O /health endpoint often enough that the service
+# never goes idle for 15 minutes keeps it warm in the first place, for free.
+#
+# 2026-09-14 finding: the `schedule` trigger is NOT reliable at a 10-minute
+# cadence in practice -- observed real gaps between runs of ~2h, ~1h45m,
+# and ~4h48m instead of every 10 minutes (`gh run list`). This is a
+# documented GitHub Actions limitation for the `schedule` event, not a bug
+# in this file: scheduled runs can be delayed arbitrarily under load, more
+# so on lower-activity personal repos. Two mitigations added here (the
+# push trigger, and a --max-time that no longer gives up right as a cold
+# instance would have answered); neither fixes the scheduling gap itself.
+# The durable fix, if the frontend's own 60s tolerance ever isn't enough,
+# is an external always-on pinger (e.g. cron-job.org, UptimeRobot) hitting
+# /health every 5-10 minutes -- deliberately not set up here, since that
+# means creating an account on a third-party service.
 name: Keep backend warm
 
 on:
   schedule:
     - cron: "*/10 * * * *"
+  # A push to main is a strong signal someone is actively working on this
+  # project right now and likely to load the live site soon -- pinging
+  # here is a free extra warm-up exactly when it is most likely to matter,
+  # on every push (not just backend changes), rather than waiting on the
+  # next flaky cron tick.
+  push:
+    branches: [main]
   workflow_dispatch: {}
 
 jobs:
@@ -17,4 +36,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping /health
-        run: curl -sf --max-time 30 https://nidhinetra-api.onrender.com/health
+        run: curl -sf --max-time 65 https://nidhinetra-api.onrender.com/health

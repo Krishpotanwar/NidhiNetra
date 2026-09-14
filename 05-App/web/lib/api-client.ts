@@ -29,10 +29,22 @@ export class ApiUnreachableError extends Error {
 // CP6: "a hung pull times out into a stated failure rather than spinning
 // forever." No contract value pins this duration -- there was none to
 // find in strings.json -- so this is an engineering choice, not a frozen
-// number: long enough that a real (if slow) government-site round trip
-// isn't false-flagged as hung, short enough that an officer waiting on a
-// dead connection sees a stated failure well within one demo slot.
-const DEFAULT_TIMEOUT_MS = 20_000;
+// number.
+//
+// Raised from 20s to 60s on 2026-09-14: the backend is Render free tier,
+// which spins down after ~15 minutes idle and takes 30-60+ seconds to
+// wake on the next request (.github/workflows/keepalive.yml). At 20s,
+// every genuinely cold hit was guaranteed to time out into
+// api_unreachable's "Cannot reach the data service" -- not a stale
+// connection, just a server still booting -- even though the exact same
+// request would have succeeded seconds later. strings.json's loading
+// state already has no spinner and no visible text (design brief section
+// 11), so a longer wait behind that same silent skeleton costs nothing
+// visible; it just gives a cold start room to finish before this code
+// gives up on it. 60s matches the documented cold-start ceiling; a
+// genuine outage now reports itself a little slower, which is the right
+// side to bias toward here.
+const DEFAULT_TIMEOUT_MS = 60_000;
 
 export interface EnvelopeResult<T> {
   data: T;
