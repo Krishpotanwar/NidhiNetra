@@ -87,19 +87,43 @@ async def health() -> dict[str, str]:
 # opt-in below, never by loosening this pattern.
 _LOCAL_DEV_ORIGIN = r"^http://(localhost|127\.0\.0\.1):(3000|3001)$"
 
+# 2026-09-14 incident: "Cannot reach the data service" on the live site,
+# consistently, not just under a slow cold start -- an exact-match
+# ALLOWED_ORIGINS listed only the stable aliases (nidhinetra.vercel.app,
+# nidhinetra-krishpotanwars-projects.vercel.app), but the URL actually
+# being tested was a per-deployment preview link
+# (nidhinetra-5oscukrhx-krishpotanwars-projects.vercel.app). Vercel mints
+# a brand-new, uniquely-hashed URL like that on every single deployment;
+# there is no way to add each one to an exact-match list in advance, and
+# testing against today's hash after tomorrow's deploy would just
+# reproduce this same failure again. A regex for this project's own
+# preview-URL shape closes the whole family at once, anchored exactly
+# like _LOCAL_DEV_ORIGIN above: the trailing $ against the literal
+# ".vercel.app" means only Vercel's own infrastructure can ever mint a
+# matching hostname -- same reasoning that makes the localhost regex safe.
+_VERCEL_PREVIEW_ORIGIN = r"^https://nidhinetra-[a-z0-9]+-krishpotanwars-projects\.vercel\.app$"
+
 # The deployed frontend's exact origin(s), comma-separated, e.g.
 # "https://nidhinetra.vercel.app,https://nidhinetra-<hash>.vercel.app".
 # Unset by default, so a host with no ALLOWED_ORIGINS configured behaves
 # exactly as before: local dev only. Exact strings, not a regex, so a
-# production value can never accidentally admit more than it lists.
+# production value can never accidentally admit more than it lists. Still
+# useful alongside the regex above for a custom domain or another team's
+# alias that doesn't fit this project's own preview-URL shape.
 _PRODUCTION_ORIGINS = [
     origin.strip() for origin in os.environ.get("ALLOWED_ORIGINS", "").split(",") if origin.strip()
 ]
 
+# CORSMiddleware takes exactly one allow_origin_regex, so local dev and
+# this project's Vercel previews are combined into one pattern rather
+# than one replacing the other -- each half keeps its own anchors, so
+# neither can widen what the other matches.
+_ALLOW_ORIGIN_REGEX = f"{_LOCAL_DEV_ORIGIN}|{_VERCEL_PREVIEW_ORIGIN}"
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_PRODUCTION_ORIGINS,
-    allow_origin_regex=_LOCAL_DEV_ORIGIN,
+    allow_origin_regex=_ALLOW_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
