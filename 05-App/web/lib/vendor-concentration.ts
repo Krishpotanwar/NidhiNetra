@@ -180,6 +180,21 @@ export function subgraphFor(graph: FundFlowGraph, vendorIds: Set<string>): FundF
   const keepNodes = new Set<string>([...vendorIds, ...keepAgencies, ...keepMps]);
   return {
     nodes: graph.nodes.filter((n) => keepNodes.has(n.id)),
-    edges: graph.edges.filter((e) => keepNodes.has(e.source) && keepNodes.has(e.target)),
+    edges: graph.edges.filter((edge) => {
+      if (!keepNodes.has(edge.source) || !keepNodes.has(edge.target)) return false;
+
+      // A Member can survive because of a valid path through one agency,
+      // while another kept agency has only an unrelated work from that same
+      // Member. Filtering by endpoint alone would redraw that cross-branch
+      // edge and visually recreate F-02's false path inside the subgraph.
+      const source = byId.get(edge.source);
+      const target = byId.get(edge.target);
+      if (source?.type === "MP" && target?.type === "Agency") {
+        const relevant = relevantWorkIdsOfAgency.get(edge.target);
+        return relevant ? hasSharedWork(new Set(edge.work_ids), relevant) : false;
+      }
+
+      return true;
+    }),
   };
 }

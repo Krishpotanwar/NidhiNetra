@@ -125,4 +125,30 @@ describe("subgraphFor (F-02: the highlighted cluster must not include an unrelat
     expect(keptIds.has("mp_c")).toBe(false);
     expect(keptIds.has("vendor_v2")).toBe(false);
   });
+
+  it("excludes a cross-branch MP edge that has no work in common with the target vendor", () => {
+    // MP A reaches V1 legitimately through Agency A on W1. Agency B also
+    // reaches V1, but on W2; MP A's separate edge into Agency B is W3.
+    // Keeping MP A because of its valid Agency A path must not make W3 look
+    // like a second path to V1 merely because both endpoint nodes survive.
+    const graph: FundFlowGraph = {
+      nodes: [
+        node("mp_a", "MP"),
+        node("agency_a", "Agency"),
+        node("agency_b", "Agency"),
+        node("vendor_v1", "Vendor"),
+      ],
+      edges: [
+        edge("mp_a", "agency_a", ["W1"]),
+        edge("agency_a", "vendor_v1", ["W1"]),
+        edge("mp_a", "agency_b", ["W3"]),
+        edge("agency_b", "vendor_v1", ["W2"]),
+      ],
+    };
+
+    const sub = subgraphFor(graph, new Set(["vendor_v1"]));
+
+    expect(sub.edges).toContain(graph.edges[0]);
+    expect(sub.edges).not.toContain(graph.edges[2]);
+  });
 });

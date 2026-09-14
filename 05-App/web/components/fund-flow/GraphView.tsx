@@ -1,20 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
-import { renderTemplate, STRINGS } from "@/lib/strings";
-import { displayName, formatCurrencyFull, formatIndianInt } from "@/lib/format";
-import type { FundFlowGraph, GraphNode, GraphNodeType } from "@/lib/graph-data";
-import { highlightedNodeIds } from "@/lib/vendor-concentration";
+import { useEffect, useRef, useState } from "react";
+import type Sigma from "sigma";
+import { STRINGS } from "@/lib/strings";
+import type { FundFlowGraph, GraphNodeType } from "@/lib/graph-data";
 import { DotCanvas } from "@/components/shared/DotCanvas";
+import { createSigmaElements, type GraphPalette } from "./sigma-graph";
 import styles from "./GraphView.module.css";
 
 const s = STRINGS.fund_flow;
 
-/**
- * A tiered layout, not a force simulation: the domain fixes the geometry
- * (money moves MP -> Agency -> Vendor, always), so three columns and curved
- * edges say everything a spring layout would approximate, deterministically.
- */
 const COLUMN_ORDER: GraphNodeType[] = ["MP", "Agency", "Vendor"];
 const COLUMN_LABEL: Record<GraphNodeType, string> = {
   MP: s.column_mp,
@@ -22,44 +17,37 @@ const COLUMN_LABEL: Record<GraphNodeType, string> = {
   Vendor: s.column_vendor,
 };
 
-const NODE_R_MIN = 5;
-const NODE_R_MAX = 12;
-const ROW_HEIGHT = 30;
-const COLUMN_GAP = 300;
-const PADDING_X = 210;
-const PADDING_Y = 28;
-const LABEL_MAX = 30;
+const FALLBACK_PALETTE: GraphPalette = {
+  ink: "#0f1b33",
+  ink2: "#334262",
+  hairline: "#e3e9ef",
+  hairlineStrong: "#d3dce6",
+  risk3: "#d4540f",
+  risk4: "#c81e1e",
+};
 
-interface Positioned extends GraphNode {
+function graphPalette(element: HTMLElement): GraphPalette {
+  const computed = getComputedStyle(element);
+  const token = (name: string, fallback: string) => computed.getPropertyValue(name).trim() || fallback;
+  return {
+    ink: token("--ink", FALLBACK_PALETTE.ink),
+    ink2: token("--ink-2", FALLBACK_PALETTE.ink2),
+    hairline: token("--hairline", FALLBACK_PALETTE.hairline),
+    hairlineStrong: token("--hairline-strong", FALLBACK_PALETTE.hairlineStrong),
+    risk3: token("--risk-3", FALLBACK_PALETTE.risk3),
+    risk4: token("--risk-4", FALLBACK_PALETTE.risk4),
+  };
+}
+
+interface TooltipState {
+  text: string;
   x: number;
   y: number;
-  r: number;
+  horizontal: "left" | "center" | "right";
+  vertical: "above" | "below";
 }
 
-function truncate(label: string): string {
-  const clean = displayName(label);
-  return clean.length > LABEL_MAX ? `${clean.slice(0, LABEL_MAX - 1)}…` : clean;
-}
-
-function layout(graph: FundFlowGraph) {
-  const maxWeight = Math.max(1, ...graph.nodes.map((n) => n.risk_weight));
-  const byColumn = COLUMN_ORDER.map((type) => graph.nodes.filter((n) => n.type === type));
-  const maxRows = Math.max(1, ...byColumn.map((column) => column.length));
-  const height = PADDING_Y * 2 + maxRows * ROW_HEIGHT;
-
-  const positioned: Positioned[] = [];
-  byColumn.forEach((column, columnIndex) => {
-    const x = PADDING_X + columnIndex * COLUMN_GAP;
-    const columnHeight = column.length * ROW_HEIGHT;
-    const startY = (height - columnHeight) / 2 + ROW_HEIGHT / 2;
-    column.forEach((node, rowIndex) => {
-      const r = NODE_R_MIN + (NODE_R_MAX - NODE_R_MIN) * (node.risk_weight / maxWeight);
-      positioned.push({ ...node, x, y: startY + rowIndex * ROW_HEIGHT, r });
-    });
-  });
-
-  return { positioned, width: PADDING_X * 2 + (COLUMN_ORDER.length - 1) * COLUMN_GAP, height };
-}
+type RendererState = "loading" | "ready" | "failed";
 
 interface GraphViewProps {
   graph: FundFlowGraph;
@@ -68,12 +56,81 @@ interface GraphViewProps {
 }
 
 export function GraphView({ graph, highlightVendorId }: GraphViewProps) {
-  const { positioned, width, height } = useMemo(() => layout(graph), [graph]);
-  const byId = useMemo(() => new Map(positioned.map((node) => [node.id, node])), [positioned]);
-  const highlighted = useMemo(
-    () => (highlightVendorId ? highlightedNodeIds(graph, highlightVendorId) : null),
-    [graph, highlightVendorId],
-  );
+  const mountRef = useRef<HTMLDivElement>(null);
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [rendererState, setRendererState] = useState<RendererState>("loading");
+
+  useEffect(() => {
+    const mount = mountRef.current;
+    if (!mount || graph.nodes.length === 0) return;
+    const container = mount;
+
+    let disposed = false;
+    let renderer: Sigma | null = null;
+    setTooltip(null);
+    setRendererState("loading");
+
+    async function initialise() {
+      const [{ MultiDirectedGraph }, { default: SigmaRenderer }] = await Promise.all([
+        import("graphology"),
+        import("sigma"),
+      ]);
+      if (disposed) return;
+
+      const elements = createSigmaElements(graph, highlightVendorId, graphPalette(container));
+      const sigmaGraph = new MultiDirectedGraph();
+      for (const node of elements.nodes) {
+        sigmaGraph.addNode(node.id, node.attributes);
+      }
+      for (const edge of elements.edges) {
+        sigmaGraph.addEdgeWithKey(edge.id, edge.source, edge.target, edge.attributes);
+      }
+
+      renderer = new SigmaRenderer(sigmaGraph, container, {
+        enableEdgeEvents: true,
+        hideEdgesOnMove: true,
+        hideLabelsOnMove: true,
+        labelColor: { attribute: "labelColor", color: FALLBACK_PALETTE.ink2 },
+        labelFont: getComputedStyle(container).fontFamily,
+        labelRenderedSizeThreshold: 5,
+        labelSize: 11,
+        labelWeight: "500",
+        renderEdgeLabels: false,
+        renderLabels: true,
+        stagePadding: 24,
+        zIndex: true,
+      });
+      setRendererState("ready");
+
+      const showTooltip = (text: string, x: number, y: number) => {
+        const horizontal = x < container.clientWidth / 3
+          ? "right"
+          : x > (container.clientWidth * 2) / 3
+            ? "left"
+            : "center";
+        const vertical = y < container.clientHeight / 2 ? "below" : "above";
+        setTooltip({ text, x, y, horizontal, vertical });
+      };
+      renderer.on("enterNode", ({ node, event }) => {
+        showTooltip(String(sigmaGraph.getNodeAttribute(node, "fullLabel")), event.x, event.y);
+      });
+      renderer.on("leaveNode", () => setTooltip(null));
+      renderer.on("enterEdge", ({ edge, event }) => {
+        showTooltip(String(sigmaGraph.getEdgeAttribute(edge, "label")), event.x, event.y);
+      });
+      renderer.on("leaveEdge", () => setTooltip(null));
+    }
+
+    void initialise().catch((error: unknown) => {
+      if (disposed) return;
+      console.error("Fund-flow renderer failed to initialise.", error);
+      setRendererState("failed");
+    });
+    return () => {
+      disposed = true;
+      renderer?.kill();
+    };
+  }, [graph, highlightVendorId]);
 
   if (graph.nodes.length === 0) {
     return (
@@ -92,68 +149,25 @@ export function GraphView({ graph, highlightVendorId }: GraphViewProps) {
         ))}
       </div>
       <div className={styles.scroller}>
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          width={width}
-          height={height}
+        <div
+          ref={mountRef}
           role="img"
           aria-label={s.subtitle}
           className={styles.canvas}
-        >
-          {graph.edges.map((edge, index) => {
-            const from = byId.get(edge.source);
-            const to = byId.get(edge.target);
-            if (!from || !to) return null; // referential integrity is enforced server-side
-            const flagged = edge.flagged_work_count > 0;
-            const onPath = highlighted ? highlighted.has(edge.source) && highlighted.has(edge.target) : false;
-            const midX = (from.x + to.x) / 2;
-            return (
-              <path
-                key={index}
-                d={`M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`}
-                fill="none"
-                className={styles.edge}
-                data-state={onPath ? "path" : flagged ? "flagged" : "plain"}
-                data-dimmed={highlighted && !onPath ? "" : undefined}
-                strokeWidth={Math.min(7, 1.5 + Math.log2(edge.work_count + 1))}
-              >
-                <title>
-                  {renderTemplate(s.edge_label, {
-                    work_count: formatIndianInt(edge.work_count),
-                    amount: formatCurrencyFull(edge.total_amount_inr),
-                  })}
-                </title>
-              </path>
-            );
-          })}
-
-          {positioned.map((node) => {
-            const onPath = highlighted?.has(node.id) ?? false;
-            return (
-              <g key={node.id} opacity={highlighted && !onPath ? 0.35 : 1}>
-                <circle
-                  cx={node.x}
-                  cy={node.y}
-                  r={onPath ? node.r + 1.5 : node.r}
-                  className={styles.node}
-                  data-state={onPath ? "path" : node.risk_weight > 0 ? "flagged" : "plain"}
-                >
-                  <title>{displayName(node.label)}</title>
-                </circle>
-                <text
-                  x={node.type === "Agency" ? node.x : node.type === "Vendor" ? node.x + node.r + 9 : node.x - node.r - 9}
-                  y={node.type === "Agency" ? node.y - node.r - 7 : node.y}
-                  textAnchor={node.type === "Agency" ? "middle" : node.type === "Vendor" ? "start" : "end"}
-                  dominantBaseline={node.type === "Agency" ? "auto" : "middle"}
-                  className={styles.label}
-                  data-strong={onPath || undefined}
-                >
-                  {truncate(node.label)}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+          data-graph-renderer="sigma"
+          data-render-state={rendererState}
+        />
+        {tooltip && (
+          <span
+            role="tooltip"
+            className={styles.tooltip}
+            style={{ left: tooltip.x, top: tooltip.y }}
+            data-horizontal={tooltip.horizontal}
+            data-vertical={tooltip.vertical}
+          >
+            {tooltip.text}
+          </span>
+        )}
       </div>
     </div>
   );

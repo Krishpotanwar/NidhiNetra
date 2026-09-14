@@ -10,59 +10,46 @@
 }
 
 .scroller {
-  overflow: auto;
-  max-height: 40rem;
+  position: relative;
+  height: clamp(24rem, 60vh, 40rem);
+  overflow: hidden;
+  background: var(--surface);
 }
 
 .canvas {
-  min-width: 100%;
+  width: 100%;
+  height: 100%;
 }
 
-.edge {
-  stroke: var(--hairline-strong);
-  stroke-opacity: 0.55;
-  transition: stroke-opacity var(--dur-base) var(--ease-out);
+.tooltip {
+  --tooltip-shift-x: -50%;
+  --tooltip-shift-y: calc(-100% - var(--space-3));
+
+  position: absolute;
+  z-index: 1;
+  max-width: min(24rem, calc(100% - var(--space-6)));
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+  font-size: var(--font-note);
+  line-height: var(--leading-normal);
+  color: var(--ink);
+  pointer-events: none;
+  transform: translate(var(--tooltip-shift-x), var(--tooltip-shift-y));
 }
 
-.edge[data-state="flagged"] {
-  stroke: var(--risk-3);
-  stroke-opacity: 0.5;
+.tooltip[data-horizontal="right"] {
+  --tooltip-shift-x: var(--space-3);
 }
 
-.edge[data-state="path"] {
-  stroke: var(--risk-4);
-  stroke-opacity: 0.85;
+.tooltip[data-horizontal="left"] {
+  --tooltip-shift-x: calc(-100% - var(--space-3));
 }
 
-.edge[data-dimmed] {
-  stroke-opacity: 0.14;
-}
-
-.node {
-  fill: var(--surface);
-  stroke: var(--hairline-strong);
-  stroke-width: 1;
-}
-
-.node[data-state="flagged"] {
-  fill: var(--risk-3);
-  stroke: var(--risk-3);
-}
-
-.node[data-state="path"] {
-  fill: var(--risk-4);
-  stroke: var(--risk-4);
-}
-
-.label {
-  font-family: var(--font-sans);
-  font-size: 11px;
-  fill: var(--ink-2);
-}
-
-.label[data-strong] {
-  font-weight: 600;
-  fill: var(--ink);
+.tooltip[data-vertical="below"] {
+  --tooltip-shift-y: var(--space-3);
 }
 
 .empty {
