@@ -31,6 +31,7 @@ export interface NormalizedRecord {
   mp_name: string;
   tenure: string;
   implementing_agency: string | null;
+  vendor_id: string | null;
   vendor_name: string | null;
   work_category: WorkCategory;
   sanctioned_amount_inr: number;

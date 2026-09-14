@@ -20,7 +20,8 @@
       "2026-09-05: added inspection_capture.inspector_id_label, same session, second outside-voice pass: the enum schema had no way to say WHICH reviewer recorded an outcome, quietly breaking the deck's own 'reviewers train the model' (plural) claim. No auth exists in this prototype, so this is self-reported initials, not a verified identity -- still required, so inter-rater disagreement is at least visible instead of invisible.",
       "2026-09-11: redesign against the user's pinned reference (NidhiNetra_Vidhi.png). Added brand, dashboard, quota_card, view_options, presenter, pagination, search, specimen, reports and system_pages, and extended nav, filters, table, detail_panel and fund_flow. Changed table.columns.district from 'District' to 'Constituency': the column always showed the constituency and the source has no district field. Changed summary_strip.idle_beyond_12_months from 'Released, unspent beyond twelve months' to 'Sanctioned, unspent beyond twelve months': the figure sums sanctioned_amount_inr, and nothing in the source says the money was released. Changed table.column_tooltips.days_stale to say what last_updated actually is. The reference's 'across every district, every scheme, every citizen' was not adopted: this product covers one scheme, MPLADS.",
       "2026-09-11: fund_flow.cluster_paid 'Paid' became 'Sanctioned value' and fund_flow.edge_label now ends in 'sanctioned': build_graph.py sums sanctioned_amount_inr onto every edge, so 'Paid' overstated what the figure is (ultra-review F10). Added filters.panel_label and detail_panel.source_labels (rung 1 is the MPLADS public dashboard pull; other rungs keep their number until they have agreed copy).",
-      "2026-09-12: removed the specimen sheet as a nav-reachable page and its whole string block (design brief section 4 material: type scale, swatches, elevation, shape, component samples). It was a live token inspector for development, not a product view for officers or judges; the user asked for it out of the shipped frontend. Four real tabs remain: Dashboard, Inspection list, Fund flow, Reports. nav.specimen is removed rather than left unused."
+      "2026-09-12: removed the specimen sheet as a nav-reachable page and its whole string block (design brief section 4 material: type scale, swatches, elevation, shape, component samples). It was a live token inspector for development, not a product view for officers or judges; the user asked for it out of the shipped frontend. Four real tabs remain: Dashboard, Inspection list, Fund flow, Reports. nav.specimen is removed rather than left unused.",
+      "2026-09-14: added entity_alias_review for R-06's Fund Flow review queue. The copy presents ambiguous vendor-ID/name associations as records that may refer to the same company, keeps evidence work IDs visible, and uses the design-reviewed actions 'These are the same' / 'These are different'. No review is described as a verified identity decision."
     ]
   },
   "_measure": {
@@ -372,6 +373,36 @@
     "column_mp": "Members of Parliament",
     "column_agency": "Implementing agencies",
     "column_vendor": "Vendor"
+  },
+  "entity_alias_review": {
+    "pending_badge": "{count} pending",
+    "title": "Vendor records to review",
+    "body": "These vendor records may refer to the same company. Check the linked works before recording a decision.",
+    "table_caption": "Vendor records waiting for review",
+    "column_record": "Vendor record",
+    "column_reason": "Why it is here",
+    "column_evidence": "Evidence works",
+    "column_actions": "Review",
+    "canonical_id": "Vendor ID {id}",
+    "evidence_vendor": "{name} · Vendor ID {id}",
+    "reason": {
+      "identifier_has_multiple_labels": "This vendor ID appears with more than one name.",
+      "label_has_multiple_identifiers": "This vendor name appears under more than one vendor ID.",
+      "identifier_and_label_ambiguous": "This vendor ID has more than one name, and this name appears under more than one vendor ID."
+    },
+    "same": "These are the same",
+    "different": "These are different",
+    "reviewer_note": "Review decisions use the self-reported initials kept on this device.",
+    "saved": "Review decision saved.",
+    "empty_title": "No vendor records are waiting for review.",
+    "empty_body": "New candidates appear when a data snapshot contains an ambiguous vendor identity.",
+    "error_title": "Could not load vendor records for review.",
+    "error_body": "The fund-flow graph is still available. Retry the review queue.",
+    "save_error": "Could not save this review decision. Try again.",
+    "loading_screen_reader": "Loading vendor records for review.",
+    "previous_page": "Previous page",
+    "next_page": "Next page",
+    "page_summary": "Page {page} of {total_pages}"
   },
   "filters": {
     "state": "State",

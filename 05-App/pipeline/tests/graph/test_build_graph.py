@@ -23,6 +23,12 @@ def test_builds_on_the_real_fixture_and_validates_against_the_frozen_schema(
     assert not errors, [str(e) for e in errors]
 
 
+def test_real_fixture_build_matches_the_committed_graph_fixture(
+    works_fixture, scored_fixture, graph_fixture
+) -> None:
+    assert build_fund_flow_graph(works_fixture, scored_fixture) == graph_fixture
+
+
 def test_every_edge_endpoint_matches_a_real_node_id(works_fixture, scored_fixture) -> None:
     graph = build_fund_flow_graph(works_fixture, scored_fixture)
     node_ids = {n["id"] for n in graph["nodes"]}
@@ -87,16 +93,15 @@ def test_agency_present_vendor_null_gives_mp_agency_edge_but_no_agency_vendor_ed
 
 
 def test_vendor_present_agency_null_creates_vendor_node_but_no_edges() -> None:
-    # Not explicitly required by the task spec, but a sensible reading of
-    # "one node per distinct vendor_name, skip only if it is null": the
-    # node instruction and the edge instruction are independent, so an
-    # orphan vendor (no agency on the same record) still gets a node, just
-    # no edge touching it.
+    # Vendor identity comes from the source ID, independently of whether an
+    # agency exists on this record. The orphan still gets a node, just no
+    # edge touching it.
     records = [
         make_normalized(
             work_id="W1",
             mp_name="Some MP",
             implementing_agency=None,
+            vendor_id="orphan-7",
             vendor_name="Orphan Vendor",
         )
     ]
@@ -113,6 +118,7 @@ def test_edges_aggregate_work_count_amount_and_flagged_count_across_records() ->
             work_id="W1",
             mp_name="Agg MP",
             implementing_agency="Agg Agency",
+            vendor_id="agg-9",
             vendor_name="Agg Vendor",
             sanctioned_amount_inr=1_000_000.0,
         ),
@@ -120,6 +126,7 @@ def test_edges_aggregate_work_count_amount_and_flagged_count_across_records() ->
             work_id="W2",
             mp_name="Agg MP",
             implementing_agency="Agg Agency",
+            vendor_id="agg-9",
             vendor_name="Agg Vendor",
             sanctioned_amount_inr=2_500_000.5,
         ),
@@ -133,7 +140,7 @@ def test_edges_aggregate_work_count_amount_and_flagged_count_across_records() ->
     assert mp_agency["total_amount_inr"] == pytest.approx(3_500_000.5)
     assert mp_agency["flagged_work_count"] == 1
 
-    agency_vendor = next(e for e in graph["edges"] if e["target"] == "vendor_agg_vendor")
+    agency_vendor = next(e for e in graph["edges"] if e["target"] == "vendor_agg-9")
     assert agency_vendor["work_count"] == 2
     assert agency_vendor["total_amount_inr"] == pytest.approx(3_500_000.5)
     assert agency_vendor["flagged_work_count"] == 1
@@ -152,12 +159,14 @@ def test_edge_work_ids_are_every_contributing_work_id_sorted_and_deduplicated() 
             work_id="W1",
             mp_name="MP One",
             implementing_agency="Shared Agency",
+            vendor_id="shared-11",
             vendor_name="Shared Vendor",
         ),
         make_normalized(
             work_id="W2",
             mp_name="MP Two",
             implementing_agency="Shared Agency",
+            vendor_id="shared-11",
             vendor_name="Shared Vendor",
         ),
     ]
@@ -165,7 +174,7 @@ def test_edge_work_ids_are_every_contributing_work_id_sorted_and_deduplicated() 
 
     mp_one_edge = next(e for e in graph["edges"] if e["source"] == "mp_mp_one")
     mp_two_edge = next(e for e in graph["edges"] if e["source"] == "mp_mp_two")
-    agency_vendor_edge = next(e for e in graph["edges"] if e["target"] == "vendor_shared_vendor")
+    agency_vendor_edge = next(e for e in graph["edges"] if e["target"] == "vendor_shared-11")
 
     assert mp_one_edge["work_ids"] == ["W1"]
     assert mp_two_edge["work_ids"] == ["W2"]
@@ -180,12 +189,14 @@ def test_risk_weight_counts_one_per_flagged_work_touching_the_node() -> None:
             work_id="W1",
             mp_name="RW MP",
             implementing_agency="RW Agency",
+            vendor_id="risk-5",
             vendor_name="RW Vendor",
         ),
         make_normalized(
             work_id="W2",
             mp_name="RW MP",
             implementing_agency="RW Agency",
+            vendor_id="risk-5",
             vendor_name="RW Vendor",
         ),
     ]
@@ -198,7 +209,7 @@ def test_risk_weight_counts_one_per_flagged_work_touching_the_node() -> None:
     weights = {n["id"]: n["risk_weight"] for n in graph["nodes"]}
     assert weights["mp_rw_mp"] == 2.0
     assert weights["agency_rw_agency"] == 2.0
-    assert weights["vendor_rw_vendor"] == 2.0
+    assert weights["vendor_risk-5"] == 2.0
 
 
 def test_unflagged_and_unmatched_work_ids_do_not_raise_and_score_zero() -> None:
@@ -213,12 +224,13 @@ def test_unflagged_and_unmatched_work_ids_do_not_raise_and_score_zero() -> None:
     assert weights["agency_quiet_agency"] == 0.0
 
 
-def test_node_ids_are_stable_deterministic_slugs() -> None:
+def test_name_node_ids_are_slugs_and_vendor_id_is_collision_free_encoded() -> None:
     records = [
         make_normalized(
             work_id="W1",
             mp_name="Dr. A.P.J. Singh",
             implementing_agency="PWD Division #7",
+            vendor_id="PFMS/A B",
             vendor_name="Ganesh & Sons Pvt. Ltd.",
         )
     ]
@@ -226,7 +238,53 @@ def test_node_ids_are_stable_deterministic_slugs() -> None:
     node_ids = {n["id"] for n in graph["nodes"]}
     assert "mp_dr_a_p_j_singh" in node_ids
     assert "agency_pwd_division_7" in node_ids
-    assert "vendor_ganesh_sons_pvt_ltd" in node_ids
+    assert "vendor_PFMS%2FA%20B" in node_ids
+
+
+def test_same_vendor_label_with_different_source_ids_stays_distinct() -> None:
+    records = [
+        make_normalized(work_id="W1", vendor_id="source/1", vendor_name="DINESH KUMAR"),
+        make_normalized(work_id="W2", vendor_id="source 1", vendor_name="DINESH KUMAR"),
+    ]
+
+    graph = build_fund_flow_graph(records, [])
+
+    vendor_nodes = [node for node in graph["nodes"] if node["type"] == "Vendor"]
+    assert {node["id"] for node in vendor_nodes} == {
+        "vendor_source%2F1",
+        "vendor_source%201",
+    }
+    vendor_edges = [
+        edge for edge in graph["edges"] if edge["target"] in {node["id"] for node in vendor_nodes}
+    ]
+    assert len(vendor_edges) == 2
+
+
+def test_one_source_vendor_id_with_multiple_labels_builds_one_deterministic_node() -> None:
+    records = [
+        make_normalized(work_id="W3", vendor_id="42", vendor_name="Zeta Works"),
+        make_normalized(work_id="W1", vendor_id="42", vendor_name="Alpha Works"),
+        make_normalized(work_id="W2", vendor_id="42", vendor_name="Alpha Works"),
+    ]
+
+    first = build_fund_flow_graph(records, [])
+    second = build_fund_flow_graph(list(reversed(records)), [])
+
+    vendor_nodes = [node for node in first["nodes"] if node["type"] == "Vendor"]
+    assert vendor_nodes == [
+        {"id": "vendor_42", "type": "Vendor", "label": "Alpha Works", "risk_weight": 0.0}
+    ]
+    assert first == second
+
+
+def test_vendor_name_without_a_source_id_never_falls_back_to_name_identity() -> None:
+    graph = build_fund_flow_graph(
+        [make_normalized(work_id="W1", vendor_id=None, vendor_name="Common Name")],
+        [],
+    )
+
+    assert not any(node["type"] == "Vendor" for node in graph["nodes"])
+    assert not any(edge["target"].startswith("vendor_") for edge in graph["edges"])
 
 
 def test_build_fund_flow_graph_is_deterministic_on_the_real_fixture(

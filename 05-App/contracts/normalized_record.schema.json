@@ -12,6 +12,7 @@
     "mp_name",
     "tenure",
     "implementing_agency",
+    "vendor_id",
     "vendor_name",
     "work_category",
     "sanctioned_amount_inr",
@@ -48,6 +49,14 @@
     "implementing_agency": {
       "type": ["string", "null"],
       "description": "Degradable for the table, fatal for the fund-flow graph (M5)."
+    },
+    "vendor_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "description": "Stable source vendor identifier from the MPLADS expenditure tile. Null when the source provides no identifier; graph construction must never fall back to vendor_name as identity."
     },
     "vendor_name": {
       "type": ["string", "null"],

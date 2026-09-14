@@ -17,9 +17,10 @@ them:
                        into the inspection queue.
   Expenditure       -> one row per *payment event*, not per work, so a work
                        appears once per disbursement. Aggregated here into
-                       a per-work total and a single vendor name. This is
-                       the only tile carrying VENDOR_NAME at all, which is
-                       why the fund-flow graph depends on this join.
+                       a per-work total and one observed vendor ID/name
+                       pair. This is the only tile carrying VENDOR_ID and
+                       VENDOR_NAME, which is why the fund-flow graph depends
+                       on this join.
 
 Call signature for all three (corrected 2026-09-04; the earlier reading of
 poptable.js had `combo` as an int, which is why every probe returned
@@ -37,9 +38,10 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter, defaultdict
+from collections.abc import Iterable
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 # ingest/mplads_adapter.py -> parents[4] is "05-App/"
 _APP_ROOT = Path(__file__).resolve().parents[4]
@@ -87,10 +89,23 @@ _CATEGORY_RULES: list[tuple[str, tuple[str, ...]]] = [
     (
         "Health",
         (
-            "hospital", "dispensar", "phc ", "fwc", "anm", "ambulance",
-            "prosthetic", "wheel chair", "wheelchair", "hearing aid",
-            "differently abled", "veterinary", "semen", "insemination",
-            "medical", "sick and injured animals", "clinics for animals",
+            "hospital",
+            "dispensar",
+            "phc ",
+            "fwc",
+            "anm",
+            "ambulance",
+            "prosthetic",
+            "wheel chair",
+            "wheelchair",
+            "hearing aid",
+            "differently abled",
+            "veterinary",
+            "semen",
+            "insemination",
+            "medical",
+            "sick and injured animals",
+            "clinics for animals",
         ),
     ),
     # School before Community: library/anganwadi/creche buildings are
@@ -98,10 +113,21 @@ _CATEGORY_RULES: list[tuple[str, tuple[str, ...]]] = [
     (
         "School",
         (
-            "school", "college", "librar", "book", "anganwad", "crèche",
-            "creche", "educational", "laborator", "training equipment",
-            "training institution", "smart board", "visual display",
-            "farmers’ training", "farmers' training",
+            "school",
+            "college",
+            "librar",
+            "book",
+            "anganwad",
+            "crèche",
+            "creche",
+            "educational",
+            "laborator",
+            "training equipment",
+            "training institution",
+            "smart board",
+            "visual display",
+            "farmers’ training",
+            "farmers' training",
         ),
     ),
     # Protective/heritage works, claimed explicitly and before Road, for one
@@ -114,8 +140,14 @@ _CATEGORY_RULES: list[tuple[str, tuple[str, ...]]] = [
     (
         "Community Infrastructure",
         (
-            "flood control", "embankment", "protection wall", "retrofitting",
-            "heritage", "archaeological", "early warning", "anti-pollution",
+            "flood control",
+            "embankment",
+            "protection wall",
+            "retrofitting",
+            "heritage",
+            "archaeological",
+            "early warning",
+            "anti-pollution",
         ),
     ),
     # Road above Sanitation, deliberately. The single largest activity in
@@ -128,10 +160,24 @@ _CATEGORY_RULES: list[tuple[str, tuple[str, ...]]] = [
     (
         "Road",
         (
-            "road", "pathway", "footpath", "culvert", "bridge", "cycle track",
-            "cycle stand", "non-motorized", "staircase", "stair ghat",
-            "railway station", "railway crossing", "escalator", "travellator",
-            "passenger shed", "bus-shed", "bus-stop", "bus shed",
+            "road",
+            "pathway",
+            "footpath",
+            "culvert",
+            "bridge",
+            "cycle track",
+            "cycle stand",
+            "non-motorized",
+            "staircase",
+            "stair ghat",
+            "railway station",
+            "railway crossing",
+            "escalator",
+            "travellator",
+            "passenger shed",
+            "bus-shed",
+            "bus-stop",
+            "bus shed",
         ),
     ),
     # Sanitation before Drinking Water: "night soil collection" and
@@ -139,26 +185,54 @@ _CATEGORY_RULES: list[tuple[str, tuple[str, ...]]] = [
     (
         "Sanitation",
         (
-            "toilet", "bathroom", "drain", "gutter", "sewer", "garbage",
-            "effluent", "sanitary", "sanitation", "biodigester",
-            "night soil", "incinerator",
+            "toilet",
+            "bathroom",
+            "drain",
+            "gutter",
+            "sewer",
+            "garbage",
+            "effluent",
+            "sanitary",
+            "sanitation",
+            "biodigester",
+            "night soil",
+            "incinerator",
         ),
     ),
     (
         "Drinking Water",
         (
-            "drinking water", "tube-well", "tubewell", "borewell", "bore well",
-            "hand pump", "handpump", "water tanker", "water tank",
-            "water plant", "supply pipeline", "rainwater", "rain water",
-            "irrigation", "pond", "lake", "ground water", "reef",
+            "drinking water",
+            "tube-well",
+            "tubewell",
+            "borewell",
+            "bore well",
+            "hand pump",
+            "handpump",
+            "water tanker",
+            "water tank",
+            "water plant",
+            "supply pipeline",
+            "rainwater",
+            "rain water",
+            "irrigation",
+            "pond",
+            "lake",
+            "ground water",
+            "reef",
             "motor boats",
         ),
     ),
     (
         "Electricity",
         (
-            "light", "electricity", "electric vehicle", "energy",
-            "solar", "wi-fi", "charging station",
+            "light",
+            "electricity",
+            "electric vehicle",
+            "energy",
+            "solar",
+            "wi-fi",
+            "charging station",
         ),
     ),
 ]
@@ -295,11 +369,17 @@ class _ExpenditureRollup:
     payment events.
     """
 
-    __slots__ = ("total_inr", "vendor_counts", "last_activity")
+    __slots__ = (
+        "total_inr",
+        "vendor_counts",
+        "vendor_ids_by_name",
+        "last_activity",
+    )
 
     def __init__(self) -> None:
         self.total_inr = 0.0
         self.vendor_counts: Counter[str] = Counter()
+        self.vendor_ids_by_name: dict[str, Counter[str]] = defaultdict(Counter)
         # Latest EXPENDITURE_DATE seen for this work, ISO. Unlike the
         # amount, this counts in-progress payments too: a disbursement that
         # has been initiated is activity on the work, which is exactly what
@@ -321,6 +401,24 @@ class _ExpenditureRollup:
         top = max(self.vendor_counts.values())
         return sorted(name for name, n in self.vendor_counts.items() if n == top)[0]
 
+    def vendor_id(self) -> str | None:
+        """The source ID observed with :meth:`vendor`'s selected name.
+
+        Name and identifier cannot be selected from independent modal
+        populations: ties can otherwise pair an ID from one payment event
+        with a name from another, fabricating an identity the source never
+        contained. The name rule stays exactly as before; within that
+        name's real events, the modal ID wins and ties break lexically.
+        """
+        vendor = self.vendor()
+        if vendor is None:
+            return None
+        counts = self.vendor_ids_by_name[vendor]
+        if not counts:
+            return None
+        top = max(counts.values())
+        return sorted(vendor_id for vendor_id, n in counts.items() if n == top)[0]
+
 
 def rollup_expenditure(expenditure_rows: Iterable[dict[str, Any]]) -> dict[int, _ExpenditureRollup]:
     """work_id -> settled total and modal vendor. Rows whose payment has not
@@ -336,6 +434,9 @@ def rollup_expenditure(expenditure_rows: Iterable[dict[str, Any]]) -> dict[int, 
         vendor = _clean(row.get("VENDOR_NAME"))
         if vendor:
             rollup.vendor_counts[vendor] += 1
+            vendor_id = _clean(row.get("VENDOR_ID"))
+            if vendor_id:
+                rollup.vendor_ids_by_name[vendor][vendor_id] += 1
         rollup.note_activity(_parse_ddmmmyyyy(row.get("EXPENDITURE_DATE")))
         if row.get("WORK_STATUS") == _SETTLED_PAYMENT_STATUS:
             rollup.total_inr += _number(row.get("FUND_DISBURSED_AMT"))
@@ -407,10 +508,9 @@ def adapt(
                 "state": _clean(row.get("STATE_NAME")),
                 "constituency": _clean(row.get("CONSTITUENCY")),
                 "mp_name": _clean(row.get("MP_NAME")),
-                "tenure": _tenure_range(
-                    row.get("TENURE_START_DATE"), row.get("TENURE_END_DATE")
-                ),
+                "tenure": _tenure_range(row.get("TENURE_START_DATE"), row.get("TENURE_END_DATE")),
                 "implementing_agency": _clean(row.get("IDA_NAME")),
+                "vendor_id": rollup.vendor_id() if rollup else None,
                 "vendor_name": rollup.vendor() if rollup else None,
                 "work_category": category_for(row.get("ACTIVITY_NAME")),
                 "sanctioned_amount_inr": _number(row.get("SANCTION_AMOUNT")),

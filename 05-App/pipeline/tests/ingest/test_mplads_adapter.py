@@ -13,7 +13,6 @@ import json
 from datetime import date
 
 import pytest
-
 from nidhinetra_pipeline.ingest.mplads_adapter import (
     CATEGORY_FALLBACK,
     VALID_CATEGORIES,
@@ -48,11 +47,18 @@ def sanctioned_row(work_id: int, **overrides):
     return row
 
 
-def payment_row(work_id: int, amount: float, vendor: str, status="Payment Success"):
+def payment_row(
+    work_id: int,
+    amount: float,
+    vendor: str,
+    status="Payment Success",
+    *,
+    vendor_id: int | str | None = 1,
+):
     return {
         "WORK_RECOMMENDATION_DTL_ID": work_id,
         "VENDOR_NAME": vendor,
-        "VENDOR_ID": 1,
+        "VENDOR_ID": vendor_id,
         "FUND_DISBURSED_AMT": amount,
         "WORK_STATUS": status,
         "EXPENDITURE_DATE": "21-Aug-2026",
@@ -122,10 +128,16 @@ class TestActivityAndCategory:
 
     def test_every_category_returned_is_in_the_schema_enum(self):
         samples = [
-            "Street lights", "Construction of roads", "Installing hand pumps",
-            "Purchase of hospital equipment", "Construction of public toilets",
-            "Construction of stadiums", "Setting up crops conservation facilities",
-            "", None, "wholly unrecognisable input",
+            "Street lights",
+            "Construction of roads",
+            "Installing hand pumps",
+            "Purchase of hospital equipment",
+            "Construction of public toilets",
+            "Construction of stadiums",
+            "Setting up crops conservation facilities",
+            "",
+            None,
+            "wholly unrecognisable input",
         ]
         assert {category_for(s) for s in samples} <= VALID_CATEGORIES
 
@@ -142,9 +154,7 @@ class TestExpenditureRollup:
         # Money committed but not disbursed is not money spent. Counting it
         # would suppress the stalled_work flag on exactly the works whose
         # payments are stuck, which is the case that detector exists for.
-        rollups = rollup_expenditure(
-            [payment_row(1, 999.0, "ACME", status="Payment In-Progress")]
-        )
+        rollups = rollup_expenditure([payment_row(1, 999.0, "ACME", status="Payment In-Progress")])
         assert rollups[1].total_inr == 0.0
         assert rollups[1].vendor() == "ACME"
 
@@ -160,6 +170,29 @@ class TestExpenditureRollup:
         # could produce two different snapshots.
         rollups = rollup_expenditure([payment_row(1, 1.0, "ZEBRA"), payment_row(1, 1.0, "ALPHA")])
         assert rollups[1].vendor() == "ALPHA"
+
+    def test_vendor_id_is_selected_from_the_same_observed_pair_as_the_modal_name(self):
+        """Selecting the name and ID independently can fabricate an identity.
+
+        Both IDs and both names tie here. The existing name rule chooses
+        ALPHA alphabetically, so its ID must come from the ALPHA event, not
+        from the independently-smallest ID on the ZEBRA event.
+        """
+        rollups = rollup_expenditure(
+            [
+                payment_row(1, 1.0, "ZEBRA", vendor_id=1),
+                payment_row(1, 1.0, "ALPHA", vendor_id=2),
+            ]
+        )
+
+        assert rollups[1].vendor() == "ALPHA"
+        assert rollups[1].vendor_id() == "2"
+
+    def test_vendor_id_is_null_when_the_modal_name_has_no_source_identifier(self):
+        rollups = rollup_expenditure([payment_row(1, 1.0, "UNIDENTIFIED VENDOR", vendor_id=None)])
+
+        assert rollups[1].vendor() == "UNIDENTIFIED VENDOR"
+        assert rollups[1].vendor_id() is None
 
     def test_rows_without_a_work_id_are_skipped(self):
         rollups = rollup_expenditure([{"VENDOR_NAME": "X", "FUND_DISBURSED_AMT": 5.0}])
@@ -178,6 +211,7 @@ class TestAdapt:
         r = records[0]
         assert r["work_id"] == "1"
         assert r["vendor_name"] == "SHRINIVAS CONTRACTOR"
+        assert r["vendor_id"] == "1"
         assert r["expenditure_amount_inr"] == 250.0
         assert r["sanctioned_amount_inr"] == 497185.0
 
@@ -235,6 +269,7 @@ class TestAdapt:
         r = adapt([sanctioned_row(1)], [], [], as_of=AS_OF)[0]
         assert r["expenditure_amount_inr"] == 0.0
         assert r["vendor_name"] is None
+        assert r["vendor_id"] is None
 
     def test_negative_disbursement_is_floored_at_zero(self):
         # Correction entries appear upstream as negative amounts; the schema

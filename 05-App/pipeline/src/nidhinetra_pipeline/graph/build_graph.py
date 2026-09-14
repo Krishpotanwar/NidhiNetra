@@ -23,9 +23,10 @@ from __future__ import annotations
 import json
 import re
 import statistics
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import jsonschema
 
@@ -84,6 +85,22 @@ def _node_id(node_type: str, label: str) -> str:
     return f"{_TYPE_PREFIX[node_type]}_{_slugify(label)}"
 
 
+def _vendor_node_id(vendor_id: str) -> str:
+    """Encode a source identifier without collapsing distinct identities.
+
+    `_slugify()` is appropriate for display labels, but it deliberately
+    folds case and punctuation. Applying it to a source ID could therefore
+    recreate R-06's false merge under a different spelling. Percent
+    encoding is stdlib-only, deterministic and reversible.
+    """
+    return f"{_TYPE_PREFIX['Vendor']}_{quote(vendor_id, safe='')}"
+
+
+def _modal_label(counts: dict[str, int]) -> str:
+    top = max(counts.values())
+    return sorted(label for label, count in counts.items() if count == top)[0]
+
+
 def _new_edge_agg() -> dict[str, Any]:
     return {"work_count": 0, "total_amount_inr": 0.0, "flagged_work_count": 0, "work_ids": set()}
 
@@ -96,9 +113,10 @@ def build_fund_flow_graph(
 
     Nodes: one per distinct mp_name, one per distinct implementing_agency
     (records where it is null contribute no Agency node), one per distinct
-    vendor_name (records where it is null contribute no Vendor node). Node
-    ids are stable deterministic slugs -- see `_node_id` -- so the same
-    input always produces the same ids.
+    source vendor_id with vendor_name used only as its display label
+    (records where either is null contribute no Vendor node). MP and Agency
+    ids are stable deterministic slugs; Vendor ids use collision-free source
+    identifier encoding so two IDs sharing a common name remain distinct.
 
     Edges: MP -> Agency and Agency -> Vendor, each aggregating work_count,
     total_amount_inr (sum of sanctioned_amount_inr across every
@@ -136,6 +154,7 @@ def build_fund_flow_graph(
     # does not depend on input record order.
     node_meta: dict[str, tuple[str, str]] = {}
     risk_weight: dict[str, float] = defaultdict(float)
+    vendor_labels: dict[str, Counter[str]] = defaultdict(Counter)
 
     mp_agency_edges: dict[tuple[str, str], dict[str, Any]] = {}
     agency_vendor_edges: dict[tuple[str, str], dict[str, Any]] = {}
@@ -166,20 +185,24 @@ def build_fund_flow_graph(
                 edge["flagged_work_count"] += 1
 
         vendor_name = record.get("vendor_name")
-        vendor_id: str | None = None
-        if vendor_name:
-            vendor_id = _node_id("Vendor", vendor_name)
-            node_meta.setdefault(vendor_id, ("Vendor", vendor_name))
+        source_vendor_id = record.get("vendor_id")
+        vendor_node_id: str | None = None
+        if vendor_name and source_vendor_id:
+            vendor_node_id = _vendor_node_id(source_vendor_id)
+            vendor_labels[vendor_node_id][vendor_name] += 1
             if is_flagged:
-                risk_weight[vendor_id] += 1.0
+                risk_weight[vendor_node_id] += 1.0
 
-        if agency_id is not None and vendor_id is not None:
-            edge = agency_vendor_edges.setdefault((agency_id, vendor_id), _new_edge_agg())
+        if agency_id is not None and vendor_node_id is not None:
+            edge = agency_vendor_edges.setdefault((agency_id, vendor_node_id), _new_edge_agg())
             edge["work_count"] += 1
             edge["total_amount_inr"] += amount
             edge["work_ids"].add(work_id)
             if is_flagged:
                 edge["flagged_work_count"] += 1
+
+    for vendor_node_id, labels in vendor_labels.items():
+        node_meta[vendor_node_id] = ("Vendor", _modal_label(labels))
 
     nodes = [
         {

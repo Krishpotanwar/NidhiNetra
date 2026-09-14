@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nidhinetra.local/contracts/entity_alias_review.schema.json",
+  "title": "EntityAliasReview",
+  "description": "R-06 append-only human review of an entity-alias candidate. reviewed_at and supersedes are assigned by the server; a later decision appends a row that supersedes the current one rather than overwriting history.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "review_id",
+    "candidate_id",
+    "status",
+    "reviewed_by",
+    "reviewed_at",
+    "reviewer_note",
+    "supersedes"
+  ],
+  "properties": {
+    "review_id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Server-assigned append-only review identity."
+    },
+    "candidate_id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "References entity_alias_candidates.candidate_id."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["confirmed_merge", "rejected_distinct"],
+      "description": "Stored decision code. Officer-facing action copy lives in strings.json."
+    },
+    "reviewed_by": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Self-reported reviewer name or initials; this prototype has no authentication."
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp assigned by the server, never accepted from the client."
+    },
+    "reviewer_note": {
+      "type": "string",
+      "description": "Optional officer note, always present and possibly empty."
+    },
+    "supersedes": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "The previously-current review amended by this row, or null for the first review."
+    }
+  }
+}

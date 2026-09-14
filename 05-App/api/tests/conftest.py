@@ -18,6 +18,7 @@ from nidhinetra_api import db
 from nidhinetra_api import snapshot as api_snapshot
 from nidhinetra_api.main import app
 from nidhinetra_pipeline.build_snapshot import build_snapshot
+from nidhinetra_pipeline.outcomes import alias_store
 from nidhinetra_pipeline.outcomes import store as outcomes_store
 
 # api/tests/conftest.py -> parents[2] is "05-App/"
@@ -75,6 +76,7 @@ def isolated_outcomes_db(tmp_path: Path) -> Path:
     """
     db_path = tmp_path / "outcomes.db"
     outcomes_store.DEFAULT_DB_PATH = db_path
+    alias_store.DEFAULT_DB_PATH = db_path
     return db_path
 
 

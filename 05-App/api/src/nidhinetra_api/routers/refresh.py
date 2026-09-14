@@ -18,6 +18,7 @@ from fastapi import APIRouter, HTTPException
 
 from .. import snapshot
 from ..models import Envelope
+from . import entity_aliases
 
 router = APIRouter(prefix="/api/refresh", tags=["refresh"])
 
@@ -37,6 +38,7 @@ def refresh() -> Envelope:
             ),
         )
     manifest = snapshot.rebuild()
+    entity_aliases.sync_alias_candidates_from_snapshot()
     return Envelope(success=True, data=manifest)
 
 

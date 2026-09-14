@@ -16,6 +16,7 @@ import { GraphView } from "./GraphView";
 import { DotCanvas } from "@/components/shared/DotCanvas";
 import { ClusterInFocus } from "./ClusterInFocus";
 import { ConcentrationFilter } from "./ConcentrationFilter";
+import { AliasReviewQueue } from "./AliasReviewQueue";
 import styles from "./FundFlowClient.module.css";
 
 const s = STRINGS.fund_flow;
@@ -149,6 +150,8 @@ export function FundFlowClient() {
           )}
         </aside>
       </div>
+
+      <AliasReviewQueue />
 
       <p className={styles.caveat}>{s.scale_caveat}</p>
       {!isDeepLink && matching.length > listed.length && (

@@ -91,40 +91,40 @@
       "risk_weight": 1.0
     },
     {
-      "id": "vendor_bharat_nirman_enterprises",
-      "type": "Vendor",
-      "label": "Bharat Nirman Enterprises",
-      "risk_weight": 2.0
-    },
-    {
-      "id": "vendor_ganesh_infra_pvt_ltd",
-      "type": "Vendor",
-      "label": "Ganesh Infra Pvt Ltd",
-      "risk_weight": 1.0
-    },
-    {
-      "id": "vendor_national_roadways_contractors",
-      "type": "Vendor",
-      "label": "National Roadways Contractors",
-      "risk_weight": 0.0
-    },
-    {
-      "id": "vendor_om_builders",
-      "type": "Vendor",
-      "label": "Om Builders",
-      "risk_weight": 1.0
-    },
-    {
-      "id": "vendor_rajdhani_civil_works",
+      "id": "vendor_SYNTH-V001",
       "type": "Vendor",
       "label": "Rajdhani Civil Works",
       "risk_weight": 1.0
     },
     {
-      "id": "vendor_shree_balaji_construction",
+      "id": "vendor_SYNTH-V002",
+      "type": "Vendor",
+      "label": "Ganesh Infra Pvt Ltd",
+      "risk_weight": 1.0
+    },
+    {
+      "id": "vendor_SYNTH-V003",
       "type": "Vendor",
       "label": "Shree Balaji Construction",
       "risk_weight": 2.0
+    },
+    {
+      "id": "vendor_SYNTH-V004",
+      "type": "Vendor",
+      "label": "Om Builders",
+      "risk_weight": 1.0
+    },
+    {
+      "id": "vendor_SYNTH-V005",
+      "type": "Vendor",
+      "label": "Bharat Nirman Enterprises",
+      "risk_weight": 2.0
+    },
+    {
+      "id": "vendor_SYNTH-V006",
+      "type": "Vendor",
+      "label": "National Roadways Contractors",
+      "risk_weight": 0.0
     }
   ],
   "edges": [
@@ -294,7 +294,7 @@
     },
     {
       "source": "agency_municipal_corporation_works_cell",
-      "target": "vendor_ganesh_infra_pvt_ltd",
+      "target": "vendor_SYNTH-V002",
       "work_count": 1,
       "total_amount_inr": 2177947.3,
       "flagged_work_count": 0,
@@ -304,7 +304,7 @@
     },
     {
       "source": "agency_municipal_corporation_works_cell",
-      "target": "vendor_shree_balaji_construction",
+      "target": "vendor_SYNTH-V003",
       "work_count": 2,
       "total_amount_inr": 3729951.31,
       "flagged_work_count": 1,
@@ -315,7 +315,7 @@
     },
     {
       "source": "agency_phed_division_2",
-      "target": "vendor_bharat_nirman_enterprises",
+      "target": "vendor_SYNTH-V005",
       "work_count": 1,
       "total_amount_inr": 3085362.5,
       "flagged_work_count": 1,
@@ -325,7 +325,7 @@
     },
     {
       "source": "agency_pwd_division_3",
-      "target": "vendor_shree_balaji_construction",
+      "target": "vendor_SYNTH-V003",
       "work_count": 1,
       "total_amount_inr": 2600136.62,
       "flagged_work_count": 0,
@@ -335,17 +335,7 @@
     },
     {
       "source": "agency_pwd_division_7",
-      "target": "vendor_national_roadways_contractors",
-      "work_count": 1,
-      "total_amount_inr": 1539140.44,
-      "flagged_work_count": 0,
-      "work_ids": [
-        "MPLADS-FX-0013"
-      ]
-    },
-    {
-      "source": "agency_pwd_division_7",
-      "target": "vendor_shree_balaji_construction",
+      "target": "vendor_SYNTH-V003",
       "work_count": 1,
       "total_amount_inr": 3216456.95,
       "flagged_work_count": 1,
@@ -354,8 +344,18 @@
       ]
     },
     {
+      "source": "agency_pwd_division_7",
+      "target": "vendor_SYNTH-V006",
+      "work_count": 1,
+      "total_amount_inr": 1539140.44,
+      "flagged_work_count": 0,
+      "work_ids": [
+        "MPLADS-FX-0013"
+      ]
+    },
+    {
       "source": "agency_rural_engineering_services",
-      "target": "vendor_om_builders",
+      "target": "vendor_SYNTH-V004",
       "work_count": 1,
       "total_amount_inr": 2117680.65,
       "flagged_work_count": 0,
@@ -365,17 +365,7 @@
     },
     {
       "source": "agency_state_electricity_board_civil_wing",
-      "target": "vendor_bharat_nirman_enterprises",
-      "work_count": 1,
-      "total_amount_inr": 3769891.63,
-      "flagged_work_count": 1,
-      "work_ids": [
-        "MPLADS-FX-0011"
-      ]
-    },
-    {
-      "source": "agency_state_electricity_board_civil_wing",
-      "target": "vendor_ganesh_infra_pvt_ltd",
+      "target": "vendor_SYNTH-V002",
       "work_count": 1,
       "total_amount_inr": 2741938.0,
       "flagged_work_count": 0,
@@ -385,7 +375,7 @@
     },
     {
       "source": "agency_state_electricity_board_civil_wing",
-      "target": "vendor_shree_balaji_construction",
+      "target": "vendor_SYNTH-V003",
       "work_count": 1,
       "total_amount_inr": 2749406.36,
       "flagged_work_count": 0,
@@ -394,39 +384,18 @@
       ]
     },
     {
-      "source": "agency_zilla_parishad_works_dept",
-      "target": "vendor_ganesh_infra_pvt_ltd",
-      "work_count": 2,
-      "total_amount_inr": 5439911.59,
+      "source": "agency_state_electricity_board_civil_wing",
+      "target": "vendor_SYNTH-V005",
+      "work_count": 1,
+      "total_amount_inr": 3769891.63,
       "flagged_work_count": 1,
       "work_ids": [
-        "MPLADS-FX-0014",
-        "MPLADS-FX-0019"
+        "MPLADS-FX-0011"
       ]
     },
     {
       "source": "agency_zilla_parishad_works_dept",
-      "target": "vendor_national_roadways_contractors",
-      "work_count": 1,
-      "total_amount_inr": 990881.71,
-      "flagged_work_count": 0,
-      "work_ids": [
-        "MPLADS-FX-0020"
-      ]
-    },
-    {
-      "source": "agency_zilla_parishad_works_dept",
-      "target": "vendor_om_builders",
-      "work_count": 1,
-      "total_amount_inr": 700123.56,
-      "flagged_work_count": 1,
-      "work_ids": [
-        "MPLADS-FX-0008"
-      ]
-    },
-    {
-      "source": "agency_zilla_parishad_works_dept",
-      "target": "vendor_rajdhani_civil_works",
+      "target": "vendor_SYNTH-V001",
       "work_count": 2,
       "total_amount_inr": 4948723.7,
       "flagged_work_count": 1,
@@ -437,12 +406,43 @@
     },
     {
       "source": "agency_zilla_parishad_works_dept",
-      "target": "vendor_shree_balaji_construction",
+      "target": "vendor_SYNTH-V002",
+      "work_count": 2,
+      "total_amount_inr": 5439911.59,
+      "flagged_work_count": 1,
+      "work_ids": [
+        "MPLADS-FX-0014",
+        "MPLADS-FX-0019"
+      ]
+    },
+    {
+      "source": "agency_zilla_parishad_works_dept",
+      "target": "vendor_SYNTH-V003",
       "work_count": 1,
       "total_amount_inr": 907588.04,
       "flagged_work_count": 0,
       "work_ids": [
         "MPLADS-FX-0003"
+      ]
+    },
+    {
+      "source": "agency_zilla_parishad_works_dept",
+      "target": "vendor_SYNTH-V004",
+      "work_count": 1,
+      "total_amount_inr": 700123.56,
+      "flagged_work_count": 1,
+      "work_ids": [
+        "MPLADS-FX-0008"
+      ]
+    },
+    {
+      "source": "agency_zilla_parishad_works_dept",
+      "target": "vendor_SYNTH-V006",
+      "work_count": 1,
+      "total_amount_inr": 990881.71,
+      "flagged_work_count": 0,
+      "work_ids": [
+        "MPLADS-FX-0020"
       ]
     }
   ]

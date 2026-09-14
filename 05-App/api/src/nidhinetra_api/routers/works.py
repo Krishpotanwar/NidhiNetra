@@ -52,7 +52,7 @@ _MERGED_SELECT = """
     SELECT
         works.work_id, works.state, works.constituency, works.mp_name,
         works.tenure, works.implementing_agency, works.vendor_name,
-        works.work_category, works.sanctioned_amount_inr,
+        works.vendor_id, works.work_category, works.sanctioned_amount_inr,
         works.expenditure_amount_inr, works.sanction_date,
         works.completion_status, works.last_updated, works.source_rung,
         scored.inspection_rank, scored.risk_score, scored.flags,
@@ -70,6 +70,7 @@ _SEARCH_COLUMNS = (
     "works.mp_name",
     "works.state",
     "works.vendor_name",
+    "works.vendor_id",
 )
 
 # flags is JSON text in scored.parquet (db.JSON_ENCODED_SCORED_COLUMNS), so
@@ -120,9 +121,7 @@ def _where(query: WorksQuery) -> tuple[str, list[Any]]:
     return (" WHERE " + " AND ".join(clauses) if clauses else ""), params
 
 
-def _ordered_population(
-    con: duckdb.DuckDBPyConnection, query: WorksQuery
-) -> list[dict[str, Any]]:
+def _ordered_population(con: duckdb.DuckDBPyConnection, query: WorksQuery) -> list[dict[str, Any]]:
     """The whole filtered set in inspection_rank order, carrying only what
     the year filter, the counts and pagination need. Always sorted by
     inspection_rank: "Filters narrow the set, never change the sort"

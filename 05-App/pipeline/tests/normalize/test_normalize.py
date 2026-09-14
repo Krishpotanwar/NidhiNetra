@@ -6,7 +6,6 @@ import copy
 from datetime import date
 
 import pytest
-
 from nidhinetra_pipeline.normalize.normalize import (
     SCHEMA_PATH,
     NormalizeValidationError,
@@ -20,6 +19,7 @@ VALID_RAW_RECORD = {
     "mp_name": "Test MP",
     "tenure": "2024-2029",
     "implementing_agency": "PWD Division 1",
+    "vendor_id": "vendor-42",
     "vendor_name": "Test Vendor Pvt Ltd",
     "work_category": "Road",
     "sanctioned_amount_inr": 1000000.0,
@@ -41,6 +41,7 @@ def test_normalize_happy_path_stamps_source_rung():
     assert len(result) == 1
     record = result[0]
     assert record["work_id"] == "MPLADS-TEST-0001"
+    assert record["vendor_id"] == "vendor-42"
     assert record["source_rung"] == 1
 
 
@@ -79,13 +80,29 @@ def test_normalize_defaults_last_updated_to_today_when_missing():
     assert result[0]["last_updated"] == date.today().isoformat()
 
 
-def test_normalize_allows_null_implementing_agency_and_vendor():
-    raw = dict(VALID_RAW_RECORD, implementing_agency=None, vendor_name=None)
+def test_normalize_allows_null_implementing_agency_and_vendor_identity():
+    raw = dict(
+        VALID_RAW_RECORD,
+        implementing_agency=None,
+        vendor_id=None,
+        vendor_name=None,
+    )
 
     result = normalize_records([raw], source_rung=5)
 
     assert result[0]["implementing_agency"] is None
+    assert result[0]["vendor_id"] is None
     assert result[0]["vendor_name"] is None
+
+
+def test_normalize_maps_a_missing_vendor_id_to_explicit_null_for_old_caches():
+    raw = dict(VALID_RAW_RECORD)
+    del raw["vendor_id"]
+
+    result = normalize_records([raw], source_rung=5)
+
+    assert "vendor_id" in result[0]
+    assert result[0]["vendor_id"] is None
 
 
 # --------------------------------------------------------------------------

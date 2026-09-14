@@ -4,9 +4,37 @@ individually, pagination, and the envelope shape.
 
 from __future__ import annotations
 
+import shutil
 from collections import Counter
 
+import duckdb
+from nidhinetra_api import db
 from nidhinetra_pipeline.risk.peer_groups import financial_year_of
+
+
+def test_legacy_snapshot_without_vendor_id_stays_queryable(tmp_path):
+    """Deploying R-06 must not strand the committed pre-R-06 snapshot.
+
+    The checked-in production Parquet predates ``vendor_id``.  Until an
+    operator performs an authorised rebuild, the API compatibility view
+    must expose that new field as null rather than failing every works
+    query with a DuckDB binder error.
+    """
+    legacy_snapshot = tmp_path / "legacy-snapshot"
+    legacy_snapshot.mkdir()
+    works_path = legacy_snapshot / "works.parquet"
+    with duckdb.connect(":memory:") as connection:
+        connection.execute(
+            "CREATE TABLE legacy_works AS SELECT * EXCLUDE (vendor_id) FROM read_parquet(?)",
+            [str(db.SNAPSHOT_DIR / "works.parquet")],
+        )
+        connection.execute("COPY legacy_works TO ? (FORMAT PARQUET)", [str(works_path)])
+    shutil.copyfile(db.SNAPSHOT_DIR / "scored.parquet", legacy_snapshot / "scored.parquet")
+
+    with db.connect(legacy_snapshot) as connection:
+        rows = db.rows_as_dicts(connection, "SELECT vendor_id FROM works LIMIT 1")
+
+    assert rows == [{"vendor_id": None}]
 
 
 def test_list_works_returns_200_and_envelope_shape(client):

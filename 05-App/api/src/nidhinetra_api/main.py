@@ -26,7 +26,7 @@ from nidhinetra_pipeline.build_snapshot import SnapshotDowngradeError
 
 from . import snapshot
 from .db import SnapshotNotReadyError
-from .routers import graph, inspections, refresh, stats, works
+from .routers import entity_aliases, graph, inspections, refresh, stats, works
 
 logger = logging.getLogger("nidhinetra_api")
 
@@ -45,6 +45,7 @@ async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
         manifest["source"],
         manifest["generated_at"],
     )
+    entity_aliases.sync_alias_candidates_from_snapshot()
     yield
 
 
@@ -134,6 +135,7 @@ app.include_router(graph.router)
 app.include_router(stats.router)
 app.include_router(refresh.router)
 app.include_router(inspections.router)
+app.include_router(entity_aliases.router)
 
 
 def _envelope_error(status_code: int, message: str) -> JSONResponse:
@@ -156,23 +158,17 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
-    detail = "; ".join(
-        f"{'.'.join(str(p) for p in e['loc'])}: {e['msg']}" for e in exc.errors()
-    )
+    detail = "; ".join(f"{'.'.join(str(p) for p in e['loc'])}: {e['msg']}" for e in exc.errors())
     return _envelope_error(422, f"Invalid request: {detail}")
 
 
 @app.exception_handler(SnapshotNotReadyError)
-async def snapshot_not_ready_handler(
-    request: Request, exc: SnapshotNotReadyError
-) -> JSONResponse:
+async def snapshot_not_ready_handler(request: Request, exc: SnapshotNotReadyError) -> JSONResponse:
     return _envelope_error(503, str(exc))
 
 
 @app.exception_handler(SnapshotDowngradeError)
-async def snapshot_downgrade_handler(
-    request: Request, exc: SnapshotDowngradeError
-) -> JSONResponse:
+async def snapshot_downgrade_handler(request: Request, exc: SnapshotDowngradeError) -> JSONResponse:
     # Eng review, 2026-09-05: refresh on a machine whose data/raw/ cache is
     # empty (any machine but the one that pulled it, since data/raw/ is
     # gitignored) used to silently replace the real snapshot with the CP0

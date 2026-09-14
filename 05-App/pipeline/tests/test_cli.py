@@ -41,6 +41,7 @@ VALID_RAW_RECORD = {
     "mp_name": "Test MP",
     "tenure": "2024-2029",
     "implementing_agency": "PWD Division 1",
+    "vendor_id": "test-vendor-id",
     "vendor_name": "Test Vendor Pvt Ltd",
     "work_category": "Road",
     "sanctioned_amount_inr": 1000000.0,
@@ -236,8 +237,7 @@ def test_malformed_pull_is_rejected_and_previous_snapshot_untouched(
     assert good_path.read_bytes() == good_bytes_before
     assert cache.latest_good(raw_dir=raw_dir) == good_path
     assert len(list(raw_dir.glob("*.json"))) == 1, (
-        "a malformed pull must never produce a second file in raw_dir, "
-        "cached or otherwise"
+        "a malformed pull must never produce a second file in raw_dir, cached or otherwise"
     )
     assert not (snapshot_dir / "manifest.json").exists(), (
         "a rejected pull must never reach the served-snapshot rebuild either"
@@ -322,9 +322,7 @@ def _tile_payloads(**overrides: dict) -> dict[str, dict]:
 
 
 def test_pull_live_writes_all_three_tiles(raw_dir):
-    sanctioned_payload = {
-        "Works Sanctioned": json.dumps([{"WORK_RECOMMENDATION_DTL_ID": 1}])
-    }
+    sanctioned_payload = {"Works Sanctioned": json.dumps([{"WORK_RECOMMENDATION_DTL_ID": 1}])}
     fake_client = _FakeMpladsClient(_tile_payloads(**{"Works Sanctioned": sanctioned_payload}))
 
     exit_code = cli.pull_live(raw_dir=raw_dir, client=fake_client)
@@ -374,16 +372,13 @@ def test_pull_live_failure_on_any_tile_leaves_raw_dir_completely_untouched(raw_d
     assert list(raw_dir.iterdir()) == [pre_existing]
     assert pre_existing.read_text(encoding="utf-8") == '{"untouched": true}'
     assert not (raw_dir / cli.mplads_adapter.SANCTIONED_FILE).exists(), (
-        "the tile fetched before the failure must not be written either -- "
-        "all three or none"
+        "the tile fetched before the failure must not be written either -- all three or none"
     )
 
 
 def test_pull_live_overwrites_a_previous_pulls_stale_tiles_on_success(raw_dir):
     stale = {"Works Sanctioned": json.dumps([{"WORK_RECOMMENDATION_DTL_ID": "stale"}])}
-    (raw_dir / cli.mplads_adapter.SANCTIONED_FILE).write_text(
-        json.dumps(stale), encoding="utf-8"
-    )
+    (raw_dir / cli.mplads_adapter.SANCTIONED_FILE).write_text(json.dumps(stale), encoding="utf-8")
 
     fresh = {"Works Sanctioned": json.dumps([{"WORK_RECOMMENDATION_DTL_ID": "fresh"}])}
     fake_client = _FakeMpladsClient(_tile_payloads(**{"Works Sanctioned": fresh}))

@@ -34,6 +34,11 @@ def graph_schema() -> dict[str, Any]:
     return json.loads((CONTRACTS_DIR / "fund_flow_graph.schema.json").read_text())
 
 
+@pytest.fixture(scope="session")
+def graph_fixture() -> dict[str, Any]:
+    return json.loads((CONTRACTS_DIR / "fixtures" / "graph.fixture.json").read_text())
+
+
 def make_normalized(**overrides: Any) -> dict[str, Any]:
     """A minimal, schema-valid normalized_record.schema.json record, with
     sane defaults any test can override.
@@ -45,6 +50,7 @@ def make_normalized(**overrides: Any) -> dict[str, Any]:
         "mp_name": "Test MP",
         "tenure": "2024-2029",
         "implementing_agency": "Test Agency",
+        "vendor_id": "test-vendor-id",
         "vendor_name": "Test Vendor",
         "work_category": "Road",
         "sanctioned_amount_inr": 1_000_000.0,

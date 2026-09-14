@@ -102,11 +102,33 @@ def graph_query(
     return GraphQuery(agency=agency, vendor=vendor)
 
 
+AliasStatus = Literal["pending", "confirmed_merge", "rejected_distinct"]
+
+
+class AliasQuery(BaseModel):
+    """Pagination and current-status filter for the R-06 review queue."""
+
+    status: AliasStatus = "pending"
+    page: int = Field(default=1, ge=1)
+    page_size: int = Field(default=50, ge=1, le=200)
+
+
+def alias_query(
+    status: Annotated[AliasStatus, Query()] = "pending",
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+) -> AliasQuery:
+    return AliasQuery(status=status, page=page, page_size=page_size)
+
+
 __all__ = [
+    "AliasQuery",
+    "AliasStatus",
     "Envelope",
     "GraphQuery",
     "WorksQuery",
     "WorksScope",
+    "alias_query",
     "graph_query",
     "works_query",
 ]

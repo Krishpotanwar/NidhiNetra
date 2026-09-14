@@ -5,7 +5,7 @@ so there is nothing here that can corrupt across a laptop swap or a fresh
 clone -- only data/snapshot/*.parquet needs to survive that.
 
 A fresh connection is opened per call rather than held as a module-level
-singleton: `connect()` itself is cheap (two CREATE VIEW statements, no
+singleton: `connect()` itself is cheap (a few CREATE VIEW statements, no
 data loaded until a query actually runs), and a fresh connection per
 request sidesteps any question of whether one DuckDB connection object is
 safe to share across FastAPI's threadpool. Each CREATE VIEW is a live
@@ -57,7 +57,19 @@ def connect(snapshot_dir: Path | None = None) -> duckdb.DuckDBPyConnection:
         )
 
     con = duckdb.connect(":memory:")
-    con.execute(f"CREATE VIEW works  AS SELECT * FROM '{works_path.as_posix()}'")
+    con.execute(f"CREATE VIEW works_snapshot AS SELECT * FROM '{works_path.as_posix()}'")
+    work_columns = {
+        row[0] for row in con.execute("DESCRIBE SELECT * FROM works_snapshot").fetchall()
+    }
+    optional_columns = []
+    if "vendor_id" not in work_columns:
+        # R-06 adds vendor_id to newly-built snapshots, but the real
+        # committed snapshot predates that field. Keep that snapshot
+        # queryable until an operator explicitly rebuilds it; a missing
+        # source identifier is truthfully represented as null.
+        optional_columns.append("CAST(NULL AS VARCHAR) AS vendor_id")
+    projection = ", ".join(["works_snapshot.*", *optional_columns])
+    con.execute(f"CREATE VIEW works AS SELECT {projection} FROM works_snapshot")
     con.execute(f"CREATE VIEW scored AS SELECT * FROM '{scored_path.as_posix()}'")
     return con
 

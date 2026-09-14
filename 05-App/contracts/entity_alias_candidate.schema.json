@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nidhinetra.local/contracts/entity_alias_candidate.schema.json",
+  "title": "EntityAliasCandidate",
+  "description": "R-06 review candidate produced from ambiguous stable-ID/label associations. Review decisions do not rewrite graph identity automatically.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "entity_type",
+    "proposed_canonical_id",
+    "alias_label",
+    "reason",
+    "evidence_work_ids"
+  ],
+  "properties": {
+    "entity_type": {
+      "type": "string",
+      "enum": [
+        "vendor"
+      ]
+    },
+    "proposed_canonical_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The stable source identifier on the observed association."
+    },
+    "alias_label": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The exact normalized label observed with the source identifier."
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "identifier_has_multiple_labels",
+        "label_has_multiple_identifiers",
+        "identifier_and_label_ambiguous"
+      ],
+      "description": "Non-display reason code. User-visible wording lives in strings.json."
+    },
+    "evidence_work_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Works covering both this association and every competing label or identifier that made it ambiguous."
+    }
+  }
+}

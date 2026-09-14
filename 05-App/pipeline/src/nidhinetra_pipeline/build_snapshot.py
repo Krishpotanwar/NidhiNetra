@@ -1,6 +1,7 @@
 """Builds the combined "current snapshot" the API (A4) reads: normalized
-records, risk-scored records, and the fund-flow graph, joined and written
-to data/snapshot/ for FastAPI + DuckDB to serve straight off disk.
+records, risk-scored records, the fund-flow graph, and entity-alias review
+candidates, joined and written to data/snapshot/ for FastAPI + DuckDB to
+serve straight off disk.
 
 Owned by A4. Nothing else in this codebase yet produces this join --
 normalize/normalize.py and risk/engine.py each produce one half of the
@@ -25,8 +26,9 @@ Either way the records go through the *real* `normalize_records()` rather
 than a hand-copy of its output, so validation happens on every build
 regardless of which source won.
 
-Every artifact (works.parquet, scored.parquet, graph.json, manifest.json)
-follows the same stage/validate/commit discipline as ingest/cache.py's
+Every artifact (works.parquet, scored.parquet, graph.json,
+alias_candidates.json, manifest.json) follows the same
+stage/validate/commit discipline as ingest/cache.py's
 write_snapshot(): serialize to a temp file in the target directory, read
 it back to confirm it landed intact, only then rename it into place. Since
 2026-09-02 this happens as one batch, not four independent ones: every
@@ -49,12 +51,13 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
+from .graph.alias_candidates import build_alias_candidates
 from .ingest import cache
 from .normalize.normalize import normalize_records
 from .risk.engine import score_all
@@ -104,7 +107,9 @@ def _nullable_string_columns(schema_filename: str) -> list[str]:
     return [
         name
         for name, prop in schema["properties"].items()
-        if isinstance(prop.get("type"), list) and "null" in prop["type"] and "string" in prop["type"]
+        if isinstance(prop.get("type"), list)
+        and "null" in prop["type"]
+        and "string" in prop["type"]
     ]
 
 
@@ -211,7 +216,7 @@ def _rung_from_label(label: str) -> int | None:
 
 
 def _utc_timestamp(now: datetime) -> str:
-    return now.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return now.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _cache_pull_timestamp(path: Path) -> str | None:
@@ -223,9 +228,7 @@ def _cache_pull_timestamp(path: Path) -> str | None:
     data_as_of fall back rather than crash the build.
     """
     try:
-        return _utc_timestamp(
-            datetime.strptime(path.stem, "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
-        )
+        return _utc_timestamp(datetime.strptime(path.stem, "%Y%m%dT%H%M%SZ").replace(tzinfo=UTC))
     except ValueError:
         return None
 
@@ -280,9 +283,7 @@ def _load_raw_records(
     )
 
 
-def _build_graph(
-    normalized: list[dict[str, Any]], scored: list[dict[str, Any]]
-) -> dict[str, Any]:
+def _build_graph(normalized: list[dict[str, Any]], scored: list[dict[str, Any]]) -> dict[str, Any]:
     if build_fund_flow_graph is not None:
         return build_fund_flow_graph(normalized, scored)
 
@@ -330,8 +331,7 @@ def _stage_bytes(payload: bytes, final_path: Path) -> Path:
             reloaded = tmp_path.read_bytes()
         except OSError as exc:
             raise SnapshotWriteError(
-                f"{final_path.name} could not be read back after writing, "
-                f"refusing to swap: {exc}"
+                f"{final_path.name} could not be read back after writing, refusing to swap: {exc}"
             ) from exc
         if reloaded != payload:
             raise SnapshotWriteError(
@@ -366,16 +366,13 @@ def _stage_parquet(df: pd.DataFrame, final_path: Path) -> Path:
         try:
             df.to_parquet(tmp_path, engine="pyarrow", index=False)
         except Exception as exc:
-            raise SnapshotWriteError(
-                f"write of {final_path.name} failed: {exc}"
-            ) from exc
+            raise SnapshotWriteError(f"write of {final_path.name} failed: {exc}") from exc
 
         try:
             reloaded = pd.read_parquet(tmp_path, engine="pyarrow")
         except Exception as exc:
             raise SnapshotWriteError(
-                f"{final_path.name} produced an unreadable parquet file, "
-                f"refusing to swap: {exc}"
+                f"{final_path.name} produced an unreadable parquet file, refusing to swap: {exc}"
             ) from exc
         if len(reloaded) != len(df) or list(reloaded.columns) != list(df.columns):
             raise SnapshotWriteError(
@@ -411,9 +408,9 @@ def build_snapshot(
     now: datetime | None = None,
     force: bool = False,
 ) -> dict[str, Any]:
-    """Runs fixture-read -> normalize_records() -> score_all() -> graph,
-    writes works.parquet, scored.parquet, graph.json and manifest.json to
-    `snapshot_dir` (default data/snapshot/), and returns the manifest dict.
+    """Runs fixture-read -> normalize -> score -> graph + alias candidates,
+    writes all five artifacts to `snapshot_dir` (default data/snapshot/),
+    and returns the manifest dict.
 
     `now` is accepted (rather than always calling datetime.now()) so tests
     and callers can pin a reference time; it also becomes the `as_of` date
@@ -427,8 +424,8 @@ def build_snapshot(
     check exists.
     """
     snapshot_dir = snapshot_dir or SNAPSHOT_DIR
-    now = now or datetime.now(timezone.utc)
-    as_of: date = now.astimezone(timezone.utc).date()
+    now = now or datetime.now(UTC)
+    as_of: date = now.astimezone(UTC).date()
 
     raw_records, source_rung, source_label, data_as_of = _load_raw_records(raw_dir)
 
@@ -461,6 +458,7 @@ def build_snapshot(
     normalized = normalize_records(raw_records, source_rung=source_rung)
     scored = score_all(normalized, as_of=as_of)
     graph = _build_graph(normalized, scored)
+    alias_candidates = build_alias_candidates(normalized)
 
     # columns= explicit, not inferred from row dicts -- see _schema_columns'
     # docstring for the empty-input crash this fixes.
@@ -502,11 +500,11 @@ def build_snapshot(
     # build while graph.json and manifest.json stayed on the old one --
     # a torn, internally-inconsistent snapshot, exactly what CP1's "a
     # partial pull must never replace a good snapshot" is about. Staging
-    # all four first means a failure at any point still leaves every real
+    # all five first means a failure at any point still leaves every real
     # file in snapshot_dir completely untouched; only the temp files (which
-    # nothing reads) are affected. The four commits at the end are still
-    # four separate os.rename() calls, not one, so a crash between commit 1
-    # and commit 4 remains a real (much smaller, metadata-only) residual
+    # nothing reads) are affected. The five commits at the end are still
+    # five separate os.rename() calls, not one, so a crash between commit 1
+    # and commit 5 remains a real (much smaller, metadata-only) residual
     # window -- true directory-level atomicity would need a staging
     # directory swapped in with a single rename, which is a larger
     # restructure than this fix scopes to. Documented, not hidden.
@@ -514,6 +512,7 @@ def build_snapshot(
         (works_df, snapshot_dir / "works.parquet", _stage_parquet),
         (scored_df, snapshot_dir / "scored.parquet", _stage_parquet),
         (graph, snapshot_dir / "graph.json", _stage_json),
+        (alias_candidates, snapshot_dir / "alias_candidates.json", _stage_json),
         (manifest, snapshot_dir / "manifest.json", _stage_json),
     ]
 

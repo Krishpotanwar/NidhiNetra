@@ -10,9 +10,10 @@ record that fails validation raises -- it is never silently emitted.
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from datetime import date
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import jsonschema
 
@@ -27,6 +28,7 @@ _REQUIRED_FIELDS = (
     "mp_name",
     "tenure",
     "implementing_agency",
+    "vendor_id",
     "vendor_name",
     "work_category",
     "sanctioned_amount_inr",
@@ -97,6 +99,7 @@ def _map_one(raw: Any, *, source_rung: int) -> dict[str, Any]:
         "mp_name": raw.get("mp_name"),
         "tenure": raw.get("tenure"),
         "implementing_agency": raw.get("implementing_agency"),
+        "vendor_id": raw.get("vendor_id"),
         "vendor_name": raw.get("vendor_name"),
         "work_category": raw.get("work_category"),
         "sanctioned_amount_inr": _to_number(raw.get("sanctioned_amount_inr")),
@@ -136,8 +139,7 @@ def normalize_records(
         if errors:
             work_id = record.get("work_id")
             messages = "; ".join(
-                f"{'.'.join(str(p) for p in e.path) or '<root>'}: {e.message}"
-                for e in errors
+                f"{'.'.join(str(p) for p in e.path) or '<root>'}: {e.message}" for e in errors
             )
             raise NormalizeValidationError(
                 f"record at index {index} (work_id={work_id!r}) failed schema "

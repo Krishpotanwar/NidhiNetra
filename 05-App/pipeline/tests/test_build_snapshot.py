@@ -16,12 +16,11 @@ the real data/snapshot/.
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
 import pytest
-
 from nidhinetra_pipeline import build_snapshot as bs
 
 REAL_FIXTURE = Path(__file__).parents[2] / "contracts" / "fixtures" / "works.fixture.json"
@@ -40,15 +39,11 @@ def fixture_path(tmp_path, monkeypatch, request):
 
 class TestSchemaColumns:
     def test_normalized_columns_match_the_frozen_schema(self):
-        schema = json.loads(
-            (bs.CONTRACTS_DIR / "normalized_record.schema.json").read_text()
-        )
+        schema = json.loads((bs.CONTRACTS_DIR / "normalized_record.schema.json").read_text())
         assert bs._NORMALIZED_COLUMNS == list(schema["properties"].keys())
 
     def test_scored_columns_match_the_frozen_schema(self):
-        schema = json.loads(
-            (bs.CONTRACTS_DIR / "risk_scored_record.schema.json").read_text()
-        )
+        schema = json.loads((bs.CONTRACTS_DIR / "risk_scored_record.schema.json").read_text())
         assert bs._SCORED_COLUMNS == list(schema["properties"].keys())
 
 
@@ -63,12 +58,12 @@ class TestBuildSnapshotEmptyInput:
     def test_zero_row_fixture_does_not_raise(self, fixture_path, tmp_path):
         # The bug's exact failure mode: this call raised KeyError('flags')
         # before the fix. It must not raise at all now.
-        manifest = bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / 'raw')
+        manifest = bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
         assert manifest["row_count"] == 0
 
     @pytest.mark.parametrize("fixture_path", [[]], indirect=True)
     def test_zero_row_fixture_writes_correctly_shaped_parquet(self, fixture_path, tmp_path):
-        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / 'raw')
+        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
 
         works_df = pd.read_parquet(tmp_path / "works.parquet")
         scored_df = pd.read_parquet(tmp_path / "scored.parquet")
@@ -84,13 +79,20 @@ class TestBuildSnapshotEmptyInput:
 
     @pytest.mark.parametrize("fixture_path", [[]], indirect=True)
     def test_zero_row_fixture_produces_empty_graph_not_a_crash(self, fixture_path, tmp_path):
-        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / 'raw')
+        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
         graph = json.loads((tmp_path / "graph.json").read_text())
         assert graph == {"nodes": [], "edges": []}
 
     @pytest.mark.parametrize("fixture_path", [[]], indirect=True)
+    def test_zero_row_fixture_produces_an_empty_alias_queue(self, fixture_path, tmp_path):
+        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
+
+        aliases = json.loads((tmp_path / "alias_candidates.json").read_text())
+        assert aliases == []
+
+    @pytest.mark.parametrize("fixture_path", [[]], indirect=True)
     def test_zero_row_fixture_manifest_is_honest(self, fixture_path, tmp_path):
-        manifest = bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / 'raw')
+        manifest = bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
         assert manifest["source"] == bs.SOURCE_LABEL
         assert manifest["row_count"] == 0
         # data_as_of must still be a real timestamp, not null/omitted, even
@@ -106,13 +108,36 @@ class TestBuildSnapshotRealFixture:
     for build_snapshot.py rather than only covering the new edge case."""
 
     def test_real_fixture_builds_without_error(self, tmp_path):
-        manifest = bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / 'raw')
+        manifest = bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
         assert manifest["row_count"] == 20
+
+    def test_build_writes_alias_candidates_from_the_same_normalized_records(
+        self, tmp_path, monkeypatch
+    ):
+        fixture = json.loads(REAL_FIXTURE.read_text(encoding="utf-8"))
+        fixture[0]["vendor_id"] = "SYNTH-AMBIGUOUS"
+        fixture[0]["vendor_name"] = "Alpha Works"
+        fixture[1]["vendor_id"] = "SYNTH-AMBIGUOUS"
+        fixture[1]["vendor_name"] = "Beta Works"
+        source = tmp_path / "ambiguous-works.json"
+        source.write_text(json.dumps(fixture), encoding="utf-8")
+        monkeypatch.setattr(bs, "WORKS_FIXTURE_PATH", source)
+
+        snapshot_dir = tmp_path / "snapshot"
+        bs.build_snapshot(snapshot_dir=snapshot_dir, raw_dir=tmp_path / "raw")
+
+        aliases = json.loads((snapshot_dir / "alias_candidates.json").read_text())
+        assert {
+            (candidate["proposed_canonical_id"], candidate["alias_label"]) for candidate in aliases
+        } >= {
+            ("SYNTH-AMBIGUOUS", "Alpha Works"),
+            ("SYNTH-AMBIGUOUS", "Beta Works"),
+        }
 
     def test_real_fixture_output_validates_against_both_schemas(self, tmp_path):
         import jsonschema
 
-        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / 'raw')
+        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
 
         works_df = pd.read_parquet(tmp_path / "works.parquet")
         scored_df = pd.read_parquet(tmp_path / "scored.parquet")
@@ -217,7 +242,7 @@ class TestBuildSnapshotRefusesADowngrade:
         vendor_name (MPLADS-FX seed data, 'some works have no vendor yet')
         so this is exercised against genuine data, not a synthetic case.
         """
-        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / 'raw')
+        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
         works_df = pd.read_parquet(tmp_path / "works.parquet")
 
         null_vendor_rows = works_df[works_df["vendor_name"].isna()]
@@ -242,15 +267,15 @@ class TestBuildSnapshotRefusesADowngrade:
                 )
 
     def test_explicit_now_pins_the_manifest_timestamp(self, tmp_path):
-        fixed = datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
-        manifest = bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / 'raw', now=fixed)
+        fixed = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
+        manifest = bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw", now=fixed)
         assert manifest["generated_at"] == "2026-01-01T12:00:00Z"
         assert manifest["data_as_of"] == "2026-01-01T12:00:00Z"
 
     def test_two_builds_with_the_same_pinned_now_are_deterministic(self, tmp_path):
-        fixed = datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
-        m1 = bs.build_snapshot(snapshot_dir=tmp_path / "a", raw_dir=tmp_path / 'raw', now=fixed)
-        m2 = bs.build_snapshot(snapshot_dir=tmp_path / "b", raw_dir=tmp_path / 'raw', now=fixed)
+        fixed = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
+        m1 = bs.build_snapshot(snapshot_dir=tmp_path / "a", raw_dir=tmp_path / "raw", now=fixed)
+        m2 = bs.build_snapshot(snapshot_dir=tmp_path / "b", raw_dir=tmp_path / "raw", now=fixed)
         assert m1 == m2
         works_a = pd.read_parquet(tmp_path / "a" / "works.parquet")
         works_b = pd.read_parquet(tmp_path / "b" / "works.parquet")
@@ -258,6 +283,34 @@ class TestBuildSnapshotRefusesADowngrade:
 
 
 class TestBuildSnapshotAtomicity:
+    def test_alias_candidate_stage_failure_leaves_the_whole_snapshot_unchanged(
+        self, tmp_path, monkeypatch
+    ):
+        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
+        artifact_names = (
+            "works.parquet",
+            "scored.parquet",
+            "graph.json",
+            "alias_candidates.json",
+            "manifest.json",
+        )
+        before = {name: (tmp_path / name).read_bytes() for name in artifact_names}
+
+        real_stage_json = bs._stage_json
+
+        def _fail_on_aliases(obj, final_path):
+            if final_path.name == "alias_candidates.json":
+                raise RuntimeError("simulated alias candidate staging failure")
+            return real_stage_json(obj, final_path)
+
+        monkeypatch.setattr(bs, "_stage_json", _fail_on_aliases)
+
+        with pytest.raises(RuntimeError, match="alias candidate"):
+            bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
+
+        assert {name: (tmp_path / name).read_bytes() for name in artifact_names} == before
+        assert list(tmp_path.glob(".*tmp")) == []
+
     def test_a_failed_stage_never_leaves_a_partial_snapshot_in_place(self, tmp_path, monkeypatch):
         """Mirrors ingest/cache.py's atomic-swap test: build a good snapshot
         first, then force graph.json's STAGE step (not the rename) to fail
@@ -269,7 +322,7 @@ class TestBuildSnapshotAtomicity:
         the time graph.json's failure was discovered, leaving a torn
         snapshot. With staging batched before any commit, none of the four
         real files may change at all."""
-        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / 'raw')
+        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
         good_works = (tmp_path / "works.parquet").read_bytes()
         good_scored = (tmp_path / "scored.parquet").read_bytes()
         good_graph = (tmp_path / "graph.json").read_text()
@@ -287,7 +340,7 @@ class TestBuildSnapshotAtomicity:
         monkeypatch.setattr(bs, "_stage_json", _fail_on_graph)
 
         with pytest.raises(RuntimeError):
-            bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / 'raw')
+            bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
 
         # The real assertion: works.parquet and scored.parquet (staged
         # before the graph.json failure) were never committed either, even
@@ -312,7 +365,7 @@ class TestBuildSnapshotAtomicity:
         build_snapshot()'s own comment both name directly -- true
         directory-level atomicity would remove it, and is out of scope for
         this fix."""
-        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / 'raw')
+        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
 
         real_commit = bs._commit_staged
         call_count = {"n": 0}
@@ -326,7 +379,7 @@ class TestBuildSnapshotAtomicity:
         monkeypatch.setattr(bs, "_commit_staged", _fail_on_second_commit)
 
         with pytest.raises(RuntimeError):
-            bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / 'raw')
+            bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
 
         # The first commit (works.parquet, per targets' order) DID land --
         # this is the documented gap, not a hidden one.
@@ -357,6 +410,7 @@ class TestBuildSnapshotSourceSelection:
             "mp_name": "Test MP",
             "tenure": "2024-2029",
             "implementing_agency": "AGENCY",
+            "vendor_id": "synthetic-vendor-id",
             "vendor_name": "VENDOR",
             "work_category": "Road",
             "sanctioned_amount_inr": 100000.0,
@@ -401,7 +455,7 @@ class TestBuildSnapshotSourceSelection:
         """
         raw = tmp_path / "raw"
         self._cache(raw, [self._record("w1", 1)], stamp="20260901T083000Z")
-        rebuilt_at = datetime(2026, 9, 4, 12, 0, 0, tzinfo=timezone.utc)
+        rebuilt_at = datetime(2026, 9, 4, 12, 0, 0, tzinfo=UTC)
 
         manifest = bs.build_snapshot(snapshot_dir=tmp_path / "snap", raw_dir=raw, now=rebuilt_at)
 

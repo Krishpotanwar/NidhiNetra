@@ -58,6 +58,7 @@ def make_record(**overrides: Any) -> dict[str, Any]:
         "mp_name": "Test MP",
         "tenure": "2024-2029",
         "implementing_agency": "Test Agency",
+        "vendor_id": "test-vendor-id",
         "vendor_name": "Test Vendor",
         "work_category": "Road",
         "sanctioned_amount_inr": 1_000_000.0,
