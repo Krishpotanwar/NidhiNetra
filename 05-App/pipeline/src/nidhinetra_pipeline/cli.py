@@ -133,8 +133,7 @@ def build(*, raw_dir: Path | None = None, snapshot_dir: Path | None = None) -> i
         source_rung,
     )
     print(
-        f"Wrote {len(normalized)} normalized records to {snapshot_path} "
-        f"(source_rung={source_rung})"
+        f"Wrote {len(normalized)} normalized records to {snapshot_path} (source_rung={source_rung})"
     )
 
     try:
