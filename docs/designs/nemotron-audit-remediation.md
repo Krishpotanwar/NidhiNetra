@@ -209,6 +209,33 @@ Lanes A and C both touch `api/routers/inspections.py` (different functions) — 
   - Files: `api/tests/test_inspections.py`
   - Verify: client-supplied `in_control_sample=True` is ignored, not persisted, post-fix
 
+## Execution Resequencing (2026-09-15)
+
+Decided with the user on 2026-09-15, when execution moved from the previous AI agent to lower-cost
+executor models working from a prepared plan kept outside this repository (the `SIHGit/` control folder
+next to this repo). The approved scope is unchanged; only the order, the gates and the push policy changed.
+
+1. F-12 (the six failing `pipeline/tests/test_cli.py` tests) and F-19 (`make clean` deleting
+   `data/raw/`) are pulled forward from the Step 7 backlog and run first, so every later step starts
+   from an all-green suite and no agent can erase the original MPLADS captures.
+2. Next Step 5 (F-01) runs next, as three commits (pipeline and contracts; API, outcome store and legacy
+   guards; web and copy), followed by an F-17 client-side indexing fix and response compression. The
+   true-IA graph is projected at about 10 MB and about 437 million edge checks in the browser's old
+   concentration loop.
+3. The committed real snapshot predates F-02, R-06 and F-01: its `graph.json` edges carry no `work_ids`,
+   it has no `alias_candidates.json`, and `works.parquet` has no `vendor_id`. Rebuilding it offline
+   from the cached tiles, keeping `data_as_of` at 2026-09-04T11:37:18Z, is a separate task that runs only
+   after review and the user's explicit go-ahead.
+4. Next Step 6 (F-09) follows. Step 7 then runs in waves: low-risk hardening (F-15, F-10, F-23, F-22,
+   F-11 single-flight, F-20, F-21), then F-18 (backend provenance) and F-17 (server-side concentration).
+   F-05, F-07, F-13, F-14, F-16, R-05, R-07, R-08, R-11 and R-13 wait for a written design. R-09, R-10
+   and R-12 are blocked on data or policy that does not exist yet.
+5. Agents commit locally and never push. The user pushes after review.
+
+## Backlog Log (pulled-forward and Step 7 items)
+
+Dated DONE entries for F-12, F-19 and every Step 7 item, newest last.
+
 ## What I noticed about how you think
 
 - You didn't accept the audit on the strength of its prose — you asked for it to be spot-checked against the actual code before trusting the rest of it, and it held up.
