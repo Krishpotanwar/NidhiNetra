@@ -244,6 +244,10 @@ Dated DONE entries for F-12, F-19 and every Step 7 item, newest last.
   the build time, which is right after a `pull-live` and wrong for old tiles, so rebuilding historical
   tiles uses an explicit acquisition time instead (recorded against F-18).
 
+- **F-19, DONE (2026-09-16).** `make clean` now removes only `data/interim/*` and `__pycache__` folders. It no
+  longer deletes `data/raw/`, which holds the only copy of the original MPLADS captures.
+  `pipeline/tests/test_makefile_safety.py` fails if any make recipe deletes `data/raw/` again.
+
 ## What I noticed about how you think
 
 - You didn't accept the audit on the strength of its prose — you asked for it to be spot-checked against the actual code before trusting the rest of it, and it held up.

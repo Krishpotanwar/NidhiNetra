@@ -52,6 +52,10 @@ demo:
 dev: validate
 	@echo "Contracts validated. Run 'make api' and 'make web' in separate terminals."
 
+# Removes derived files only. Never touches data/raw/: it holds the original
+# MPLADS captures (including the truncated expenditure capture and its
+# salvaged copy), which are audit evidence and may not be re-downloadable
+# (F-19). Deleting them needs a separate, deliberate step outside make.
 clean:
-	rm -rf data/interim/* data/raw/*
+	rm -rf data/interim/*
 	find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
