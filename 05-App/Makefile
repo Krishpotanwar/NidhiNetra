@@ -29,6 +29,9 @@ contracts:
 	cd web && npx json-schema-to-typescript ../contracts/risk_scored_record.schema.json > lib/generated/risk-scored-record.ts
 	cd web && npx json-schema-to-typescript ../contracts/fund_flow_graph.schema.json > lib/generated/fund-flow-graph.ts
 
+# Acquisition ladder -> normalized cache in data/raw/ -> served snapshot in
+# data/snapshot/ (F-12). It stamps data_as_of with the build time, so run it
+# only right after a real `pull-live`.
 pipeline:
 	cd pipeline && uv run python -m nidhinetra_pipeline.cli build
 

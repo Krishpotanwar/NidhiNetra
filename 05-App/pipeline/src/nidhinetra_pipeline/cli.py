@@ -5,8 +5,9 @@ Usage:
     python -m nidhinetra_pipeline.cli build
 
 `build` runs the acquisition ladder (`ingest/rungs.py`), normalizes whatever
-it returns (`normalize/normalize.py`), and atomically caches the result
-(`ingest/cache.py`). Rung 1 has been live since 2026-09-04 and reads
+it returns (`normalize/normalize.py`), atomically caches the result
+(`ingest/cache.py`), and then rebuilds the served snapshot in data/snapshot/
+from that cache (`build_snapshot.py`; F-12). Rung 1 has been live since 2026-09-04 and reads
 whatever tiles are cached in `data/raw/mplads-*.json`; if the ladder is ever
 exhausted (no cached tiles and every other rung still unimplemented), `build`
 falls through to the labelled seed fixture at
@@ -33,6 +34,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+from .build_snapshot import SnapshotDowngradeError, SnapshotWriteError, build_snapshot
 from .ingest import cache, mplads_adapter
 from .ingest.mplads_api import MpladsClient, MpladsClientError
 from .ingest.rungs import AllRungsFailedError, run_ladder
@@ -84,15 +86,27 @@ def _load_fixture_fallback() -> list[dict]:
     return json.loads(FIXTURES_PATH.read_text(encoding="utf-8"))
 
 
-def build(*, raw_dir: Path | None = None) -> int:
-    """Run ladder -> normalize -> cache. Returns a process exit code.
+def build(*, raw_dir: Path | None = None, snapshot_dir: Path | None = None) -> int:
+    """Run ladder -> normalize -> cache -> served snapshot. Returns an exit code.
 
-    `raw_dir` overrides where the cache write lands; `None` (the default,
-    every real invocation) defers to `cache.write_snapshot`'s own default of
-    `data/raw/`. Exists so tests can point a full run at a temp directory
-    instead of monkeypatching cache module state -- see
-    pipeline/tests/test_cli.py's malformed-pull test, which needs to plant a
-    "previous good snapshot" and then assert it is byte-for-byte untouched.
+    `raw_dir` overrides where the cache write lands and where the snapshot
+    rebuild reads it from; `snapshot_dir` overrides where the served snapshot
+    is written. `None` (every real invocation) means the defaults, data/raw/
+    and data/snapshot/. Both exist so tests can point a full run at temp
+    directories (pipeline/tests/test_cli.py).
+
+    F-12 (nemotronreview.md, fixed with the 2026-09-15 resequencing): the
+    served snapshot is rebuilt from the cache this call just wrote, so `make
+    pipeline` produces what the API actually serves instead of stopping at
+    the raw cache. A rebuild that would downgrade a better-provenance snapshot
+    (for example, the rung-5 fixture fallback on a machine that already
+    serves real data) is refused by build_snapshot(); that refusal is
+    reported and is not a failure, because the cache write succeeded and
+    keeping the better snapshot is correct.
+
+    The cache file, and therefore the snapshot's data_as_of, is stamped with
+    the time of this build. Run it right after a real `pull-live`, never to
+    rebuild old tiles (that needs an explicit acquisition time).
     """
     try:
         raw_records, source_rung = run_ladder()
@@ -121,6 +135,21 @@ def build(*, raw_dir: Path | None = None) -> int:
     print(
         f"Wrote {len(normalized)} normalized records to {snapshot_path} "
         f"(source_rung={source_rung})"
+    )
+
+    try:
+        manifest = build_snapshot(snapshot_dir=snapshot_dir, raw_dir=raw_dir)
+    except SnapshotDowngradeError as exc:
+        logger.warning("Served snapshot left unchanged: %s", exc)
+        print(f"Served snapshot left unchanged: {exc}")
+        return 0
+    except SnapshotWriteError as exc:
+        logger.error("Served snapshot rebuild failed; the previous one is untouched: %s", exc)
+        return 1
+
+    print(
+        f"Rebuilt the served snapshot: {manifest['row_count']} records "
+        f"(source={manifest['source']}, data_as_of={manifest['data_as_of']})"
     )
     return 0
 

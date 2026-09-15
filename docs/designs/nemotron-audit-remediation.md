@@ -236,6 +236,14 @@ next to this repo). The approved scope is unchanged; only the order, the gates a
 
 Dated DONE entries for F-12, F-19 and every Step 7 item, newest last.
 
+- **F-12, DONE (2026-09-16).** `cli.build()` now takes `snapshot_dir` and, after the atomic normalized-cache
+  write, rebuilds the served snapshot from that same cache through `build_snapshot()`. A downgrade refusal
+  (`SnapshotDowngradeError`) is reported and exits 0; any other `SnapshotWriteError` exits 1 with the
+  previous snapshot untouched. The six `pipeline/tests/test_cli.py` tests that specified this behaviour now
+  pass unchanged; the pipeline suite is `280 passed, 0 failed`. The cache and `data_as_of` are stamped with
+  the build time, which is right after a `pull-live` and wrong for old tiles, so rebuilding historical
+  tiles uses an explicit acquisition time instead (recorded against F-18).
+
 ## What I noticed about how you think
 
 - You didn't accept the audit on the strength of its prose — you asked for it to be spot-checked against the actual code before trusting the rest of it, and it held up.
