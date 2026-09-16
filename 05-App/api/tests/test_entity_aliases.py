@@ -135,6 +135,11 @@ def test_page_evidence_is_resolved_with_one_batched_duckdb_query(
         [work_ids[1], work_ids[2]]
     )
     assert all("vendor_id" in work for row in body["data"] for work in row["evidence_works"])
+    assert all(
+        "implementing_district_authority" in work
+        for row in body["data"]
+        for work in row["evidence_works"]
+    )
 
 
 def test_review_post_assigns_history_fields_and_correction_supersedes(

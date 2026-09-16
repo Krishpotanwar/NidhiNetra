@@ -70,6 +70,8 @@ def test_valid_outcome_is_recorded_with_server_side_rank_score_and_context(
     assert stored[0]["inspection_rank_at_time"] == body["data"]["inspection_rank_at_time"]
     assert stored[0]["state"] == row["state"]
     assert stored[0]["constituency"] == row["constituency"]
+    assert stored[0]["implementing_district_authority"] == row["implementing_district_authority"]
+    assert stored[0]["implementing_agency"] == row["implementing_agency"]
     assert stored[0]["work_category"] == row["work_category"]
     assert stored[0]["sanctioned_amount_inr"] == row["sanctioned_amount_inr"]
 
@@ -100,7 +102,9 @@ def test_district_population_and_rank_match_an_independent_computation(
     # national-scoped number, which is exactly what F-04 got wrong.
     target = under_implementation[-1]
     district = [
-        w for w in under_implementation if w["implementing_agency"] == target["implementing_agency"]
+        w
+        for w in under_implementation
+        if w["implementing_district_authority"] == target["implementing_district_authority"]
     ]
     expected_population = len(district)
     expected_rank = 1 + sum(
@@ -119,6 +123,36 @@ def test_district_population_and_rank_match_an_independent_computation(
     assert recorded["population_n_at_time"] == expected_population
     assert recorded["inspection_rank_at_time"] == expected_rank
     assert recorded["cutoff_rank_at_time"] == expected_cutoff
+
+
+def test_quota_population_is_the_district_authority_not_the_agency(client: TestClient) -> None:
+    """F-01: clause 4.5.2 is the District Authority's duty. An agency can work
+    under several District Authorities, so the frozen population must follow
+    the authority. The fixture maps each state to its own synthetic authority,
+    which groups differently from the fixture's agencies.
+    """
+    under = client.get(
+        "/api/works", params={"scope": "under_implementation", "page_size": 200}
+    ).json()["data"]
+
+    def population(field: str, value: str | None) -> int:
+        return sum(1 for w in under if w[field] == value)
+
+    target = next(
+        w
+        for w in under
+        if w["implementing_agency"]
+        and population("implementing_district_authority", w["implementing_district_authority"])
+        != population("implementing_agency", w["implementing_agency"])
+    )
+    recorded = client.post("/api/inspections", json=_payload(target["work_id"])).json()["data"]
+
+    assert recorded["population_n_at_time"] == population(
+        "implementing_district_authority", target["implementing_district_authority"]
+    )
+    assert recorded["population_n_at_time"] != population(
+        "implementing_agency", target["implementing_agency"]
+    )
 
 
 def test_in_control_sample_round_trips_true(client: TestClient) -> None:

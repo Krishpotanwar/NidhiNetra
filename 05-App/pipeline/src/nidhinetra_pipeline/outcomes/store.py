@@ -23,6 +23,13 @@ same work on the same date is still rejected, which was the actual scenario
 the original constraint protected against -- and a nullable `supersedes`
 column so a later entry can explicitly amend an earlier one instead of the
 storage layer refusing a legitimate second visit.
+
+F-01 (nemotronreview.md): rows now carry implementing_district_authority
+(IDA_NAME) and implementing_agency (IA_NAME) separately, plus a
+context_version column. Rows written before that split have their old
+implementing_agency value (which held IDA_NAME) reported under
+implementing_district_authority on read; their stored values are never
+rewritten. See _migrate_f01_columns() and _row_to_dict().
 """
 
 from __future__ import annotations
@@ -50,6 +57,7 @@ _INSERT_COLUMNS = (
     "inspector_id",
     "state",
     "constituency",
+    "implementing_district_authority",
     "implementing_agency",
     "work_category",
     "sanctioned_amount_inr",
@@ -59,6 +67,7 @@ _INSERT_COLUMNS = (
     "population_n_at_time",
     "in_control_sample",
     "supersedes",
+    "context_version",
 )
 
 # Full column set, in select order. outcome_id first: it's the row's own
@@ -67,6 +76,14 @@ _INSERT_COLUMNS = (
 _COLUMNS = ("outcome_id", *_INSERT_COLUMNS)
 
 _BOOL_COLUMNS = ("in_control_sample",)
+
+# F-01 (nemotronreview.md): what the two agency-shaped context columns mean.
+#   1 = written before the IDA/IA split. implementing_agency held IDA_NAME
+#       (the District Authority) and implementing_district_authority did not
+#       exist. Every row that predates the migration below reads as 1.
+#   2 = implementing_district_authority is IDA_NAME and implementing_agency
+#       is IA_NAME (null when unknown). Every new row is written as 2.
+_CONTEXT_VERSION = 2
 
 
 class OutcomeError(Exception):
@@ -136,6 +153,7 @@ def init_db(db_path: Path | None = None) -> None:
                 inspector_id TEXT NOT NULL,
                 state TEXT NOT NULL,
                 constituency TEXT NOT NULL,
+                implementing_district_authority TEXT,
                 implementing_agency TEXT,
                 work_category TEXT NOT NULL,
                 sanctioned_amount_inr REAL NOT NULL,
@@ -145,12 +163,34 @@ def init_db(db_path: Path | None = None) -> None:
                 population_n_at_time INTEGER NOT NULL,
                 in_control_sample INTEGER NOT NULL,
                 supersedes INTEGER,
+                context_version INTEGER NOT NULL DEFAULT 1,
                 UNIQUE(work_id, inspected_on, inspector_id),
                 FOREIGN KEY (supersedes) REFERENCES inspection_outcomes(outcome_id)
             )
             """
         )
+        _migrate_f01_columns(conn)
         conn.commit()
+
+
+def _migrate_f01_columns(conn: sqlite3.Connection) -> None:
+    """Adds the F-01 columns to a table created before them. Idempotent.
+
+    Existing rows keep every stored value byte for byte. ADD COLUMN with
+    DEFAULT 1 marks them as context_version 1, which _row_to_dict reads with
+    their original meaning. Only the inspection_outcomes table is touched:
+    the R-06 alias tables that share this SQLite file are never altered.
+    """
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(inspection_outcomes)")}
+    if "implementing_district_authority" not in columns:
+        conn.execute(
+            "ALTER TABLE inspection_outcomes ADD COLUMN implementing_district_authority TEXT"
+        )
+    if "context_version" not in columns:
+        conn.execute(
+            "ALTER TABLE inspection_outcomes "
+            "ADD COLUMN context_version INTEGER NOT NULL DEFAULT 1"
+        )
 
 
 def record_outcome(
@@ -170,6 +210,7 @@ def record_outcome(
     population_n_at_time: int,
     in_control_sample: bool,
     *,
+    implementing_district_authority: str | None,
     supersedes: int | None = None,
     db_path: Path | None = None,
 ) -> int:
@@ -213,6 +254,7 @@ def record_outcome(
         "inspector_id": inspector_id,
         "state": state,
         "constituency": constituency,
+        "implementing_district_authority": implementing_district_authority,
         "implementing_agency": implementing_agency,
         "work_category": work_category,
         "sanctioned_amount_inr": sanctioned_amount_inr,
@@ -224,6 +266,7 @@ def record_outcome(
         # bool on read in _row_to_dict.
         "in_control_sample": int(in_control_sample),
         "supersedes": supersedes,
+        "context_version": _CONTEXT_VERSION,
     }
 
     db_path = db_path or DEFAULT_DB_PATH
@@ -250,6 +293,13 @@ def _row_to_dict(row: tuple[Any, ...]) -> dict[str, Any]:
     record = dict(zip(_COLUMNS, row, strict=True))
     for column in _BOOL_COLUMNS:
         record[column] = bool(record[column])
+    if record["context_version"] == 1:
+        # Written before F-01: this row's implementing_agency column holds
+        # IDA_NAME. Report it under the field that means District Authority
+        # and leave the true agency unknown instead of repeating the
+        # mislabel. The stored values themselves are never rewritten.
+        record["implementing_district_authority"] = record["implementing_agency"]
+        record["implementing_agency"] = None
     return record
 
 

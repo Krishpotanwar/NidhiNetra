@@ -17,6 +17,7 @@ UNDER_IMPLEMENTATION = ("Sanctioned", "In Progress")
 SEARCH_FIELDS = (
     "work_id",
     "constituency",
+    "implementing_district_authority",
     "implementing_agency",
     "mp_name",
     "state",
@@ -117,3 +118,11 @@ def test_flag_counts_cover_every_page_not_just_the_returned_one(client):
     assert one_page["meta"]["flagged_beyond_quota"] == sum(
         1 for r in everything["data"][quota_n:] if r["flags"]
     )
+
+
+def test_q_matches_the_district_authority(client, works_fixture):
+    """F-01: officers search by their own District Authority name."""
+    needle = "District Authority"
+    expected = sum(1 for r in works_fixture if _matches(r, needle))
+    assert expected == len(works_fixture)  # every synthetic authority ends with it
+    assert _get(client, {"q": needle, "page_size": 200})["meta"]["total"] == expected

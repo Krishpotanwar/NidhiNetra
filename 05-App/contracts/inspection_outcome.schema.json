@@ -14,6 +14,7 @@
     "duplicate_of_another_work": true,
     "agency_unresponsive": null
   },
+  "_f01_context_version": "F-01 (nemotronreview.md). The outcome store adds a context_version column. Rows written before the IDA/IA split are context_version 1: their stored implementing_agency value is IDA_NAME, so outcomes/store.py reports it as implementing_district_authority and reports implementing_agency as null when reading them. Stored values are never rewritten. Rows written after the split are context_version 2 and store both fields with their true meaning.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -29,6 +30,7 @@
     "in_control_sample",
     "state",
     "constituency",
+    "implementing_district_authority",
     "implementing_agency",
     "work_category",
     "sanctioned_amount_inr"
@@ -54,9 +56,13 @@
       "minLength": 1,
       "description": "Denormalized from normalized_record.constituency at write time. Same orphan-recovery purpose as state."
     },
+    "implementing_district_authority": {
+      "type": ["string", "null"],
+      "description": "Denormalized from normalized_record.implementing_district_authority (IDA_NAME) at write time, for orphan recovery like state. Null when the source has none. F-01: see _f01_context_version."
+    },
     "implementing_agency": {
       "type": ["string", "null"],
-      "description": "Denormalized from normalized_record.implementing_agency at write time. Nullable because the source field is nullable (normalized_record.schema.json) -- an outcome for a work with no recorded agency must not fabricate one."
+      "description": "Denormalized from normalized_record.implementing_agency (IA_NAME, the executing agency) at write time. Nullable: many works have no payment event yet, and an outcome must not fabricate an agency. F-01: see _f01_context_version."
     },
     "work_category": {
       "type": "string",

@@ -37,11 +37,11 @@ precision-at-quota calculation:
 
 _district_population_and_rank() below fixes both at once (2026-09-14):
 population_n_at_time and cutoff_rank_at_time are this work's own District
-Authority's (works.implementing_agency) under-implementation population and
-policy.quota_for() of it, not the national ones, and inspection_rank_at_time
-is this work's rank strictly within that same district-scoped population,
-re-deriving rank.py's own tie-break (risk_score descending, work_id
-ascending) in SQL rather than reading the unrelated global
+Authority's (works.implementing_district_authority since F-01) under-implementation
+population and policy.quota_for() of it, not the national ones, and
+inspection_rank_at_time is this work's rank strictly within that same
+district-scoped population, re-deriving rank.py's own tie-break (risk_score
+descending, work_id ascending) in SQL rather than reading the unrelated global
 scored.inspection_rank value. The two figures are now drawn from the same
 population by construction, so inspection_rank_at_time <= cutoff_rank_at_time
 (the Reports page's within_quota check, _group_summary below) is finally a
@@ -73,8 +73,9 @@ router = APIRouter(prefix="/api/inspections", tags=["inspections"])
 
 _CONTEXT_SELECT = """
     SELECT
-        works.state, works.constituency, works.implementing_agency,
-        works.work_category, works.sanctioned_amount_inr, scored.risk_score
+        works.state, works.constituency, works.implementing_district_authority,
+        works.implementing_agency, works.work_category,
+        works.sanctioned_amount_inr, scored.risk_score
     FROM works
     JOIN scored USING (work_id)
     WHERE works.work_id = ?
@@ -119,7 +120,7 @@ def _lookup_work_context(con: duckdb.DuckDBPyConnection, work_id: str) -> dict[s
 
 def _district_population_and_rank(
     con: duckdb.DuckDBPyConnection,
-    implementing_agency: str | None,
+    district_authority: str | None,
     risk_score: float,
     work_id: str,
 ) -> tuple[int, int, int]:
@@ -132,15 +133,22 @@ def _district_population_and_rank(
     under-implementation peers by risk_score, rather than left undefined for
     a work outside that population.
 
-    implementing_agency is compared with an explicit IS NULL branch, not a
+    F-01: grouped by works.implementing_district_authority (IDA_NAME). Until
+    F-01 the grouping used works.implementing_agency, which held IDA_NAME
+    values at the time; that column now means the executing agency.
+
+    district_authority is compared with an explicit IS NULL branch, not a
     parameterised `= ?`, because SQL's `NULL = NULL` is UNKNOWN, not true --
     a plain `=?` would silently and wrongly report population 0 for every
-    work with a null agency instead of grouping them together.
+    work with a null authority instead of grouping them together.
     """
-    if implementing_agency is None:
-        agency_clause, agency_params = "works.implementing_agency IS NULL", []
+    if district_authority is None:
+        agency_clause, agency_params = "works.implementing_district_authority IS NULL", []
     else:
-        agency_clause, agency_params = "works.implementing_agency = ?", [implementing_agency]
+        agency_clause, agency_params = (
+            "works.implementing_district_authority = ?",
+            [district_authority],
+        )
     placeholders = ", ".join("?" for _ in UNDER_IMPLEMENTATION)
 
     population_rows = db.rows_as_dicts(
@@ -177,7 +185,7 @@ def record_inspection(payload: InspectionOutcomeRequest) -> Envelope:
     context = _lookup_work_context(con, payload.work_id)
     population_n_at_time, inspection_rank_at_time, cutoff_rank_at_time = (
         _district_population_and_rank(
-            con, context["implementing_agency"], context["risk_score"], payload.work_id
+            con, context["implementing_district_authority"], context["risk_score"], payload.work_id
         )
     )
 
@@ -190,6 +198,7 @@ def record_inspection(payload: InspectionOutcomeRequest) -> Envelope:
             inspector_id=payload.inspector_id,
             state=context["state"],
             constituency=context["constituency"],
+            implementing_district_authority=context["implementing_district_authority"],
             implementing_agency=context["implementing_agency"],
             work_category=context["work_category"],
             sanctioned_amount_inr=context["sanctioned_amount_inr"],

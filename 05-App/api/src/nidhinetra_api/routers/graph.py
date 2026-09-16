@@ -12,6 +12,12 @@ vendors" -- rather than a set of isolated, edge-less nodes. When neither
 filter is given, the full graph is returned unfiltered. When a filter is
 given but matches nothing, the response is an empty graph (200, not 404 --
 contracts/openapi.yaml defines no 404 case for this endpoint).
+
+F-01/F-02 legacy guard (decision D6 in the handoff): a graph.json whose edges
+carry no work_ids, or whose snapshot has no implementing_district_authority
+column, is never served under the current labels. The endpoint returns an
+empty graph with meta.graph_status = "rebuild_required" instead, and
+"current" otherwise.
 """
 
 from __future__ import annotations
@@ -25,6 +31,21 @@ from .. import db
 from ..models import Envelope, GraphQuery, graph_query
 
 router = APIRouter(prefix="/api/graph", tags=["graph"])
+
+# meta.graph_status values; web/lib/graph-data.ts reads them.
+GRAPH_STATUS_CURRENT = "current"
+GRAPH_STATUS_REBUILD_REQUIRED = "rebuild_required"
+
+
+def _graph_is_legacy(graph: dict[str, Any]) -> bool:
+    """True for a graph built before F-01 (its snapshot has no
+    implementing_district_authority column, so its Agency nodes are District
+    Authorities under the wrong name) or before F-02 (edges without work_ids
+    cannot be checked for a real shared work).
+    """
+    if "implementing_district_authority" not in db.works_columns():
+        return True
+    return any("work_ids" not in edge for edge in graph.get("edges", []))
 
 
 def _load_graph() -> dict[str, Any]:
@@ -68,8 +89,18 @@ def _filter_graph(
 @router.get("")
 def get_graph(query: GraphQuery = Depends(graph_query)) -> Envelope:  # noqa: B008
     graph = _load_graph()
+    if _graph_is_legacy(graph):
+        return Envelope(
+            success=True,
+            data={"nodes": [], "edges": []},
+            meta={"graph_status": GRAPH_STATUS_REBUILD_REQUIRED},
+        )
     filtered = _filter_graph(graph, agency=query.agency, vendor=query.vendor)
-    return Envelope(success=True, data=filtered)
+    return Envelope(success=True, data=filtered, meta={"graph_status": GRAPH_STATUS_CURRENT})
 
 
-__all__ = ["router"]
+__all__ = [
+    "GRAPH_STATUS_CURRENT",
+    "GRAPH_STATUS_REBUILD_REQUIRED",
+    "router",
+]

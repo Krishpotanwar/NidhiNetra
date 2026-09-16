@@ -51,7 +51,8 @@ router = APIRouter(prefix="/api/works", tags=["works"])
 _MERGED_SELECT = """
     SELECT
         works.work_id, works.state, works.constituency, works.mp_name,
-        works.tenure, works.implementing_agency, works.vendor_name,
+        works.tenure, works.implementing_district_authority,
+        works.implementing_agency, works.vendor_name,
         works.vendor_id, works.work_category, works.sanctioned_amount_inr,
         works.expenditure_amount_inr, works.sanction_date,
         works.completion_status, works.last_updated, works.source_rung,
@@ -62,10 +63,11 @@ _MERGED_SELECT = """
 """
 
 # The fields an officer would type into the header search: a work ID read off
-# a file, a constituency, an agency, an MP, a state or a vendor.
+# a file, a constituency, a District Authority, an agency, an MP, a state or a vendor.
 _SEARCH_COLUMNS = (
     "works.work_id",
     "works.constituency",
+    "works.implementing_district_authority",
     "works.implementing_agency",
     "works.mp_name",
     "works.state",

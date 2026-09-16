@@ -37,6 +37,39 @@ def test_legacy_snapshot_without_vendor_id_stays_queryable(tmp_path):
     assert rows == [{"vendor_id": None}]
 
 
+def test_legacy_snapshot_ida_values_are_never_served_as_the_agency(tmp_path):
+    """F-01 legacy mode (decision D4). A snapshot built before the split has no
+    implementing_district_authority column, and its implementing_agency column
+    holds IDA_NAME values. The API must expose those values as the District
+    Authority and report the agency as unknown.
+    """
+    legacy_snapshot = tmp_path / "legacy-f01-snapshot"
+    legacy_snapshot.mkdir()
+    works_path = legacy_snapshot / "works.parquet"
+    with duckdb.connect(":memory:") as connection:
+        connection.execute(
+            "CREATE TABLE legacy_works AS SELECT * "
+            "EXCLUDE (implementing_district_authority, implementing_agency), "
+            "implementing_district_authority AS implementing_agency FROM read_parquet(?)",
+            [str(db.SNAPSHOT_DIR / "works.parquet")],
+        )
+        connection.execute("COPY legacy_works TO ? (FORMAT PARQUET)", [str(works_path)])
+        expected = dict(
+            connection.execute("SELECT work_id, implementing_agency FROM legacy_works").fetchall()
+        )
+    shutil.copyfile(db.SNAPSHOT_DIR / "scored.parquet", legacy_snapshot / "scored.parquet")
+
+    assert "implementing_district_authority" not in db.works_columns(legacy_snapshot)
+    with db.connect(legacy_snapshot) as connection:
+        rows = db.rows_as_dicts(
+            connection,
+            "SELECT work_id, implementing_district_authority, implementing_agency FROM works",
+        )
+
+    assert {r["work_id"]: r["implementing_district_authority"] for r in rows} == expected
+    assert all(r["implementing_agency"] is None for r in rows)
+
+
 def test_list_works_returns_200_and_envelope_shape(client):
     response = client.get("/api/works")
     assert response.status_code == 200

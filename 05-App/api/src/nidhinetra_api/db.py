@@ -17,6 +17,7 @@ against the atomic rename in build_snapshot.py's _atomic_write_parquet.
 
 from __future__ import annotations
 
+import contextlib
 import json
 from pathlib import Path
 from typing import Any
@@ -45,6 +46,25 @@ class SnapshotNotReadyError(Exception):
     """
 
 
+def works_columns(snapshot_dir: Path | None = None) -> set[str]:
+    """Column names physically present in works.parquet, before any of
+    connect()'s compatibility projections. Lets a caller tell a snapshot built
+    before a contract change from a current one (routers/graph.py uses it for
+    F-01).
+    """
+    snapshot_dir = snapshot_dir or SNAPSHOT_DIR
+    works_path = snapshot_dir / "works.parquet"
+    if not works_path.exists():
+        raise SnapshotNotReadyError(
+            f"snapshot parquet files not found in {snapshot_dir}. Run "
+            "nidhinetra_pipeline.build_snapshot.build_snapshot() first "
+            "(main.py's startup hook does this automatically)."
+        )
+    with contextlib.closing(duckdb.connect(":memory:")) as con:
+        rows = con.execute(f"DESCRIBE SELECT * FROM '{works_path.as_posix()}'").fetchall()
+    return {row[0] for row in rows}
+
+
 def connect(snapshot_dir: Path | None = None) -> duckdb.DuckDBPyConnection:
     snapshot_dir = snapshot_dir or SNAPSHOT_DIR
     works_path = snapshot_dir / "works.parquet"
@@ -61,6 +81,7 @@ def connect(snapshot_dir: Path | None = None) -> duckdb.DuckDBPyConnection:
     work_columns = {
         row[0] for row in con.execute("DESCRIBE SELECT * FROM works_snapshot").fetchall()
     }
+    star = "works_snapshot.*"
     optional_columns = []
     if "vendor_id" not in work_columns:
         # R-06 adds vendor_id to newly-built snapshots, but the real
@@ -68,7 +89,17 @@ def connect(snapshot_dir: Path | None = None) -> duckdb.DuckDBPyConnection:
         # queryable until an operator explicitly rebuilds it; a missing
         # source identifier is truthfully represented as null.
         optional_columns.append("CAST(NULL AS VARCHAR) AS vendor_id")
-    projection = ", ".join(["works_snapshot.*", *optional_columns])
+    if "implementing_district_authority" not in work_columns:
+        # F-01 legacy snapshot: built before the IDA/IA split, so its
+        # implementing_agency column holds IDA_NAME values. Serve them under
+        # the field that means District Authority, and report the true agency
+        # as unknown, never as the authority.
+        star = "* EXCLUDE (implementing_agency)"
+        optional_columns.append(
+            "works_snapshot.implementing_agency AS implementing_district_authority"
+        )
+        optional_columns.append("CAST(NULL AS VARCHAR) AS implementing_agency")
+    projection = ", ".join([star, *optional_columns])
     con.execute(f"CREATE VIEW works AS SELECT {projection} FROM works_snapshot")
     con.execute(f"CREATE VIEW scored AS SELECT * FROM '{scored_path.as_posix()}'")
     return con
@@ -118,4 +149,5 @@ __all__ = [
     "connect",
     "decode_scored_json",
     "rows_as_dicts",
+    "works_columns",
 ]

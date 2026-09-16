@@ -40,8 +40,8 @@ def quota_by_group(population_by_group: Mapping[str, int]) -> dict[str, int]:
     district's surplus makes a single national quota_for() call look
     satisfied. `population_by_group` is each District Authority's own count
     of works under implementation (UNDER_IMPLEMENTATION), keyed however the
-    caller identifies a district -- today that is `works.implementing_agency`
-    (already IDA-shaped; F-01's later rename does not change this key).
+    caller identifies a district -- since F-01 that is
+    `works.implementing_district_authority` (IDA_NAME).
     """
     return {group: quota_for(n) for group, n in population_by_group.items()}
 

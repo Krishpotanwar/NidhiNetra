@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from nidhinetra_api import snapshot
 
@@ -54,3 +55,27 @@ def test_refresh_within_the_window_is_429_without_backdating(client):
     """
     response = client.post("/api/refresh")
     assert response.status_code == 429
+
+
+def test_refresh_refuses_a_stale_normalized_cache_and_changes_nothing(
+    client, tmp_path: Path, monkeypatch, works_fixture
+):
+    """F-01: a normalized cache written before the IDA/IA split must never be
+    rebuilt into the served snapshot. The API answers 409 and leaves every
+    snapshot file as it was.
+    """
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    legacy = dict(works_fixture[0])
+    del legacy["implementing_district_authority"]
+    legacy["source_rung"] = 1
+    (raw / "20260904T113718Z.json").write_text(json.dumps([legacy]), encoding="utf-8")
+    monkeypatch.setattr(snapshot, "RAW_DIR", raw)
+    _backdate_last_refresh(seconds=60)
+    works_before = (snapshot.SNAPSHOT_DIR / "works.parquet").read_bytes()
+
+    response = client.post("/api/refresh")
+
+    assert response.status_code == 409
+    assert response.json()["success"] is False
+    assert (snapshot.SNAPSHOT_DIR / "works.parquet").read_bytes() == works_before

@@ -40,6 +40,7 @@ _EVIDENCE_SELECT = """
         works.state,
         works.constituency,
         works.mp_name,
+        works.implementing_district_authority,
         works.implementing_agency,
         works.vendor_id,
         works.vendor_name,

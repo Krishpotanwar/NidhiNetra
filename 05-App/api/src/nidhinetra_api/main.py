@@ -22,7 +22,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from nidhinetra_pipeline.build_snapshot import SnapshotDowngradeError
+from nidhinetra_pipeline.build_snapshot import SnapshotDowngradeError, StaleCacheError
 
 from . import snapshot
 from .db import SnapshotNotReadyError
@@ -181,6 +181,19 @@ async def snapshot_downgrade_handler(request: Request, exc: SnapshotDowngradeErr
         "Refresh could not find a real data pull to rebuild from, and would "
         "have replaced the current data with the demo dataset. Showing the "
         "current data unchanged.",
+    )
+
+
+@app.exception_handler(StaleCacheError)
+async def stale_cache_handler(request: Request, exc: StaleCacheError) -> JSONResponse:
+    # F-01: the newest normalized cache predates the current contract, so a
+    # rebuild from it would bring the IDA/IA mislabel back. Refused before
+    # anything was written.
+    logger.warning("Refresh refused, the cached normalized data is outdated: %s", exc)
+    return _envelope_error(
+        409,
+        "Refresh found only an outdated cached data file and did not use it. "
+        "Showing the current data unchanged.",
     )
 
 

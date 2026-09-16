@@ -55,6 +55,10 @@ def test_outcomes_come_back_newest_first_with_their_frozen_context(client: TestC
 
     assert [o["outcome_id"] for o in data["outcomes"]] == [b["outcome_id"], a["outcome_id"]]
     assert data["outcomes"][0]["constituency"] == second["constituency"]
+    assert (
+        data["outcomes"][0]["implementing_district_authority"]
+        == second["implementing_district_authority"]
+    )
     assert data["summary"]["total"] == 2
     assert data["summary"]["ranked"]["n"] == 1
     assert data["summary"]["spot_check"]["n"] == 1

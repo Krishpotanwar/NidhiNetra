@@ -18,11 +18,13 @@ that blocked a legitimate same-day re-visit.
 
 from __future__ import annotations
 
+import contextlib
+import sqlite3
 from pathlib import Path
 
 import pytest
 from nidhinetra_pipeline.build_snapshot import build_snapshot
-from nidhinetra_pipeline.outcomes import store
+from nidhinetra_pipeline.outcomes import alias_store, store
 
 VALID_OUTCOME = "work_present_and_matches"
 
@@ -37,6 +39,7 @@ def _record(
     inspector_id: str = "AB",
     state: str = "Bihar",
     constituency: str = "Patna Sahib",
+    implementing_district_authority: str | None = "Patna District Authority",
     implementing_agency: str | None = "PWD Division 7",
     work_category: str = "Road",
     sanctioned_amount_inr: float = 1_500_000.0,
@@ -55,6 +58,7 @@ def _record(
         inspector_id=inspector_id,
         state=state,
         constituency=constituency,
+        implementing_district_authority=implementing_district_authority,
         implementing_agency=implementing_agency,
         work_category=work_category,
         sanctioned_amount_inr=sanctioned_amount_inr,
@@ -96,6 +100,7 @@ def test_record_and_read_back_round_trips_every_field(db_path: Path) -> None:
         inspector_id="RK",
         state="Uttar Pradesh",
         constituency="Lucknow",
+        implementing_district_authority="Lucknow District Authority",
         implementing_agency=None,
         work_category="Drinking Water",
         sanctioned_amount_inr=250_000.0,
@@ -117,6 +122,8 @@ def test_record_and_read_back_round_trips_every_field(db_path: Path) -> None:
     assert row["state"] == "Uttar Pradesh"
     assert row["constituency"] == "Lucknow"
     assert row["implementing_agency"] is None
+    assert row["implementing_district_authority"] == "Lucknow District Authority"
+    assert row["context_version"] == 2
     assert row["work_category"] == "Drinking Water"
     assert row["sanctioned_amount_inr"] == 250_000.0
     assert row["inspection_rank_at_time"] == 42
@@ -244,3 +251,98 @@ class TestIssueMapping:
 
     def test_no_underscore_metadata_keys_leak_into_the_mapping(self) -> None:
         assert all(not k.startswith("_") for k in store.issue_mapping())
+
+
+_PRE_F01_TABLE = """
+    CREATE TABLE inspection_outcomes (
+        outcome_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        work_id TEXT NOT NULL,
+        inspected_on TEXT NOT NULL,
+        outcome TEXT NOT NULL,
+        notes TEXT NOT NULL,
+        inspector_id TEXT NOT NULL,
+        state TEXT NOT NULL,
+        constituency TEXT NOT NULL,
+        implementing_agency TEXT,
+        work_category TEXT NOT NULL,
+        sanctioned_amount_inr REAL NOT NULL,
+        inspection_rank_at_time INTEGER NOT NULL,
+        risk_score_at_time REAL NOT NULL,
+        cutoff_rank_at_time INTEGER NOT NULL,
+        population_n_at_time INTEGER NOT NULL,
+        in_control_sample INTEGER NOT NULL,
+        supersedes INTEGER,
+        UNIQUE(work_id, inspected_on, inspector_id),
+        FOREIGN KEY (supersedes) REFERENCES inspection_outcomes(outcome_id)
+    )
+"""
+
+
+def test_a_pre_f01_database_is_migrated_without_reinterpreting_old_rows(tmp_path: Path) -> None:
+    """F-01: rows stored before the split hold IDA_NAME in implementing_agency.
+    The migration adds columns only; old rows keep their bytes and read back
+    under the field that matches their meaning; the R-06 alias tables sharing
+    the same SQLite file are untouched.
+    """
+    path = tmp_path / "outcomes.db"
+    with contextlib.closing(sqlite3.connect(path)) as connection:
+        connection.execute(_PRE_F01_TABLE)
+        connection.execute(
+            "INSERT INTO inspection_outcomes (work_id, inspected_on, outcome, notes, "
+            "inspector_id, state, constituency, implementing_agency, work_category, "
+            "sanctioned_amount_inr, inspection_rank_at_time, risk_score_at_time, "
+            "cutoff_rank_at_time, population_n_at_time, in_control_sample, supersedes) "
+            "VALUES ('W-OLD', '2026-09-05', 'work_present_and_matches', '', 'AB', "
+            "'Karnataka', 'DHARWAD', 'DHARWAD(DEPUTY COMMISSIONER DHARWAR_IDA)', 'Road', "
+            "100.0, 3, 50.0, 1, 5, 0, NULL)"
+        )
+        connection.commit()
+    alias_store.upsert_candidates(
+        [
+            {
+                "entity_type": "vendor",
+                "proposed_canonical_id": "v1",
+                "alias_label": "ALPHA",
+                "reason": "identifier_has_multiple_labels",
+                "evidence_work_ids": ["W-OLD"],
+            }
+        ],
+        db_path=path,
+    )
+    (candidate,), _total = alias_store.list_candidates(db_path=path)
+    review_id = alias_store.record_review(
+        candidate["candidate_id"], "confirmed_merge", "RK", db_path=path
+    )
+
+    store.init_db(db_path=path)
+    store.init_db(db_path=path)  # idempotent
+
+    (old,) = store.get_outcomes_for_work("W-OLD", db_path=path)
+    assert old["context_version"] == 1
+    assert old["implementing_district_authority"] == "DHARWAD(DEPUTY COMMISSIONER DHARWAR_IDA)"
+    assert old["implementing_agency"] is None
+    with contextlib.closing(sqlite3.connect(path)) as connection:
+        stored = connection.execute(
+            "SELECT implementing_agency, implementing_district_authority "
+            "FROM inspection_outcomes WHERE work_id = 'W-OLD'"
+        ).fetchone()
+    assert stored == ("DHARWAD(DEPUTY COMMISSIONER DHARWAR_IDA)", None)
+
+    rows, total = alias_store.list_candidates(db_path=path)
+    assert total == 1
+    assert rows[0]["candidate_id"] == candidate["candidate_id"]
+    history = alias_store.get_review_history(candidate["candidate_id"], db_path=path)
+    assert [review["review_id"] for review in history] == [review_id]
+
+    _record(
+        "W-NEW",
+        "2026-09-06",
+        VALID_OUTCOME,
+        path,
+        implementing_district_authority="DHARWAD IDA",
+        implementing_agency="KRIDL DHARWAD",
+    )
+    (new,) = store.get_outcomes_for_work("W-NEW", db_path=path)
+    assert new["context_version"] == 2
+    assert new["implementing_district_authority"] == "DHARWAD IDA"
+    assert new["implementing_agency"] == "KRIDL DHARWAD"
