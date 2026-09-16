@@ -57,6 +57,7 @@ def make_record(**overrides: Any) -> dict[str, Any]:
         "constituency": "Bihar Constituency 1",
         "mp_name": "Test MP",
         "tenure": "2024-2029",
+        "implementing_district_authority": "Test District Authority",
         "implementing_agency": "Test Agency",
         "vendor_id": "test-vendor-id",
         "vendor_name": "Test Vendor",

@@ -40,6 +40,7 @@ VALID_RAW_RECORD = {
     "constituency": "Bihar Constituency 1",
     "mp_name": "Test MP",
     "tenure": "2024-2029",
+    "implementing_district_authority": "Bihar District Authority",
     "implementing_agency": "PWD Division 1",
     "vendor_id": "test-vendor-id",
     "vendor_name": "Test Vendor Pvt Ltd",

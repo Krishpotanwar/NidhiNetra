@@ -111,8 +111,9 @@ def build_fund_flow_graph(
 ) -> dict:
     """Returns a dict matching contracts/fund_flow_graph.schema.json exactly.
 
-    Nodes: one per distinct mp_name, one per distinct implementing_agency
-    (records where it is null contribute no Agency node), one per distinct
+    Nodes: one per distinct mp_name, one per distinct implementing_agency (IA_NAME,
+    the executing agency; F-01) (records where it is null contribute no Agency
+    node), one per distinct
     source vendor_id with vendor_name used only as its display label
     (records where either is null contribute no Vendor node). MP and Agency
     ids are stable deterministic slugs; Vendor ids use collision-free source

@@ -6,8 +6,9 @@ on `WORK_RECOMMENDATION_DTL_ID`, which is unique and non-null in all of
 them:
 
   Works Sanctioned  -> the spine. One row per sanctioned work, carrying
-                       state, constituency, MP, agency, sanctioned amount,
-                       sanction date and work stage.
+                       state, constituency, MP, the Implementing District
+                       Authority (IDA_NAME), sanctioned amount, sanction
+                       date and work stage.
   Works Completed   -> a subset of the same works, used only to decide
                        completion_status. Do NOT infer completion from the
                        spine's WORK_STAGE alone: that column marks just
@@ -17,10 +18,17 @@ them:
                        into the inspection queue.
   Expenditure       -> one row per *payment event*, not per work, so a work
                        appears once per disbursement. Aggregated here into
-                       a per-work total and one observed vendor ID/name
-                       pair. This is the only tile carrying VENDOR_ID and
-                       VENDOR_NAME, which is why the fund-flow graph depends
-                       on this join.
+                       a per-work total, one observed vendor ID/name pair
+                       and the executing Implementing Agency (IA_NAME).
+                       This is the only tile carrying VENDOR_ID,
+                       VENDOR_NAME and IA_NAME, which is why the fund-flow
+                       graph depends on this join.
+
+IDA_NAME and IA_NAME are different actors (F-01, nemotronreview.md; MPLADS
+Guidelines 2023 definitions). The District Authority administers the work
+and owns the clause 4.5.2 inspection duty; the Implementing Agency it selects
+executes the work. IDA_NAME -> implementing_district_authority, IA_NAME ->
+implementing_agency, and neither is ever used to fill the other.
 
 Call signature for all three (corrected 2026-09-04; the earlier reading of
 poptable.js had `combo` as an int, which is why every probe returned
@@ -38,7 +46,7 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter, defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -364,6 +372,21 @@ def _number(value: Any) -> float:
 _SETTLED_PAYMENT_STATUS = "Payment Success"
 
 
+def _modal_string(counts: Mapping[str, int]) -> str | None:
+    """The most frequent key in `counts`, ties broken alphabetically so the
+    choice is deterministic across runs. None when `counts` is empty.
+
+    Shared by every "pick one observed value out of a work's payment events"
+    rule (vendor name, the vendor ID seen with that name, implementing
+    agency) so their tie-breaks can never drift apart (plan-eng-review
+    Issue 3, F-01).
+    """
+    if not counts:
+        return None
+    top = max(counts.values())
+    return sorted(key for key, n in counts.items() if n == top)[0]
+
+
 class _ExpenditureRollup:
     """Per-work totals, vendor and last activity date, rolled up from
     payment events.
@@ -373,6 +396,7 @@ class _ExpenditureRollup:
         "total_inr",
         "vendor_counts",
         "vendor_ids_by_name",
+        "agency_counts",
         "last_activity",
     )
 
@@ -380,6 +404,10 @@ class _ExpenditureRollup:
         self.total_inr = 0.0
         self.vendor_counts: Counter[str] = Counter()
         self.vendor_ids_by_name: dict[str, Counter[str]] = defaultdict(Counter)
+        # IA_NAME per payment event (F-01). Only the Expenditure tile carries
+        # the executing agency; the Sanctioned tile's IDA_NAME is the District
+        # Authority, a different actor.
+        self.agency_counts: Counter[str] = Counter()
         # Latest EXPENDITURE_DATE seen for this work, ISO. Unlike the
         # amount, this counts in-progress payments too: a disbursement that
         # has been initiated is activity on the work, which is exactly what
@@ -396,10 +424,7 @@ class _ExpenditureRollup:
         schema has one vendor_name field, so the modal one is used and ties
         break alphabetically to keep the choice deterministic across runs.
         """
-        if not self.vendor_counts:
-            return None
-        top = max(self.vendor_counts.values())
-        return sorted(name for name, n in self.vendor_counts.items() if n == top)[0]
+        return _modal_string(self.vendor_counts)
 
     def vendor_id(self) -> str | None:
         """The source ID observed with :meth:`vendor`'s selected name.
@@ -413,17 +438,22 @@ class _ExpenditureRollup:
         vendor = self.vendor()
         if vendor is None:
             return None
-        counts = self.vendor_ids_by_name[vendor]
-        if not counts:
-            return None
-        top = max(counts.values())
-        return sorted(vendor_id for vendor_id, n in counts.items() if n == top)[0]
+        return _modal_string(self.vendor_ids_by_name[vendor])
+
+    def agency(self) -> str | None:
+        """The Implementing Agency (IA_NAME) seen on the most payment events
+        for this work, alphabetical tie-break. Every work in the 2026-09-04
+        capture carries exactly one IA_NAME, but the rule does not rely on
+        that holding for the next pull.
+        """
+        return _modal_string(self.agency_counts)
 
 
 def rollup_expenditure(expenditure_rows: Iterable[dict[str, Any]]) -> dict[int, _ExpenditureRollup]:
-    """work_id -> settled total and modal vendor. Rows whose payment has not
-    settled still contribute their vendor (the vendor is real and identified
-    even while the payment clears) but not their amount.
+    """work_id -> settled total, modal vendor and modal implementing agency.
+    Rows whose payment has not settled still contribute their vendor and
+    agency (both are real and identified even while the payment clears) but
+    not their amount.
     """
     rollups: dict[int, _ExpenditureRollup] = defaultdict(_ExpenditureRollup)
     for row in expenditure_rows:
@@ -437,6 +467,9 @@ def rollup_expenditure(expenditure_rows: Iterable[dict[str, Any]]) -> dict[int, 
             vendor_id = _clean(row.get("VENDOR_ID"))
             if vendor_id:
                 rollup.vendor_ids_by_name[vendor][vendor_id] += 1
+        agency = _clean(row.get("IA_NAME"))
+        if agency:
+            rollup.agency_counts[agency] += 1
         rollup.note_activity(_parse_ddmmmyyyy(row.get("EXPENDITURE_DATE")))
         if row.get("WORK_STATUS") == _SETTLED_PAYMENT_STATUS:
             rollup.total_inr += _number(row.get("FUND_DISBURSED_AMT"))
@@ -509,7 +542,12 @@ def adapt(
                 "constituency": _clean(row.get("CONSTITUENCY")),
                 "mp_name": _clean(row.get("MP_NAME")),
                 "tenure": _tenure_range(row.get("TENURE_START_DATE"), row.get("TENURE_END_DATE")),
-                "implementing_agency": _clean(row.get("IDA_NAME")),
+                # F-01: two different actors, two fields. IDA_NAME (this
+                # Sanctioned row) is the District Authority; IA_NAME exists
+                # only on payment events. A work with no payment event has
+                # no known agency: null, never a copy of the authority.
+                "implementing_district_authority": _clean(row.get("IDA_NAME")),
+                "implementing_agency": rollup.agency() if rollup else None,
                 "vendor_id": rollup.vendor_id() if rollup else None,
                 "vendor_name": rollup.vendor() if rollup else None,
                 "work_category": category_for(row.get("ACTIVITY_NAME")),

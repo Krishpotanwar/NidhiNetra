@@ -238,8 +238,9 @@ def _zscores(counts: dict[str, int]) -> dict[str, float]:
 def detect_agency_concentration(
     records: list[dict[str, Any]],
 ) -> dict[str, ConcentrationFinding]:
-    """Cross-record pass: for every implementing_agency and vendor_name
-    that appears on at least two works, compares how many distinct MPs and
+    """Cross-record pass: for every implementing_agency (IA_NAME, the executing
+    agency; never the District Authority, F-01) and vendor_name that appears on
+    at least two works, compares how many distinct MPs and
     districts (constituency is the closest field the 3.1 contract has to
     "district") it spans against every other agency's/vendor's span in
     this same batch, and flags the ones whose span is both statistically

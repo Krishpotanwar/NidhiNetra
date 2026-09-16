@@ -10,6 +10,7 @@ tidier shape here would test a parser that does not exist.
 from __future__ import annotations
 
 import json
+from collections import Counter
 from datetime import date
 
 import pytest
@@ -17,6 +18,7 @@ from nidhinetra_pipeline.ingest.mplads_adapter import (
     CATEGORY_FALLBACK,
     VALID_CATEGORIES,
     MpladsAdapterError,
+    _modal_string,
     activity_of,
     adapt,
     category_for,
@@ -54,11 +56,13 @@ def payment_row(
     status="Payment Success",
     *,
     vendor_id: int | str | None = 1,
+    ia_name: str | None = "TEST IMPLEMENTING AGENCY",
 ):
     return {
         "WORK_RECOMMENDATION_DTL_ID": work_id,
         "VENDOR_NAME": vendor,
         "VENDOR_ID": vendor_id,
+        "IA_NAME": ia_name,
         "FUND_DISBURSED_AMT": amount,
         "WORK_STATUS": status,
         "EXPENDITURE_DATE": "21-Aug-2026",
@@ -212,6 +216,8 @@ class TestAdapt:
         assert r["work_id"] == "1"
         assert r["vendor_name"] == "SHRINIVAS CONTRACTOR"
         assert r["vendor_id"] == "1"
+        assert r["implementing_district_authority"] == "DHARWAD(DEPUTY COMMISSIONER DHARWAR_IDA)"
+        assert r["implementing_agency"] == "TEST IMPLEMENTING AGENCY"
         assert r["expenditure_amount_inr"] == 250.0
         assert r["sanctioned_amount_inr"] == 497185.0
 
@@ -233,7 +239,7 @@ class TestAdapt:
 
     def test_tab_padding_is_stripped_from_source_strings(self):
         rows = [sanctioned_row(1, IDA_NAME="DHARWAD\t\t(DEPUTY   COMMISSIONER)")]
-        assert adapt(rows, [], [], as_of=AS_OF)[0]["implementing_agency"] == (
+        assert adapt(rows, [], [], as_of=AS_OF)[0]["implementing_district_authority"] == (
             "DHARWAD (DEPUTY COMMISSIONER)"
         )
 
@@ -395,3 +401,77 @@ class TestLoadAndAdapt:
         (tmp_path / "mplads-sanctioned.json").write_text('[{"a": 1}', encoding="utf-8")
         with pytest.raises(MpladsAdapterError, match="truncated"):
             load_and_adapt(tmp_path)
+
+
+class TestAuthorityAndAgencySeparation:
+    """F-01 (nemotronreview.md): IDA_NAME is the Implementing District
+    Authority (Works Sanctioned tile); IA_NAME is the executing Implementing
+    Agency (Expenditure tile payment events). Different actors, separate
+    fields, and neither ever fills the other.
+    """
+
+    def test_ida_and_ia_land_in_separate_fields(self):
+        records = adapt(
+            [sanctioned_row(1, IDA_NAME="DHARWAD(DEPUTY COMMISSIONER DHARWAR_IDA)")],
+            [],
+            [payment_row(1, 100.0, "ACME", ia_name="KRIDL DHARWAD")],
+            as_of=AS_OF,
+        )
+        assert records[0]["implementing_district_authority"] == (
+            "DHARWAD(DEPUTY COMMISSIONER DHARWAR_IDA)"
+        )
+        assert records[0]["implementing_agency"] == "KRIDL DHARWAD"
+
+    def test_agency_is_the_modal_ia_across_payment_events(self):
+        rollups = rollup_expenditure(
+            [
+                payment_row(1, 1.0, "V", ia_name="B AGENCY"),
+                payment_row(1, 1.0, "V", ia_name="B AGENCY"),
+                payment_row(1, 1.0, "V", ia_name="A AGENCY"),
+            ]
+        )
+        assert rollups[1].agency() == "B AGENCY"
+
+    def test_agency_tie_breaks_alphabetically(self):
+        rollups = rollup_expenditure(
+            [
+                payment_row(1, 1.0, "V", ia_name="ZETA WORKS"),
+                payment_row(1, 1.0, "V", ia_name="ALPHA WORKS"),
+            ]
+        )
+        assert rollups[1].agency() == "ALPHA WORKS"
+
+    def test_in_progress_payment_events_still_identify_the_agency(self):
+        rollups = rollup_expenditure(
+            [payment_row(1, 5.0, "V", status="Payment In-Progress", ia_name="RED_Gzb")]
+        )
+        assert rollups[1].agency() == "RED_Gzb"
+        assert rollups[1].total_inr == 0.0
+
+    def test_work_without_payment_events_keeps_its_authority_and_has_no_agency(self):
+        record = adapt([sanctioned_row(1)], [], [], as_of=AS_OF)[0]
+        assert record["implementing_district_authority"] == (
+            "DHARWAD(DEPUTY COMMISSIONER DHARWAR_IDA)"
+        )
+        assert record["implementing_agency"] is None
+
+    def test_blank_ia_name_is_not_an_agency(self):
+        rollups = rollup_expenditure([payment_row(1, 1.0, "V", ia_name=" \t ")])
+        assert rollups[1].agency() is None
+
+    def test_vendor_pairing_is_unchanged_by_the_agency_rollup(self):
+        """R-06 regression: the vendor ID still comes from the chosen name's events."""
+        rollups = rollup_expenditure(
+            [
+                payment_row(1, 1.0, "ZEBRA", vendor_id=1, ia_name="X"),
+                payment_row(1, 1.0, "ALPHA", vendor_id=2, ia_name="Y"),
+            ]
+        )
+        assert rollups[1].vendor() == "ALPHA"
+        assert rollups[1].vendor_id() == "2"
+        assert rollups[1].agency() == "X"
+
+    def test_modal_string_is_shared_and_deterministic(self):
+        assert _modal_string(Counter()) is None
+        assert _modal_string(Counter({"b": 2, "a": 1})) == "b"
+        assert _modal_string(Counter({"b": 1, "a": 1})) == "a"

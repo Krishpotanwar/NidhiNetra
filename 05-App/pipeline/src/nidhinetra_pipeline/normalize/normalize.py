@@ -27,6 +27,7 @@ _REQUIRED_FIELDS = (
     "constituency",
     "mp_name",
     "tenure",
+    "implementing_district_authority",
     "implementing_agency",
     "vendor_id",
     "vendor_name",
@@ -75,7 +76,8 @@ def _to_number(value: Any, *, default: float | None = None) -> Any:
 
 
 def _map_one(raw: Any, *, source_rung: int) -> dict[str, Any]:
-    """Map one raw rung-output row into the exact 14-key normalized shape.
+    """Map one raw rung-output row into the exact normalized shape
+    (every property in normalized_record.schema.json).
 
     Raw rows are expected to already carry the normalized field names --
     every current rung either raises before returning data (Rung 1, blocked)
@@ -98,6 +100,7 @@ def _map_one(raw: Any, *, source_rung: int) -> dict[str, Any]:
         "constituency": raw.get("constituency"),
         "mp_name": raw.get("mp_name"),
         "tenure": raw.get("tenure"),
+        "implementing_district_authority": raw.get("implementing_district_authority"),
         "implementing_agency": raw.get("implementing_agency"),
         "vendor_id": raw.get("vendor_id"),
         "vendor_name": raw.get("vendor_name"),

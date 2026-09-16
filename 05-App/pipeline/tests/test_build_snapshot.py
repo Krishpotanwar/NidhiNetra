@@ -409,6 +409,7 @@ class TestBuildSnapshotSourceSelection:
             "constituency": "DHARWAD",
             "mp_name": "Test MP",
             "tenure": "2024-2029",
+            "implementing_district_authority": "DHARWAD DISTRICT AUTHORITY",
             "implementing_agency": "AGENCY",
             "vendor_id": "synthetic-vendor-id",
             "vendor_name": "VENDOR",
@@ -420,6 +421,29 @@ class TestBuildSnapshotSourceSelection:
             "last_updated": "2026-09-04",
             "source_rung": source_rung,
         }
+
+    def test_a_cache_missing_a_contract_field_is_refused_before_anything_is_written(self, tmp_path):
+        """F-01: a pre-F-01 cache stores IDA_NAME under implementing_agency and
+        has no implementing_district_authority. Re-normalizing it would
+        silently re-introduce the mislabel, so the build must refuse it."""
+        raw = tmp_path / "raw"
+        legacy = self._record("legacy-1", 1)
+        del legacy["implementing_district_authority"]
+        self._cache(raw, [legacy])
+        snap = tmp_path / "snap"
+
+        with pytest.raises(bs.StaleCacheError, match="implementing_district_authority"):
+            bs.build_snapshot(snapshot_dir=snap, raw_dir=raw)
+
+        assert not snap.exists() or not any(snap.iterdir())
+
+    def test_a_cache_with_every_contract_field_still_builds(self, tmp_path):
+        raw = tmp_path / "raw"
+        self._cache(raw, [self._record("current-1", 1)])
+
+        manifest = bs.build_snapshot(snapshot_dir=tmp_path / "snap", raw_dir=raw)
+
+        assert manifest["row_count"] == 1
 
     def test_cached_snapshot_is_preferred_over_the_fixture(self, tmp_path):
         raw = tmp_path / "raw"

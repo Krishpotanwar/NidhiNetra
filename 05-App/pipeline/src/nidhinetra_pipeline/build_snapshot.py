@@ -204,6 +204,18 @@ class SnapshotDowngradeError(SnapshotWriteError):
     """
 
 
+class StaleCacheError(SnapshotWriteError):
+    """Raised when the newest cached normalized snapshot in data/raw/ was
+    written by an older normalize step and lacks a field the current
+    normalized_record contract requires. A pre-F-01 cache (nemotronreview.md
+    F-01) stores IDA_NAME under implementing_agency and has no
+    implementing_district_authority or vendor_id at all; re-normalizing it
+    would silently re-introduce the mislabel F-01 fixed and drop every vendor
+    from the graph. The build refuses before anything is staged. Regenerate
+    the cache from the raw tiles instead.
+    """
+
+
 def _rung_from_label(label: str) -> int | None:
     """Reverses _SOURCE_LABELS. None for a label this build never produced
     (a legacy or hand-edited manifest), which the caller treats as "unknown
@@ -262,6 +274,20 @@ def _load_raw_records(
                     f"source_rung values {sorted(r for r in rungs if r is not None)}; "
                     "refusing to build a snapshot whose provenance cannot be "
                     "stated in one number"
+                )
+            missing = sorted(
+                {
+                    field
+                    for record in records
+                    for field in _NORMALIZED_COLUMNS
+                    if field not in record
+                }
+            )
+            if missing:
+                raise StaleCacheError(
+                    f"cached snapshot {cached.name} predates the current "
+                    f"normalized_record contract (missing {missing}); regenerate it "
+                    "from the raw MPLADS tiles before rebuilding the served snapshot"
                 )
             rung = rungs.pop()
             return (
@@ -546,8 +572,10 @@ if __name__ == "__main__":
 
 
 __all__ = [
+    "SnapshotDowngradeError",
     "SnapshotWriteError",
     "SNAPSHOT_DIR",
+    "StaleCacheError",
     "build_snapshot",
     "main",
 ]

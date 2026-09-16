@@ -11,6 +11,7 @@
     "constituency",
     "mp_name",
     "tenure",
+    "implementing_district_authority",
     "implementing_agency",
     "vendor_id",
     "vendor_name",
@@ -46,9 +47,13 @@
       "pattern": "^[0-9]{4}-[0-9]{4}$",
       "description": "e.g. 2024-2029"
     },
+    "implementing_district_authority": {
+      "type": ["string", "null"],
+      "description": "IDA_NAME from the Works Sanctioned tile: the Implementing District Authority that administers the work and owns the clause 4.5.2 annual inspection duty (MPLADS Guidelines 2023). The per-District-Authority quota and frozen district rank group by this field. Never used to fill implementing_agency (F-01, nemotronreview.md)."
+    },
     "implementing_agency": {
       "type": ["string", "null"],
-      "description": "Degradable for the table, fatal for the fund-flow graph (M5)."
+      "description": "IA_NAME from the Expenditure tile's payment events (the modal value per work, alphabetical tie-break): the Implementing Agency that executes the work. Null when the work has no payment event yet; never filled from implementing_district_authority (F-01). Degradable for the table, fatal for the fund-flow graph (M5)."
     },
     "vendor_id": {
       "type": [
