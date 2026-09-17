@@ -312,13 +312,16 @@ def category_for(activity_name: str | None) -> str:
 # happen before any ground work.
 _NOT_STARTED_STAGES = frozenset({"Sanction", "Vendor Identification", "Time Estimation"})
 
+# The values the portal writes instead of a date when it has none.
+_NO_DATE_VALUES = frozenset({"NA", "-"})
+
 
 def _parse_ddmmmyyyy(value: str | None) -> str | None:
     """'09-Jul-2024' -> '2024-07-09'. Returns None for the empty/NA cases
     rather than inventing a date -- normalized_record.schema.json marks
     sanction_date nullable precisely so a missing date stays missing.
     """
-    if not value or value in {"NA", "-"}:
+    if not value or value in _NO_DATE_VALUES:
         return None
     try:
         return datetime.strptime(value.strip(), "%d-%b-%Y").date().isoformat()
@@ -680,7 +683,11 @@ def load_and_adapt(
 
     def _unreadable(raw_key: str) -> tuple[int, int]:
         supplied = [row.get(raw_key) for row in sanctioned]
-        non_empty = [value for value in supplied if _clean(value) is not None]
+        non_empty = []
+        for value in supplied:
+            text = _clean(value)
+            if text is not None and text not in _NO_DATE_VALUES:
+                non_empty.append(value)
         failed = sum(1 for value in non_empty if _parse_ddmmmyyyy(value) is None)
         return len(non_empty), failed
 

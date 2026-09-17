@@ -580,3 +580,16 @@ def test_a_changed_date_format_fails_the_build_instead_of_blanking_every_date(tm
         load_and_adapt(tmp_path, as_of=date(2026, 9, 4))
 
     assert "recommendation_date" in str(caught.value)
+
+
+def test_the_portals_no_date_sentinels_count_as_missing_not_unreadable(tmp_path) -> None:
+    rows = [
+        _sanctioned_row(700 + i, description="Road work", recommendation="NA" if i % 2 else "-")
+        for i in range(50)
+    ]
+    _write_tiles(tmp_path, rows)
+
+    _records, counts = load_and_adapt(tmp_path, as_of=date(2026, 9, 4))
+
+    assert counts["recommendation_date_unparseable"] == 0
+    assert counts["recommendation_date_missing"] == 50
