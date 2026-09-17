@@ -133,3 +133,17 @@ test("lists the portal activity and the recommendation date as published", () =>
     formatDate("2024-07-02"),
   );
 });
+
+test("shows a portal activity with capitals exactly as published", () => {
+  render(
+    <DetailPanel
+      row={row({ activity_name: "Fitting of Sitting RCC Benches in Public Places" })}
+      onClose={() => {}}
+      quotaN={10}
+    />,
+  );
+
+  expect(screen.getByText(fields.activity).nextElementSibling).toHaveTextContent(
+    "Fitting of Sitting RCC Benches in Public Places",
+  );
+});
