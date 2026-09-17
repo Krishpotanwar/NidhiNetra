@@ -21,6 +21,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from nidhinetra_pipeline.build_snapshot import SnapshotDowngradeError, StaleCacheError
 
@@ -129,6 +130,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# F-17 companion: the rebuilt national graph is about 10 MB of JSON.
+# Compressing responses (Starlette's gzip middleware, no new dependency) cuts
+# that transfer roughly tenfold for the browser. Responses under 1 KB, like
+# /health, are left alone.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 app.include_router(works.router)
 app.include_router(graph.router)

@@ -152,3 +152,30 @@ describe("subgraphFor (F-02: the highlighted cluster must not include an unrelat
     expect(sub.edges).not.toContain(graph.edges[2]);
   });
 });
+
+describe("allVendorConcentrations at national scale (F-17)", () => {
+  it("summarises a graph the size of the rebuilt snapshot in well under a second", () => {
+    const MPS = 536;
+    const AGENCIES = 5_856;
+    const VENDORS = 17_455;
+    const nodes: FundFlowGraph["nodes"] = [];
+    const edges: FundFlowGraph["edges"] = [];
+    for (let m = 0; m < MPS; m++) nodes.push(node(`mp_${m}`, "MP"));
+    for (let a = 0; a < AGENCIES; a++) {
+      nodes.push(node(`agency_${a}`, "Agency"));
+      edges.push(edge(`mp_${a % MPS}`, `agency_${a}`, [`W${a}`]));
+    }
+    for (let v = 0; v < VENDORS; v++) {
+      nodes.push(node(`vendor_${v}`, "Vendor"));
+      edges.push(edge(`agency_${v % AGENCIES}`, `vendor_${v}`, [`W${v % AGENCIES}`]));
+    }
+
+    const started = performance.now();
+    const result = allVendorConcentrations({ nodes, edges });
+    const elapsed = performance.now() - started;
+
+    expect(result).toHaveLength(VENDORS);
+    expect(result.every((vendor) => vendor.memberCount === 1)).toBe(true);
+    expect(elapsed).toBeLessThan(1000);
+  });
+});

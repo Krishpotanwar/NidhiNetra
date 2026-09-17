@@ -252,6 +252,13 @@ Dated DONE entries for F-12, F-19 and every Step 7 item, newest last.
   longer deletes `data/raw/`, which holds the only copy of the original MPLADS captures.
   `pipeline/tests/test_makefile_safety.py` fails if any make recipe deletes `data/raw/` again.
 
+- **F-17, part a, DONE (2026-09-18).** `allVendorConcentrations()` indexes Agency-to-Vendor edges by vendor
+  once instead of rescanning every edge for every vendor. The result is identical, and a synthetic graph the
+  size of the rebuilt snapshot (17,455 vendors, 23,311 edges) now takes 26.55 ms, down from 9,554.71 ms
+  or a timeout. API responses over 1 KB are gzip-compressed when the browser accepts it. Part b (server-side
+  aggregation, so the browser never downloads the national graph) is a separate, optional task decided after
+  the snapshot rebuild.
+
 ## What I noticed about how you think
 
 - You didn't accept the audit on the strength of its prose — you asked for it to be spot-checked against the actual code before trusting the rest of it, and it held up.

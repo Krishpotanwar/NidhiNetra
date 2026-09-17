@@ -1,4 +1,4 @@
-import type { FundFlowGraph, GraphNode } from "./graph-data";
+import type { FundFlowGraph, GraphEdge, GraphNode } from "./graph-data";
 
 /**
  * Vendor concentration: how many distinct Members of Parliament, through
@@ -69,6 +69,11 @@ export function allVendorConcentrations(graph: FundFlowGraph): VendorConcentrati
 
   // agency id -> (MP id -> that MP's own work_ids into this agency).
   const mpWorkIdsOfAgency = new Map<string, Map<string, Set<string>>>();
+  // vendor id -> every Agency -> Vendor edge into it. Built once, so each
+  // vendor below reads only its own edges instead of rescanning the whole
+  // edge list (F-17: the rescan was vendors x edges, about 437 million checks
+  // on the rebuilt national graph).
+  const agencyEdgesIntoVendor = new Map<string, GraphEdge[]>();
   for (const edge of graph.edges) {
     const source = byId.get(edge.source);
     const target = byId.get(edge.target);
@@ -76,6 +81,10 @@ export function allVendorConcentrations(graph: FundFlowGraph): VendorConcentrati
       const byMp = mpWorkIdsOfAgency.get(edge.target) ?? new Map<string, Set<string>>();
       byMp.set(edge.source, new Set(edge.work_ids));
       mpWorkIdsOfAgency.set(edge.target, byMp);
+    } else if (source?.type === "Agency") {
+      const into = agencyEdgesIntoVendor.get(edge.target) ?? [];
+      into.push(edge);
+      agencyEdgesIntoVendor.set(edge.target, into);
     }
   }
 
@@ -85,9 +94,7 @@ export function allVendorConcentrations(graph: FundFlowGraph): VendorConcentrati
     const members = new Set<string>();
     let workCount = 0;
     let paidInr = 0;
-    for (const edge of graph.edges) {
-      const source = byId.get(edge.source);
-      if (source?.type !== "Agency" || edge.target !== vendor.id) continue;
+    for (const edge of agencyEdgesIntoVendor.get(vendor.id) ?? []) {
       workCount += edge.work_count;
       paidInr += edge.total_amount_inr;
 
