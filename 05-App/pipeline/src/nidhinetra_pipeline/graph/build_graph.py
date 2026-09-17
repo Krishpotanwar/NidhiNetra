@@ -72,13 +72,26 @@ def _slugify(label: str) -> str:
     single underscore, strip leading/trailing underscores. Deterministic:
     the same label always produces the same slug, which is what lets the
     frontend cache or link against these ids across runs.
+
+    A label written in another script has no ASCII alphanumerics to slug at
+    all: one of the 5,867 live IA_NAME strings is Devanagari
+    ("सामाजिक न्याय एवं दिव्यांगजन सशक्तिकरण विभाग सीधी"). Percent encoding it
+    keeps the id ASCII, deterministic and distinct from every other label --
+    the same reasoning `_vendor_node_id()` already documents -- rather than
+    failing an entire national build over one department's script. A label
+    that is blank, or ASCII punctuation with no letters or digits, still
+    raises: that is missing or unusable data, not a spelling this function
+    cannot handle.
     """
-    slug = _SLUG_RE.sub("_", label.strip().lower()).strip("_")
-    if not slug:
-        raise GraphValidationError(
-            f"cannot build a stable node id from blank/unslugifiable label {label!r}"
-        )
-    return slug
+    stripped = label.strip()
+    slug = _SLUG_RE.sub("_", stripped.lower()).strip("_")
+    if slug:
+        return slug
+    if stripped and not stripped.isascii():
+        return quote(stripped, safe="")
+    raise GraphValidationError(
+        f"cannot build a stable node id from blank/unslugifiable label {label!r}"
+    )
 
 
 def _node_id(node_type: str, label: str) -> str:

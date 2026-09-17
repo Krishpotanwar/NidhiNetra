@@ -7,9 +7,12 @@ check 8 for the same rule enforced independently at the fixture level.
 
 from __future__ import annotations
 
+from urllib.parse import quote
+
 import jsonschema
 import pytest
 from nidhinetra_pipeline.graph import build_fund_flow_graph
+from nidhinetra_pipeline.graph.build_graph import GraphValidationError
 
 from .conftest import make_normalized, make_scored
 
@@ -239,6 +242,36 @@ def test_name_node_ids_are_slugs_and_vendor_id_is_collision_free_encoded() -> No
     assert "mp_dr_a_p_j_singh" in node_ids
     assert "agency_pwd_division_7" in node_ids
     assert "vendor_PFMS%2FA%20B" in node_ids
+
+
+def test_agency_label_in_another_script_gets_a_stable_ascii_id_instead_of_failing() -> None:
+    # One of the 5,867 live IA_NAME strings is Devanagari, which slugs to
+    # nothing. The build must still name that agency, keep it distinct from
+    # every other one, and return the same id on every run.
+    sidhi = "सामाजिक न्याय एवं दिव्यांगजन सशक्तिकरण विभाग सीधी"
+    rewa = "सामाजिक न्याय विभाग रीवा"
+    records = [
+        make_normalized(work_id="W1", implementing_agency=sidhi),
+        make_normalized(work_id="W2", implementing_agency=rewa),
+    ]
+
+    graph = build_fund_flow_graph(records, [])
+    rebuilt = build_fund_flow_graph(records, [])
+
+    agency_nodes = [node for node in graph["nodes"] if node["type"] == "Agency"]
+    agency_ids = {node["id"] for node in agency_nodes}
+    assert agency_ids == {f"agency_{quote(sidhi, safe='')}", f"agency_{quote(rewa, safe='')}"}
+    assert all(node_id.isascii() for node_id in agency_ids)
+    assert agency_ids == {n["id"] for n in rebuilt["nodes"] if n["type"] == "Agency"}
+    # The id is encoded so it stays ASCII and linkable; the label an officer
+    # reads is still the department's own name, untouched.
+    assert {node["label"] for node in agency_nodes} == {sidhi, rewa}
+
+
+def test_label_with_no_letters_or_digits_still_refuses_to_invent_a_node_id() -> None:
+    for unusable in ("   ", "###"):
+        with pytest.raises(GraphValidationError):
+            build_fund_flow_graph([make_normalized(work_id="W1", implementing_agency=unusable)], [])
 
 
 def test_same_vendor_label_with_different_source_ids_stays_distinct() -> None:
