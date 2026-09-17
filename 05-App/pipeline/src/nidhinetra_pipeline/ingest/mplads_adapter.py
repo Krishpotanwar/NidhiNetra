@@ -551,6 +551,15 @@ def adapt(
                 "vendor_id": rollup.vendor_id() if rollup else None,
                 "vendor_name": rollup.vendor() if rollup else None,
                 "work_category": category_for(row.get("ACTIVITY_NAME")),
+                # The portal's own words, carried without interpretation:
+                # _clean() only tidies transport whitespace, activity_of()
+                # only removes the "WS/ MP620/2024-2025/133166-" reference
+                # prefix, and the date parser only reshapes dd-Mon-yyyy.
+                # activity_of() returns "" for a missing activity, so _clean()
+                # wraps it to produce a null rather than an empty string.
+                "work_description": _clean(row.get("WORK_DESCRIPTION")),
+                "activity_name": _clean(activity_of(row.get("ACTIVITY_NAME"))),
+                "recommendation_date": _parse_ddmmmyyyy(row.get("RECOMMENDATION_DATE")),
                 "sanctioned_amount_inr": _number(row.get("SANCTION_AMOUNT")),
                 "expenditure_amount_inr": rollup.total_inr if rollup else 0.0,
                 "sanction_date": _parse_ddmmmyyyy(row.get("SANCTION_DATE")),

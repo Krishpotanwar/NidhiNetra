@@ -196,3 +196,38 @@ def test_normalize_does_not_mutate_input_records():
     normalize_records([VALID_RAW_RECORD], source_rung=5)
 
     assert VALID_RAW_RECORD == original
+
+
+def test_normalize_carries_the_three_source_fields_and_allows_them_to_be_null() -> None:
+    raw = {
+        "work_id": "W1",
+        "state": "Bihar",
+        "constituency": "ARARIA",
+        "mp_name": "Test MP",
+        "tenure": "2024-2029",
+        "implementing_district_authority": "ARARIA(DPO)",
+        "implementing_agency": "KRIDL",
+        "vendor_id": "V1",
+        "vendor_name": "Test Vendor",
+        "work_category": "Road",
+        "work_description": "PCC Road from Ram house to Shyam house",
+        "activity_name": "Construction of roads",
+        "recommendation_date": "2024-07-08",
+        "sanctioned_amount_inr": 500000.0,
+        "expenditure_amount_inr": 0.0,
+        "sanction_date": "2024-07-09",
+        "completion_status": "In Progress",
+        "last_updated": "2026-09-04",
+    }
+
+    kept = normalize_records([raw], source_rung=1)[0]
+    assert kept["work_description"] == "PCC Road from Ram house to Shyam house"
+    assert kept["activity_name"] == "Construction of roads"
+    assert kept["recommendation_date"] == "2024-07-08"
+
+    blanked = normalize_records(
+        [{**raw, "work_description": None, "activity_name": None, "recommendation_date": None}],
+        source_rung=1,
+    )[0]
+    assert blanked["work_description"] is None
+    assert blanked["recommendation_date"] is None

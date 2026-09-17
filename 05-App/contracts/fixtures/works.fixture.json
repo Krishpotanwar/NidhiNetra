@@ -15,7 +15,10 @@
     "sanction_date": null,
     "completion_status": "Recommended",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": "Construction of bore well near Zilla Parishad school, Ward 4",
+    "activity_name": "Drinking water facilities",
+    "recommendation_date": "2024-06-28"
   },
   {
     "work_id": "MPLADS-FX-0002",
@@ -33,7 +36,10 @@
     "sanction_date": null,
     "completion_status": "Recommended",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": "PCC road from Kisan Bhawan to the bus stop",
+    "activity_name": "Construction of roads",
+    "recommendation_date": "2024-07-02"
   },
   {
     "work_id": "MPLADS-FX-0003",
@@ -51,7 +57,10 @@
     "sanction_date": "2023-10-19",
     "completion_status": "Completed",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": "Installation of 5 solar street lights at the village chowk",
+    "activity_name": "Street lighting",
+    "recommendation_date": "2024-07-11"
   },
   {
     "work_id": "MPLADS-FX-0004",
@@ -69,7 +78,10 @@
     "sanction_date": "2023-10-10",
     "completion_status": "In Progress",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": "Construction of community hall at Ward 9",
+    "activity_name": "Construction of buildings for community activities",
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0005",
@@ -87,7 +99,10 @@
     "sanction_date": "2023-02-18",
     "completion_status": "Sanctioned",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0006",
@@ -105,7 +120,10 @@
     "sanction_date": "2023-10-15",
     "completion_status": "In Progress",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0007",
@@ -123,7 +141,10 @@
     "sanction_date": "2023-09-16",
     "completion_status": "Sanctioned",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0008",
@@ -141,7 +162,10 @@
     "sanction_date": "2023-03-16",
     "completion_status": "In Progress",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0009",
@@ -159,7 +183,10 @@
     "sanction_date": "2023-12-12",
     "completion_status": "In Progress",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0010",
@@ -177,7 +204,10 @@
     "sanction_date": "2023-01-24",
     "completion_status": "In Progress",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0011",
@@ -195,7 +225,10 @@
     "sanction_date": "2023-01-15",
     "completion_status": "Completed",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0012",
@@ -213,7 +246,10 @@
     "sanction_date": "2023-07-28",
     "completion_status": "In Progress",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0013",
@@ -231,7 +267,10 @@
     "sanction_date": "2023-12-14",
     "completion_status": "In Progress",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0014",
@@ -249,7 +288,10 @@
     "sanction_date": "2023-01-16",
     "completion_status": "Sanctioned",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0015",
@@ -267,7 +309,10 @@
     "sanction_date": null,
     "completion_status": "Recommended",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0016",
@@ -285,7 +330,10 @@
     "sanction_date": "2023-07-13",
     "completion_status": "Completed",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0017",
@@ -303,7 +351,10 @@
     "sanction_date": "2023-02-11",
     "completion_status": "In Progress",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0018",
@@ -321,7 +372,10 @@
     "sanction_date": "2023-02-28",
     "completion_status": "In Progress",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0019",
@@ -339,7 +393,10 @@
     "sanction_date": "2023-02-28",
     "completion_status": "In Progress",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   },
   {
     "work_id": "MPLADS-FX-0020",
@@ -357,6 +414,9 @@
     "sanction_date": "2023-08-27",
     "completion_status": "Sanctioned",
     "last_updated": "2026-08-15",
-    "source_rung": 5
+    "source_rung": 5,
+    "work_description": null,
+    "activity_name": null,
+    "recommendation_date": null
   }
 ]

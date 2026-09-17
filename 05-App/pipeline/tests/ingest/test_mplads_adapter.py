@@ -475,3 +475,51 @@ class TestAuthorityAndAgencySeparation:
         assert _modal_string(Counter()) is None
         assert _modal_string(Counter({"b": 2, "a": 1})) == "b"
         assert _modal_string(Counter({"b": 1, "a": 1})) == "a"
+
+
+def test_adapt_carries_description_activity_and_recommendation_date() -> None:
+    sanctioned = [
+        {
+            "WORK_RECOMMENDATION_DTL_ID": 501,
+            "STATE_NAME": "Bihar",
+            "CONSTITUENCY": "ARARIA",
+            "MP_NAME": "Test MP",
+            "IDA_NAME": "ARARIA(DISTRICT PLANNING OFFICER ARARIA_IDA)",
+            "ACTIVITY_NAME": "WS/\t MP418/2024-2025/133409-Construction of roads",
+            "WORK_DESCRIPTION": "  PCC Road from\tRam house to Shyam house  ",
+            "SANCTION_AMOUNT": "500000",
+            "SANCTION_DATE": "09-Jul-2024",
+            "RECOMMENDATION_DATE": "08-Jul-2024",
+            "WORK_STAGE": "Work in Progress",
+        }
+    ]
+
+    record = adapt(sanctioned, [], [], as_of=date(2026, 9, 4))[0]
+
+    assert record["work_description"] == "PCC Road from Ram house to Shyam house"
+    assert record["activity_name"] == "Construction of roads"
+    assert record["recommendation_date"] == "2024-07-08"
+
+
+def test_adapt_leaves_the_three_new_fields_null_when_the_portal_has_nothing() -> None:
+    sanctioned = [
+        {
+            "WORK_RECOMMENDATION_DTL_ID": 502,
+            "STATE_NAME": "Bihar",
+            "CONSTITUENCY": "ARARIA",
+            "MP_NAME": "Test MP",
+            "IDA_NAME": "ARARIA(DISTRICT PLANNING OFFICER ARARIA_IDA)",
+            "ACTIVITY_NAME": "",
+            "WORK_DESCRIPTION": "   ",
+            "SANCTION_AMOUNT": "500000",
+            "SANCTION_DATE": "09-Jul-2024",
+            "RECOMMENDATION_DATE": "",
+            "WORK_STAGE": "Work in Progress",
+        }
+    ]
+
+    record = adapt(sanctioned, [], [], as_of=date(2026, 9, 4))[0]
+
+    assert record["work_description"] is None
+    assert record["activity_name"] is None
+    assert record["recommendation_date"] is None

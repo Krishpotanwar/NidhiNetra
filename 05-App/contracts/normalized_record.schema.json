@@ -16,6 +16,9 @@
     "vendor_id",
     "vendor_name",
     "work_category",
+    "work_description",
+    "activity_name",
+    "recommendation_date",
     "sanctioned_amount_inr",
     "expenditure_amount_inr",
     "sanction_date",
@@ -71,6 +74,19 @@
       "type": "string",
       "enum": ["Road", "Drinking Water", "School", "Health", "Community Infrastructure", "Electricity", "Sanitation"],
       "description": "Fatal if missing: no category means no peer group, and peer group is mandatory on every flagged record."
+    },
+    "work_description": {
+      "type": ["string", "null"],
+      "description": "The recommendation's own free text from the Sanctioned tile (WORK_DESCRIPTION), spacing tidied and nothing else. Degradable: only the duplicate finder, the detail panel and the header search read it."
+    },
+    "activity_name": {
+      "type": ["string", "null"],
+      "description": "The portal's own activity string with its work-reference prefix stripped, one of 112 live values. Degradable: work_category stays the field every detector groups by."
+    },
+    "recommendation_date": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "YYYY-MM-DD or null. The date the MP recommended the work, from RECOMMENDATION_DATE. Degradable: nothing scores on it yet."
     },
     "sanctioned_amount_inr": {
       "type": "number",
