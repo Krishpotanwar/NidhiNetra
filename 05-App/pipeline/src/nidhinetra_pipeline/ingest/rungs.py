@@ -109,6 +109,12 @@ class Rung1LiveApi(Rung):
             counts["expenditure_rows"],
             counts["dropped_no_work_id"],
         )
+        completeness = {
+            key: value
+            for key, value in counts.items()
+            if key.endswith(("_present", "_missing", "_unparseable"))
+        }
+        logger.info("Rung 1 source completeness: %s", completeness)
         return records
 
 

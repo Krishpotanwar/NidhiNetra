@@ -70,28 +70,6 @@ def payment_row(
     }
 
 
-def _sanctioned_row(work_id: int, *, description, recommendation):
-    """One MPLADS-shaped Works Sanctioned row exercising the three source
-    fields Task 1 added, with `description` and `recommendation` free to be
-    `None` on purpose. Separate from `sanctioned_row` above: that helper's
-    `**overrides` shape does not suit a caller that wants those two fields
-    named explicitly at every call site.
-    """
-    return {
-        "WORK_RECOMMENDATION_DTL_ID": work_id,
-        "STATE_NAME": "Bihar",
-        "CONSTITUENCY": "ARARIA",
-        "MP_NAME": "Test MP",
-        "IDA_NAME": "ARARIA(DISTRICT PLANNING OFFICER ARARIA_IDA)",
-        "ACTIVITY_NAME": f"WS/\t MP418/2024-2025/{work_id}-Construction of roads",
-        "WORK_DESCRIPTION": description,
-        "SANCTION_AMOUNT": "500000",
-        "SANCTION_DATE": "09-Jul-2024",
-        "RECOMMENDATION_DATE": recommendation,
-        "WORK_STAGE": "Work in Progress",
-    }
-
-
 def _write_tiles(raw_dir, rows):
     """Writes `rows` as a JSON list to `raw_dir / "mplads-sanctioned.json"`."""
     (raw_dir / "mplads-sanctioned.json").write_text(json.dumps(rows), encoding="utf-8")
@@ -555,8 +533,8 @@ def test_adapt_leaves_the_three_new_fields_null_when_the_portal_has_nothing() ->
 
 def test_counts_report_how_complete_the_three_source_fields_are(tmp_path) -> None:
     rows = [
-        _sanctioned_row(501, description="Road work", recommendation="08-Jul-2024"),
-        _sanctioned_row(502, description=None, recommendation=None),
+        sanctioned_row(501, WORK_DESCRIPTION="Road work", RECOMMENDATION_DATE="08-Jul-2024"),
+        sanctioned_row(502, WORK_DESCRIPTION=None, RECOMMENDATION_DATE=None),
     ]
     _write_tiles(tmp_path, rows)
 
@@ -571,7 +549,7 @@ def test_counts_report_how_complete_the_three_source_fields_are(tmp_path) -> Non
 
 def test_a_changed_date_format_fails_the_build_instead_of_blanking_every_date(tmp_path) -> None:
     rows = [
-        _sanctioned_row(600 + i, description="Road work", recommendation="2024-07-08")
+        sanctioned_row(600 + i, WORK_DESCRIPTION="Road work", RECOMMENDATION_DATE="2024-07-08")
         for i in range(50)
     ]
     _write_tiles(tmp_path, rows)
@@ -584,7 +562,9 @@ def test_a_changed_date_format_fails_the_build_instead_of_blanking_every_date(tm
 
 def test_the_portals_no_date_sentinels_count_as_missing_not_unreadable(tmp_path) -> None:
     rows = [
-        _sanctioned_row(700 + i, description="Road work", recommendation="NA" if i % 2 else "-")
+        sanctioned_row(
+            700 + i, WORK_DESCRIPTION="Road work", RECOMMENDATION_DATE="NA" if i % 2 else "-"
+        )
         for i in range(50)
     ]
     _write_tiles(tmp_path, rows)
@@ -593,3 +573,32 @@ def test_the_portals_no_date_sentinels_count_as_missing_not_unreadable(tmp_path)
 
     assert counts["recommendation_date_unparseable"] == 0
     assert counts["recommendation_date_missing"] == 50
+
+
+@pytest.mark.parametrize(
+    ("raw_key", "parsed_key"),
+    [("RECOMMENDATION_DATE", "recommendation_date"), ("SANCTION_DATE", "sanction_date")],
+)
+def test_one_unreadable_date_in_a_hundred_does_not_block_a_refresh_but_two_do(
+    tmp_path, raw_key, parsed_key
+) -> None:
+    def rows(unreadable: int) -> list[dict]:
+        built = []
+        for i in range(100):
+            overrides = {"WORK_DESCRIPTION": "Road work", "RECOMMENDATION_DATE": "08-Jul-2024"}
+            if i < unreadable:
+                overrides[raw_key] = "2024-07-08"
+            built.append(sanctioned_row(800 + i, **overrides))
+        return built
+
+    one, two = tmp_path / "one", tmp_path / "two"
+    one.mkdir()
+    two.mkdir()
+    _write_tiles(one, rows(1))
+    _write_tiles(two, rows(2))
+
+    _records, counts = load_and_adapt(one, as_of=AS_OF)
+    assert counts[f"{parsed_key}_unparseable"] == 1
+
+    with pytest.raises(UnreadableDateFormatError, match=parsed_key):
+        load_and_adapt(two, as_of=AS_OF)

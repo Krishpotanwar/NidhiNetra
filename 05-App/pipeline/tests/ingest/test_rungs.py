@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 
 import pytest
@@ -232,3 +233,26 @@ def test_rung1_raises_on_unreadable_date_format_instead_of_falling_through(tmp_p
 
     with pytest.raises(UnreadableDateFormatError):
         Rung1LiveApi(raw_dir=tmp_path).try_fetch()
+
+
+def test_rung1_logs_how_complete_the_source_fields_are(tmp_path, caplog):
+    """The spec requires the build itself to print present, missing and
+    unreadable counts, so a portal that stops publishing descriptions shows
+    up in the build log, not only in an offline script."""
+    _write_tiles(
+        tmp_path,
+        sanctioned=[
+            _tile_row(1, WORK_DESCRIPTION="Road work", RECOMMENDATION_DATE="08-Jul-2024"),
+            _tile_row(2),
+        ],
+    )
+
+    with caplog.at_level(logging.INFO, logger="nidhinetra_pipeline.ingest.rungs"):
+        Rung1LiveApi(raw_dir=tmp_path).try_fetch()
+
+    message = next(
+        r.getMessage() for r in caplog.records if "source completeness" in r.getMessage()
+    )
+    assert "'description_present': 1" in message
+    assert "'description_missing': 1" in message
+    assert "'recommendation_date_unparseable': 0" in message
