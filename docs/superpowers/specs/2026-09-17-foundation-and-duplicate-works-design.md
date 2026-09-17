@@ -98,16 +98,31 @@ characters becomes one space, collapse spaces. Digits are kept. No stemming, no 
 stopword removal. The original text is stored separately. Any change to this rule becomes `v2`,
 because the same data under a different rule produces different "identical" groups.
 
-Three internal concepts, never conflated, measured on the 2026-09-04 capture:
+Text equality has three levels, and they must never be conflated. Only the middle one is reproducible
+downstream, because `work_description` is already `_clean()`ed by the time anything else sees it:
 
-| Concept | Count |
-|---|---|
-| `exact_source_text_group` (byte-identical, same constituency) | 1,080 groups / 7,830 works |
-| `canonical_v1_text_group` | 1,176 groups / 8,576 works |
-| `threshold_crossing_batch` (every work under Rs 15 lakh, group total at or above Rs 25 lakh) | 271 groups / 5,424 works / Rs 204.5 crore |
-| `near_copy_candidate` (text pairs, same constituency) | 40,304 |
+```text
+portal raw value
+    |  _clean()  (tabs to spaces, runs collapsed, trimmed)
+work_description
+    |  exact equality
+cleaned_source_text_group          <- the production concept
+    |  canonical_description_v1
+canonical_v1_text_group            <- what Finder 1 groups by
+```
 
-Officer-facing wording for the first two: "Works sharing the same portal description".
+Measured on the 2026-09-04 capture:
+
+| Concept | Count | Status |
+|---|---|---|
+| raw byte-identical, same constituency | 1,080 groups / 7,830 works | analysis statistic only; not reproducible after Phase 0 |
+| `cleaned_source_text_group` | 1,152 groups / 8,193 works | production concept |
+| `canonical_v1_text_group` | 1,176 groups / 8,576 works | Finder 1's grouping |
+| `threshold_crossing_batch` (every work under Rs 15 lakh, group total at or above Rs 25 lakh), measured on `canonical_v1_text_group` | 271 groups / 5,424 works / Rs 204.5 crore | production signal |
+| `near_copy_candidate` (text pairs, same constituency) | 40,304 | production candidates |
+
+`_clean()` changes 7,755 of the 79,066 descriptions, which is the entire gap between the first two
+rows. Officer-facing wording for a group at either level: "Works sharing the same portal description".
 
 **Finder 1, identical batches.** No AI. Code attaches work count, amount range, group total, sanction
 dates and agency, and the `threshold_crossing_batch` flag with the neutral clause 4.4.2 sentence.
@@ -179,9 +194,20 @@ the other a human record. A dollar budget cap, resumable, with prices in config 
 comments. Judging all 40,304 pairs costs about 1 to 2 dollars at `gpt-oss-120b` rates (DeepInfra
 $0.04 in / $0.17 out per million tokens).
 
-**Model choice is decided by Stage D,** among `openai/gpt-oss-120b`, `openai/gpt-oss-20b`,
-`google/gemma-3-27b-it` and `sarvamai/sarvam-m` (Indic scripts and romanised Hindi, via Featherless;
-strict-JSON support unverified, so it may need JSON mode plus retries).
+**A model and its provider are pinned together, never the model alone.** Hugging Face's own guidance
+is that structured-output support depends on the model and provider combination, and automatic
+routing (`:cheapest`, `:fastest`) can change which provider serves a model between runs. Those
+selectors are fine while experimenting and are **forbidden for the production judging run**, because
+a silent provider change would break reproducibility of answers we have already committed.
+
+Stage D therefore bakes off pairs, not models: `openai/gpt-oss-120b` + DeepInfra,
+`openai/gpt-oss-20b` + its provider, `google/gemma-3-27b-it` + DeepInfra, and `sarvamai/sarvam-m` +
+Featherless (Indic scripts and romanised Hindi; strict-JSON support unverified, so it may need JSON
+mode plus retries, which the bake-off will show as a rejected-output rate).
+
+Every cached answer stores `model_id`, `provider_id`, `prompt_version`, `schema_version`,
+`judge_code_version`, `run_timestamp` and the input pair's fingerprint, so any answer on screen can be
+traced to exactly what produced it.
 
 ## From a text answer to a work-level candidate (code, not AI)
 
@@ -192,11 +218,33 @@ the largest implies 2,904.
   agency, activity and status.
 - Above that, the candidate stays group-to-group with summaries only, so a 246-work batch never
   becomes 12,000 rows.
-- Labels: same place and asset with close amounts and dates gives `duplicate_candidate`; same place
-  and asset but numbered or same-day gives `split_or_phase_candidate`; same place, different asset
-  gives `sibling_candidate`; different place or unrelated gives `separate_work`; not enough detail
-  gives `unclear`.
-- The text answer is cached once. Work-level labels are recomputed every build, being deterministic.
+**`work_candidate_derivation_v1`, frozen.** "Close amounts", "numbered" and "same-day" are not
+algorithms, so they are replaced by explicit conditions. Every threshold below is a v1 default that
+Stage D may revise once, after which the version number moves to v2:
+
+```text
+duplicate_candidate:
+    text_relation == same_asset_same_place
+    AND  date_gap_days <= 365
+    AND  min(sanctioned_a, sanctioned_b) / max(sanctioned_a, sanctioned_b) >= 0.5
+
+split_or_phase_candidate:
+    text_relation == same_asset_same_place
+    AND  NOT duplicate_candidate            (it failed the date or the amount test)
+    OR   either canonical text contains a continuation marker from the frozen list
+         {"phase", "continuation", "continue", "remaining", "balance work"}
+
+sibling_candidate:   text_relation == same_place_different_asset
+separate_work:       text_relation in {same_asset_different_place, unrelated}
+unclear:             text_relation == not_enough_detail
+```
+
+"Numbered" is deliberately absent. The judge's own rubric sends "hall no 3" against "hall no 4" to
+`same_place_different_asset`, so numbering is already answered one level up; treating it as split
+evidence here would contradict that and would put the model's job back into the deterministic layer.
+
+The text answer is cached once. Work-level labels are recomputed on every build from this frozen
+rule, so two developers reading the same judgment produce the same labels.
 
 **What reaches the officer:** only `duplicate_candidate` or `split_or_phase_candidate`, and only when
 at least one discriminating fact is quoted from both records: a place, an institution, road endpoints,
@@ -225,27 +273,58 @@ actions "These are the same" and "These are different". "Duplicate" never appear
 each side, 50 conflicting with more, and **50 from below the cut-off** (character 0.65 to 0.80),
 generated for the sample only. Without that last stratum we cannot say what the finder misses.
 
-Two labellers from different companies, blind to each other and to the judge: a Claude Opus subagent,
+Two separately run models from different providers, blind to each other and to the judge (different
+providers does not make their errors statistically independent, and the report must not imply it): a
+Claude Opus subagent,
 and GPT via the user's Codex app or ChatGPT (the Codex CLI is not installed locally, so this is a file
 handoff). Both follow the judge's own rubric, so the rubric is under test too. Agreement becomes the
 reference label; disagreements are marked ambiguous, excluded from the headline figure and counted,
 because a pair two strong models read differently is one an officer should decide. Agreement is
 reported per answer type, and no figure is published for a type the labellers rarely agree on.
 
-Per model: agreement with the reference by stratum and weighted to the population; abstention
-behaviour; **false same-place claims reported separately**, since that is the error that sends an
-officer to the wrong village; rejected outputs; cost per 1,000 pairs from the API's own token counts.
-The selection rule is fixed in advance: fewest false same-place claims first, then the cheaper model
-among those within a small margin.
+Per model and provider: agreement with the reference by stratum and weighted to the population;
+abstention behaviour; **false same-place claims reported separately**, since that is the error that
+sends an officer to the wrong village; rejected outputs; cost per 1,000 pairs from the API's own
+token counts.
+
+**The selection rule is pre-registered here, before the bake-off runs,** because a rule written
+afterwards can be fitted to the winner. A rule of "fewest false same-place claims" alone is not
+enough: a model that abstains on 285 of 300 pairs would win it while being useless.
+
+```text
+1. Eligibility   usable-output coverage >= 90%
+                 (a non-rejected, non-abstaining classification)
+2. Primary       lowest false same-place rate
+3. Tie band      models within 1 percentage point of the best
+4. Secondary     highest agreement on consensus-labelled pairs
+5. Final tie     lowest measured cost per 1,000 pairs
+```
+
+The dangerous-error rate is reported as a proportion with a 95% Wilson interval, never as a bare
+number: "2 of 143 applicable pairs, 1.4%, 95% interval 0.4% to 4.9%". A 300-pair experiment cannot
+support the precision that "1.4%" alone implies, and this project already uses Wilson intervals for
+exactly this reason in its inspection-precision arithmetic.
 
 Thresholds are then chosen from measured yield per band, so the claim is "we chose 0.80 because below
 it candidate volume rose sharply while confirmed pairs barely moved".
 
-Wording, in public and in the app: never "accuracy". "On 300 pairs labelled independently by two
-frontier models, the judge matched the reference on N% and made M false same-place claims", with the
-caveat that the reference is model-made, not human-made. `strings.json` bans "accuracy",
-"confidence" and "probability", so the Reports page says "agrees with an independent two-model
-reference on N of 300 pairs".
+**Three quantities are reported, never one.** Excluding disagreements and then quoting "N of 300"
+would use a denominator that no longer exists:
+
+```text
+panel consensus coverage    259 of 300 pairs received an agreed reference label
+judge agreement             238 of those 259 consensus-labelled pairs
+panel ambiguity              41 of 300 pairs were labelled differently by the two runs
+```
+
+(The numbers above are the shape of the report, not results.) Public wording: "Two models separately
+labelled 300 test pairs and agreed on 259. On those 259, the selected judge matched 238. The
+remaining 41 were kept as ambiguous rather than forced into a reference answer."
+
+Never "accuracy", and never "independent models": two models from different providers can still make
+the same mistake, so the correct phrase is "a two-model reference" or "two separately run models".
+`strings.json` bans "accuracy", "confidence" and "probability", so the Reports page says "agrees with
+a two-model reference on N of the M pairs both runs labelled the same way".
 
 Every artifact is committed and re-runnable from one script, as `deck_figures.py` already is.
 
