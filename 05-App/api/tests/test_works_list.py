@@ -9,6 +9,7 @@ from collections import Counter
 
 import duckdb
 from nidhinetra_api import db
+from nidhinetra_api.routers import works as works_router
 from nidhinetra_pipeline.risk.peer_groups import financial_year_of
 
 
@@ -35,6 +36,37 @@ def test_legacy_snapshot_without_vendor_id_stays_queryable(tmp_path):
         rows = db.rows_as_dicts(connection, "SELECT vendor_id FROM works LIMIT 1")
 
     assert rows == [{"vendor_id": None}]
+
+
+def test_legacy_snapshot_without_source_fields_stays_queryable(tmp_path, works_fixture):
+    """Phase 0 adds work_description, activity_name and recommendation_date
+    to newly built snapshots, but the committed pre-Phase-0 snapshot has none
+    of them. Until an operator performs an authorised rebuild, the API
+    compatibility view must expose those fields as null rather than failing
+    every works query with a DuckDB binder error.
+    """
+    legacy_snapshot = tmp_path / "legacy-source-fields-snapshot"
+    legacy_snapshot.mkdir()
+    works_path = legacy_snapshot / "works.parquet"
+    with duckdb.connect(":memory:") as connection:
+        connection.execute(
+            "CREATE TABLE legacy_works AS SELECT * "
+            "EXCLUDE (work_description, activity_name, recommendation_date) "
+            "FROM read_parquet(?)",
+            [str(db.SNAPSHOT_DIR / "works.parquet")],
+        )
+        connection.execute("COPY legacy_works TO ? (FORMAT PARQUET)", [str(works_path)])
+    shutil.copyfile(db.SNAPSHOT_DIR / "scored.parquet", legacy_snapshot / "scored.parquet")
+
+    work_id = works_fixture[0]["work_id"]
+    with db.connect(legacy_snapshot) as connection:
+        rows = db.rows_as_dicts(
+            connection, works_router._MERGED_SELECT + " WHERE works.work_id = ?", [work_id]
+        )
+
+    assert rows[0]["work_description"] is None
+    assert rows[0]["activity_name"] is None
+    assert rows[0]["recommendation_date"] is None
 
 
 def test_legacy_snapshot_ida_values_are_never_served_as_the_agency(tmp_path):

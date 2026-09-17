@@ -99,6 +99,13 @@ def connect(snapshot_dir: Path | None = None) -> duckdb.DuckDBPyConnection:
             "works_snapshot.implementing_agency AS implementing_district_authority"
         )
         optional_columns.append("CAST(NULL AS VARCHAR) AS implementing_agency")
+    # Phase 0 adds work_description, activity_name and recommendation_date to
+    # newly-built snapshots, but the real committed snapshot predates them.
+    # Keep that snapshot queryable until an operator explicitly rebuilds it; a
+    # missing source field is truthfully represented as null.
+    for column in ("work_description", "activity_name", "recommendation_date"):
+        if column not in work_columns:
+            optional_columns.append(f"CAST(NULL AS VARCHAR) AS {column}")
     projection = ", ".join([star, *optional_columns])
     con.execute(f"CREATE VIEW works AS SELECT {projection} FROM works_snapshot")
     con.execute(f"CREATE VIEW scored AS SELECT * FROM '{scored_path.as_posix()}'")

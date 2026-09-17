@@ -53,7 +53,8 @@ _MERGED_SELECT = """
         works.work_id, works.state, works.constituency, works.mp_name,
         works.tenure, works.implementing_district_authority,
         works.implementing_agency, works.vendor_name,
-        works.vendor_id, works.work_category, works.sanctioned_amount_inr,
+        works.vendor_id, works.work_category, works.work_description, works.activity_name,
+        works.recommendation_date, works.sanctioned_amount_inr,
         works.expenditure_amount_inr, works.sanction_date,
         works.completion_status, works.last_updated, works.source_rung,
         scored.inspection_rank, scored.risk_score, scored.flags,
@@ -73,6 +74,9 @@ _SEARCH_COLUMNS = (
     "works.state",
     "works.vendor_name",
     "works.vendor_id",
+    # What an officer types is usually what was built, not who built it.
+    "works.work_description",
+    "works.activity_name",
 )
 
 # flags is JSON text in scored.parquet (db.JSON_ENCODED_SCORED_COLUMNS), so

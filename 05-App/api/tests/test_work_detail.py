@@ -35,3 +35,13 @@ def test_get_work_404_for_fake_id_has_a_renderable_error_message(client):
     assert isinstance(body["error"], str)
     assert "this-work-id-does-not-exist" in body["error"]
     assert "Traceback" not in body["error"]
+
+
+def test_a_work_carries_the_portal_description_activity_and_recommendation_date(client):
+    body = client.get("/api/works/MPLADS-FX-0001").json()["data"]
+
+    assert (
+        body["work_description"] == "Construction of bore well near Zilla Parishad school, Ward 4"
+    )
+    assert body["activity_name"] == "Drinking water facilities"
+    assert body["recommendation_date"] == "2024-06-28"

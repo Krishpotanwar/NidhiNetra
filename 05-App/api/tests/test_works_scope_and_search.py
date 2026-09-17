@@ -22,6 +22,8 @@ SEARCH_FIELDS = (
     "mp_name",
     "state",
     "vendor_name",
+    "work_description",
+    "activity_name",
 )
 
 
@@ -126,3 +128,15 @@ def test_q_matches_the_district_authority(client, works_fixture):
     expected = sum(1 for r in works_fixture if _matches(r, needle))
     assert expected == len(works_fixture)  # every synthetic authority ends with it
     assert _get(client, {"q": needle, "page_size": 200})["meta"]["total"] == expected
+
+
+def test_the_header_search_matches_a_word_in_the_description(client):
+    body = client.get("/api/works", params={"q": "bore well"}).json()["data"]
+
+    assert [row["work_id"] for row in body] == ["MPLADS-FX-0001"]
+
+
+def test_the_header_search_matches_a_word_in_the_portal_activity(client):
+    body = client.get("/api/works", params={"q": "street lighting"}).json()["data"]
+
+    assert "MPLADS-FX-0003" in [row["work_id"] for row in body]
