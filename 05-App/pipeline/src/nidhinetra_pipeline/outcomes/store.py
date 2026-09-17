@@ -107,6 +107,20 @@ class DuplicateOutcomeError(OutcomeError):
     """
 
 
+class InvalidSupersedesError(OutcomeError):
+    """`supersedes` names no outcome, or an outcome recorded for a different
+    work. An amendment can only correct an earlier entry for the same work
+    (F-10, nemotronreview.md).
+    """
+
+
+class AlreadySupersededError(OutcomeError):
+    """The outcome named by `supersedes` has already been amended once. Amend
+    the latest entry instead, so each work's amendment chain stays linear
+    (F-10).
+    """
+
+
 def _valid_outcomes() -> frozenset[str]:
     """Read fresh from the schema file every call rather than caching at
     import time -- the schema is the single source of truth (same
@@ -133,6 +147,17 @@ def issue_mapping() -> dict[str, bool | None]:
     return {k: v for k, v in schema["_issue_mapping"].items() if not k.startswith("_")}
 
 
+def _connect(db_path: Path) -> sqlite3.Connection:
+    """The one connection policy for this store (F-10): foreign keys enforced,
+    and a 5 second busy timeout, so a concurrent writer waits instead of
+    failing. SQLite's default rollback journal is kept rather than WAL: one
+    writer at a time is the expected load.
+    """
+    connection = sqlite3.connect(db_path, timeout=5.0)
+    connection.execute("PRAGMA foreign_keys = ON")
+    return connection
+
+
 def init_db(db_path: Path | None = None) -> None:
     """Creates the outcomes table if it doesn't exist yet. Safe to call on
     every process start (api/main.py's startup hook, the same pattern
@@ -141,7 +166,7 @@ def init_db(db_path: Path | None = None) -> None:
     """
     db_path = db_path or DEFAULT_DB_PATH
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    with contextlib.closing(sqlite3.connect(db_path)) as conn:
+    with contextlib.closing(_connect(db_path)) as conn:
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS inspection_outcomes (
@@ -233,12 +258,10 @@ def record_outcome(
     human-readable without a live join back to a work that may no longer
     resolve).
 
-    `supersedes`, when given, must be an existing outcome_id -- this
-    function does not validate that beyond the database's own FOREIGN KEY
-    (SQLite only enforces it when the caller has turned on
-    `PRAGMA foreign_keys`, which this module does not; treated as
-    advisory, not enforced, for a single-officer prototype with no
-    concurrent-amendment race to guard against).
+    `supersedes`, when given, must be an earlier outcome for the same work that
+    has not been amended yet (InvalidSupersedesError / AlreadySupersededError,
+    checked inside one BEGIN IMMEDIATE transaction, F-10). Foreign keys are
+    enforced on every connection (see _connect).
     """
     if outcome not in _valid_outcomes():
         raise UnknownOutcomeEnumError(
@@ -271,8 +294,26 @@ def record_outcome(
 
     db_path = db_path or DEFAULT_DB_PATH
     init_db(db_path)
-    with contextlib.closing(sqlite3.connect(db_path)) as conn:
+    with contextlib.closing(_connect(db_path)) as conn:
         try:
+            conn.execute("BEGIN IMMEDIATE")
+            if supersedes is not None:
+                target = conn.execute(
+                    "SELECT work_id FROM inspection_outcomes WHERE outcome_id = ?",
+                    (supersedes,),
+                ).fetchone()
+                if target is None or target[0] != work_id:
+                    raise InvalidSupersedesError(
+                        f"supersedes={supersedes} is not an earlier outcome for work_id={work_id!r}"
+                    )
+                already = conn.execute(
+                    "SELECT 1 FROM inspection_outcomes WHERE supersedes = ?",
+                    (supersedes,),
+                ).fetchone()
+                if already is not None:
+                    raise AlreadySupersededError(
+                        f"outcome {supersedes} has already been amended; amend the latest entry"
+                    )
             cursor = conn.execute(
                 f"INSERT INTO inspection_outcomes ({', '.join(_INSERT_COLUMNS)}) "
                 f"VALUES ({', '.join('?' for _ in _INSERT_COLUMNS)})",
@@ -281,12 +322,22 @@ def record_outcome(
             conn.commit()
             return cursor.lastrowid
         except sqlite3.IntegrityError as exc:
-            raise DuplicateOutcomeError(
-                f"inspector {inspector_id!r} already recorded an outcome for "
-                f"work_id={work_id!r} on {inspected_on!r}; rejected rather "
-                "than overwritten. Record an explicit supersedes amendment "
-                "instead if this is meant to correct that entry."
-            ) from exc
+            conn.rollback()
+            if "UNIQUE constraint failed" in str(exc):
+                raise DuplicateOutcomeError(
+                    f"inspector {inspector_id!r} already recorded an outcome for "
+                    f"work_id={work_id!r} on {inspected_on!r}; rejected rather "
+                    "than overwritten. Record an explicit supersedes amendment "
+                    "instead if this is meant to correct that entry."
+                ) from exc
+            if "FOREIGN KEY constraint failed" in str(exc):
+                raise InvalidSupersedesError(
+                    f"supersedes={supersedes} does not name a recorded outcome"
+                ) from exc
+            raise OutcomeError(f"the database rejected this outcome: {exc}") from exc
+        except Exception:
+            conn.rollback()
+            raise
 
 
 def _row_to_dict(row: tuple[Any, ...]) -> dict[str, Any]:
@@ -309,7 +360,7 @@ def get_outcomes_for_work(work_id: str, *, db_path: Path | None = None) -> list[
     """
     db_path = db_path or DEFAULT_DB_PATH
     init_db(db_path)
-    with contextlib.closing(sqlite3.connect(db_path)) as conn:
+    with contextlib.closing(_connect(db_path)) as conn:
         rows = conn.execute(
             f"SELECT {', '.join(_COLUMNS)} FROM inspection_outcomes "
             "WHERE work_id = ? ORDER BY inspected_on ASC",
@@ -325,7 +376,7 @@ def list_all_outcomes(*, db_path: Path | None = None) -> list[dict[str, Any]]:
     """
     db_path = db_path or DEFAULT_DB_PATH
     init_db(db_path)
-    with contextlib.closing(sqlite3.connect(db_path)) as conn:
+    with contextlib.closing(_connect(db_path)) as conn:
         rows = conn.execute(
             f"SELECT {', '.join(_COLUMNS)} FROM inspection_outcomes ORDER BY inspected_on ASC"
         ).fetchall()

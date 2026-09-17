@@ -19,8 +19,15 @@ interface InspectionCaptureProps {
 
 type Phase = "closed" | "open" | "submitting" | "success" | "error";
 
+/**
+ * The officer's own calendar date. toISOString() is UTC, which in India is
+ * still "yesterday" until 05:30, so it cannot be used here (F-10).
+ */
 function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
 }
 
 /**
@@ -154,6 +161,7 @@ export function InspectionCapture({ workId }: InspectionCaptureProps) {
         <input
           id={dateId}
           type="date"
+          max={todayIsoDate()}
           value={inspectedOn}
           onChange={(e) => setInspectedOn(e.target.value)}
           disabled={submitting}

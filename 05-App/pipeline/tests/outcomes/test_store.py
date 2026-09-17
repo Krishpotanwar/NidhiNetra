@@ -346,3 +346,24 @@ def test_a_pre_f01_database_is_migrated_without_reinterpreting_old_rows(tmp_path
     assert new["context_version"] == 2
     assert new["implementing_district_authority"] == "DHARWAD IDA"
     assert new["implementing_agency"] == "KRIDL DHARWAD"
+
+
+def test_supersedes_must_name_an_outcome_for_the_same_work(db_path: Path) -> None:
+    other_work = _record("W2", "2026-09-05", VALID_OUTCOME, db_path)
+    with pytest.raises(store.InvalidSupersedesError):
+        _record("W1", "2026-09-06", VALID_OUTCOME, db_path, supersedes=other_work)
+    with pytest.raises(store.InvalidSupersedesError):
+        _record("W1", "2026-09-06", VALID_OUTCOME, db_path, supersedes=999_999)
+    assert store.get_outcomes_for_work("W1", db_path=db_path) == []
+
+
+def test_an_outcome_can_be_amended_only_once(db_path: Path) -> None:
+    original = _record("W1", "2026-09-05", "documentation_incomplete", db_path)
+    _record("W1", "2026-09-06", VALID_OUTCOME, db_path, supersedes=original)
+    with pytest.raises(store.AlreadySupersededError):
+        _record("W1", "2026-09-07", VALID_OUTCOME, db_path, inspector_id="RK", supersedes=original)
+
+
+def test_store_connections_enforce_foreign_keys(db_path: Path) -> None:
+    with contextlib.closing(store._connect(db_path)) as connection:
+        assert connection.execute("PRAGMA foreign_keys").fetchone()[0] == 1

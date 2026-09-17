@@ -188,3 +188,15 @@ test("shows the generic error message on a bare network failure", async () => {
 
   await waitFor(() => expect(screen.getByText(strings.error_generic)).toBeInTheDocument());
 });
+
+test("the date picker defaults to today and cannot pick a later day (F-10)", async () => {
+  const user = userEvent.setup();
+  render(<InspectionCapture workId="W1" />);
+  await user.click(screen.getByRole("button", { name: strings.cta }));
+
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const dateInput = screen.getByLabelText(strings.date_label);
+  expect(dateInput).toHaveAttribute("max", today);
+  expect(dateInput).toHaveValue(today);
+});

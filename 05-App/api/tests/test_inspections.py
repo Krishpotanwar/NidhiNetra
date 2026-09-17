@@ -8,8 +8,10 @@ precisely what makes them a trustworthy frozen fact later.
 from __future__ import annotations
 
 import math
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from nidhinetra_api.routers import inspections as inspections_router
 from nidhinetra_pipeline.outcomes import store as outcomes_store
@@ -278,3 +280,80 @@ def test_missing_required_field_is_a_422_not_a_500(client: TestClient) -> None:
     )
     assert resp.status_code == 422
     assert resp.json()["success"] is False
+
+
+_IST = timezone(timedelta(hours=5, minutes=30))
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"inspected_on": "2026-02-30"},
+        {"inspected_on": "05-09-2026"},
+        {"inspected_on": (datetime.now(_IST).date() + timedelta(days=1)).isoformat()},
+        {"inspector_id": "   "},
+        {"inspector_id": "x" * 41},
+        {"notes": "n" * 2001},
+        {"work_id": "w" * 65},
+        {"supersedes": 0},
+    ],
+)
+def test_invalid_outcome_input_is_a_422_and_stores_nothing(
+    client: TestClient, overrides: dict[str, Any]
+) -> None:
+    """F-10: strict request constraints, even in demo mode."""
+    row = _first_work_id(client)
+    # Built with update(), not _payload(row["work_id"], **overrides): the
+    # {"work_id": ...} case's key collides with _payload's own first
+    # positional parameter name, which raises TypeError before any request
+    # is made (proven in this task's red-test-output.txt). update() applies
+    # overrides on top of a valid payload exactly like _payload's own
+    # base.update(overrides) does internally, without that collision.
+    payload = _payload(row["work_id"])
+    payload.update(overrides)
+    resp = client.post("/api/inspections", json=payload)
+    assert resp.status_code == 422
+    assert resp.json()["success"] is False
+    assert outcomes_store.list_all_outcomes() == []
+
+
+def test_whitespace_around_initials_is_trimmed(client: TestClient) -> None:
+    row = _first_work_id(client)
+    resp = client.post("/api/inspections", json=_payload(row["work_id"], inspector_id="  AB  "))
+    assert resp.status_code == 200
+    assert resp.json()["data"]["inspector_id"] == "AB"
+
+
+def test_an_amendment_must_name_an_outcome_for_the_same_work(client: TestClient) -> None:
+    first, second = client.get("/api/works", params={"page_size": 2}).json()["data"]
+    original = client.post("/api/inspections", json=_payload(first["work_id"])).json()["data"]
+
+    resp = client.post(
+        "/api/inspections",
+        json=_payload(second["work_id"], supersedes=original["outcome_id"]),
+    )
+
+    assert resp.status_code == 422
+    assert len(outcomes_store.list_all_outcomes()) == 1
+
+
+def test_an_outcome_can_be_amended_only_once(client: TestClient) -> None:
+    row = _first_work_id(client)
+    original = client.post("/api/inspections", json=_payload(row["work_id"])).json()["data"]
+    first_fix = client.post(
+        "/api/inspections",
+        json=_payload(row["work_id"], inspected_on="2026-09-06", supersedes=original["outcome_id"]),
+    )
+    assert first_fix.status_code == 200
+
+    second_fix = client.post(
+        "/api/inspections",
+        json=_payload(
+            row["work_id"],
+            inspected_on="2026-09-07",
+            inspector_id="RK",
+            supersedes=original["outcome_id"],
+        ),
+    )
+
+    assert second_fix.status_code == 409

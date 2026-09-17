@@ -39,11 +39,13 @@
     "work_id": {
       "type": "string",
       "minLength": 1,
+      "maxLength": 64,
       "description": "Matches normalized_record.work_id. An outcome for an unknown work_id is rejected by the API, not stored."
     },
     "inspector_id": {
       "type": "string",
       "minLength": 1,
+      "maxLength": 40,
       "description": "Free-text initials or name, whoever recorded this outcome. No auth exists in this prototype (main.py has CORS and nothing else) so this is self-reported, not verified -- still required, because the deck's 'reviewers train the model' claim needs to be able to say which reviewer."
     },
     "state": {
@@ -77,7 +79,7 @@
     "inspected_on": {
       "type": "string",
       "format": "date",
-      "description": "YYYY-MM-DD. The date the inspection actually happened, not the date it was recorded on screen."
+      "description": "YYYY-MM-DD. The date the inspection actually happened, not the date it was recorded on screen. Never later than today in India (F-10)."
     },
     "outcome": {
       "type": "string",
@@ -93,6 +95,7 @@
     },
     "notes": {
       "type": "string",
+      "maxLength": 2000,
       "description": "Free text, always present (may be empty). The pressure valve for anything the enum doesn't cover, without letting the enum grow to cover every edge case."
     },
     "inspection_rank_at_time": {

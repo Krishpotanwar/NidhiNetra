@@ -266,6 +266,15 @@ Dated DONE entries for F-12, F-19 and every Step 7 item, newest last.
   every value. `pipeline/tests/risk/test_contamination_invariance.py` locks this in. No constant changed, so
   every score is byte-identical.
 
+- **F-10, DONE (2026-09-18), input and integrity half.** `POST /api/inspections` trims whitespace and caps
+  sizes (work_id 64, initials 40, notes 2000). `inspected_on` must be a real date no later than today in
+  India. `supersedes` must name an earlier, not-yet-amended outcome of the same work, which the store checks
+  inside one `BEGIN IMMEDIATE` transaction (422 or 409). Every store connection enforces foreign keys with a
+  5 second busy timeout, and an `IntegrityError` is no longer always reported as a duplicate. The date picker
+  defaults to the officer's local date and cannot choose a later one. **Deliberately NOT done:** verified
+  identity (needs authentication), server-recorded snapshot/run IDs per outcome, idempotency keys and audit
+  export. These are listed in the design backlog.
+
 ## What I noticed about how you think
 
 - You didn't accept the audit on the strength of its prose — you asked for it to be spot-checked against the actual code before trusting the rest of it, and it held up.

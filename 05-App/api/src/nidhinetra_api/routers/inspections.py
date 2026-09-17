@@ -63,18 +63,23 @@ outcome joins the ranked group.
 from __future__ import annotations
 
 import math
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 import duckdb
 from fastapi import APIRouter, HTTPException
 from nidhinetra_pipeline.outcomes import store
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .. import db
 from ..models import Envelope
 from ..policy import UNDER_IMPLEMENTATION, quota_for
 
 router = APIRouter(prefix="/api/inspections", tags=["inspections"])
+
+# India has no daylight saving, so a fixed +05:30 offset is exact and needs no
+# timezone database. "Today" for an inspection date is the officer's date.
+_IST = timezone(timedelta(hours=5, minutes=30))
 
 _CONTEXT_SELECT = """
     SELECT
@@ -96,19 +101,35 @@ class InspectionOutcomeRequest(BaseModel):
     six values: the schema file is the single source of truth for the
     enum, and store.record_outcome validates against it directly, so a
     future enum edit can't drift between two hand-maintained copies.
+
+    F-10 (nemotronreview.md): strict input even in demo mode. Whitespace is
+    trimmed, sizes are capped, inspected_on must be a real date no later than
+    today in India, and supersedes must be a positive id. Violations are 422s
+    through main.py's envelope handler.
     """
 
     # F-09: a client may not choose the comparison group. Unknown fields,
     # including an old frontend's in_control_sample, are ignored rather than
     # rejected, so that frontend keeps working while the server decides.
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="ignore", str_strip_whitespace=True)
 
-    work_id: str
-    inspected_on: str
+    work_id: str = Field(min_length=1, max_length=64)
+    inspected_on: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
     outcome: str
-    notes: str = ""
-    inspector_id: str
-    supersedes: int | None = None
+    notes: str = Field(default="", max_length=2000)
+    inspector_id: str = Field(min_length=1, max_length=40)
+    supersedes: int | None = Field(default=None, ge=1)
+
+    @field_validator("inspected_on")
+    @classmethod
+    def _a_real_date_not_in_the_future(cls, value: str) -> str:
+        try:
+            parsed = date.fromisoformat(value)
+        except ValueError as exc:
+            raise ValueError("inspected_on must be a real calendar date (YYYY-MM-DD)") from exc
+        if parsed > datetime.now(_IST).date():
+            raise ValueError("inspected_on cannot be later than today (India time)")
+        return value
 
 
 def _server_control_assignment(work_id: str) -> bool:
@@ -233,6 +254,10 @@ def record_inspection(payload: InspectionOutcomeRequest) -> Envelope:
     except store.UnknownOutcomeEnumError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except store.DuplicateOutcomeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except store.InvalidSupersedesError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except store.AlreadySupersededError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
     return Envelope(
