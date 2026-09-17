@@ -521,3 +521,53 @@ class TestBuildSnapshotSourceSelection:
         self._cache(raw, [self._record("w1", 1), self._record("w2", 5)])
         with pytest.raises(bs.SnapshotWriteError, match="inconsistent"):
             bs.build_snapshot(snapshot_dir=tmp_path / "snap", raw_dir=raw)
+
+
+DECISION_COLUMNS = [
+    "work_id",
+    "risk_score",
+    "inspection_rank",
+    "flags",
+    "why_flagged",
+    "peer_group",
+]
+
+
+def _decisions(snapshot_dir: Path) -> list[dict]:
+    frame = pd.read_parquet(snapshot_dir / "scored.parquet")[DECISION_COLUMNS]
+    return json.loads(frame.sort_values("work_id").to_json(orient="records", double_precision=15))
+
+
+def test_the_three_source_fields_never_change_a_score_rank_flag_or_reason(tmp_path, monkeypatch):
+    """Phase 0 carries information; it must not move a single decision. The
+    same works are built twice with the same pinned reference time, once with
+    the portal's own text and once with all three fields blanked and altered.
+    Every scored column must come out identical.
+    """
+    rows = json.loads(REAL_FIXTURE.read_text(encoding="utf-8"))
+    with_text = tmp_path / "with_text.json"
+    without_text = tmp_path / "without_text.json"
+    with_text.write_text(json.dumps(rows), encoding="utf-8")
+    without_text.write_text(
+        json.dumps(
+            [
+                {
+                    **row,
+                    "work_description": None if i % 2 else "completely different wording",
+                    "activity_name": None,
+                    "recommendation_date": None,
+                }
+                for i, row in enumerate(rows)
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    pinned = datetime(2026, 9, 13, 6, 27, 54, tzinfo=UTC)
+    first, second = tmp_path / "a", tmp_path / "b"
+    monkeypatch.setattr(bs, "WORKS_FIXTURE_PATH", with_text)
+    bs.build_snapshot(snapshot_dir=first, raw_dir=tmp_path / "raw", now=pinned)
+    monkeypatch.setattr(bs, "WORKS_FIXTURE_PATH", without_text)
+    bs.build_snapshot(snapshot_dir=second, raw_dir=tmp_path / "raw", now=pinned)
+
+    assert _decisions(first) == _decisions(second)
