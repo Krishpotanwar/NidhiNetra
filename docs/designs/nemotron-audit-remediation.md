@@ -260,6 +260,12 @@ Dated DONE entries for F-12, F-19 and every Step 7 item, newest last.
   aggregation, so the browser never downloads the national graph) is a separate, optional task decided after
   the snapshot rebuild.
 
+- **F-15, DONE (2026-09-18).** The comments on `ISOLATION_FOREST_CONTAMINATION` and `LOF_CONTAMINATION` no
+  longer claim to calibrate the ensemble to the 10 percent quota. Min-max normalisation cancels
+  contamination's only effect (a constant offset), and LOF's output ignores it, so scores are identical for
+  every value. `pipeline/tests/risk/test_contamination_invariance.py` locks this in. No constant changed, so
+  every score is byte-identical.
+
 ## What I noticed about how you think
 
 - You didn't accept the audit on the strength of its prose — you asked for it to be spot-checked against the actual code before trusting the rest of it, and it held up.

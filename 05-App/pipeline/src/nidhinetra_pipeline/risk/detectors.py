@@ -357,12 +357,14 @@ ISOLATION_FOREST_N_ESTIMATORS = 200
 # inspection list" promise (Checkpoints CP2), not the random_state alone.
 
 ISOLATION_FOREST_CONTAMINATION = 0.1
-# Matches the product's own framing: District Authorities must inspect at
-# least 10 percent of works under implementation every year (README, PRD).
-# Calibrating the model's assumed anomaly rate to that same figure keeps
-# the ensemble's internal notion of "unusual" in the same order of
-# magnitude as the quota the product already exists to serve, rather than
-# leaving it at sklearn's arbitrary default of "auto".
+# Does NOT calibrate anything (F-15, nemotronreview.md). contamination only
+# moves IsolationForest's decision threshold (offset_), and ensemble_scores()
+# min-max normalises decision_function across the batch, which cancels any
+# constant offset: every value from 0.01 to 0.5 yields identical final
+# scores (pipeline/tests/risk/test_contamination_invariance.py). It stays at
+# 0.1 only so the fitted models remain byte-identical to earlier snapshots.
+# The statutory 10 percent inspection quota is a budget, never an assumed
+# anomaly prevalence.
 
 ISOLATION_FOREST_RANDOM_STATE = 42
 # Eng review finding: without a fixed random_state, IsolationForest's
@@ -371,7 +373,9 @@ ISOLATION_FOREST_RANDOM_STATE = 42
 # stable, reproducible document (Execution Plan 3.2, Checkpoints CP2).
 # Fixed once, here, and never regenerated per run.
 
-LOF_CONTAMINATION = 0.1  # see ISOLATION_FOREST_CONTAMINATION above.
+LOF_CONTAMINATION = 0.1
+# Also calibrates nothing: negative_outlier_factor_, the only LOF output used
+# below, does not depend on contamination at all (F-15).
 
 LOF_N_NEIGHBORS_DEFAULT = 20
 # Balances two failure modes described in Understanding NidhiNetra part 6,
