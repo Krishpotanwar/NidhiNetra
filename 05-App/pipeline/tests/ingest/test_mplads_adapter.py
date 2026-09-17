@@ -18,6 +18,7 @@ from nidhinetra_pipeline.ingest.mplads_adapter import (
     CATEGORY_FALLBACK,
     VALID_CATEGORIES,
     MpladsAdapterError,
+    UnreadableDateFormatError,
     _modal_string,
     activity_of,
     adapt,
@@ -67,6 +68,33 @@ def payment_row(
         "WORK_STATUS": status,
         "EXPENDITURE_DATE": "21-Aug-2026",
     }
+
+
+def _sanctioned_row(work_id: int, *, description, recommendation):
+    """One MPLADS-shaped Works Sanctioned row exercising the three source
+    fields Task 1 added, with `description` and `recommendation` free to be
+    `None` on purpose. Separate from `sanctioned_row` above: that helper's
+    `**overrides` shape does not suit a caller that wants those two fields
+    named explicitly at every call site.
+    """
+    return {
+        "WORK_RECOMMENDATION_DTL_ID": work_id,
+        "STATE_NAME": "Bihar",
+        "CONSTITUENCY": "ARARIA",
+        "MP_NAME": "Test MP",
+        "IDA_NAME": "ARARIA(DISTRICT PLANNING OFFICER ARARIA_IDA)",
+        "ACTIVITY_NAME": f"WS/\t MP418/2024-2025/{work_id}-Construction of roads",
+        "WORK_DESCRIPTION": description,
+        "SANCTION_AMOUNT": "500000",
+        "SANCTION_DATE": "09-Jul-2024",
+        "RECOMMENDATION_DATE": recommendation,
+        "WORK_STAGE": "Work in Progress",
+    }
+
+
+def _write_tiles(raw_dir, rows):
+    """Writes `rows` as a JSON list to `raw_dir / "mplads-sanctioned.json"`."""
+    (raw_dir / "mplads-sanctioned.json").write_text(json.dumps(rows), encoding="utf-8")
 
 
 class TestActivityAndCategory:
@@ -523,3 +551,32 @@ def test_adapt_leaves_the_three_new_fields_null_when_the_portal_has_nothing() ->
     assert record["work_description"] is None
     assert record["activity_name"] is None
     assert record["recommendation_date"] is None
+
+
+def test_counts_report_how_complete_the_three_source_fields_are(tmp_path) -> None:
+    rows = [
+        _sanctioned_row(501, description="Road work", recommendation="08-Jul-2024"),
+        _sanctioned_row(502, description=None, recommendation=None),
+    ]
+    _write_tiles(tmp_path, rows)
+
+    _records, counts = load_and_adapt(tmp_path, as_of=date(2026, 9, 4))
+
+    assert counts["description_present"] == 1
+    assert counts["recommendation_date_present"] == 1
+    assert counts["recommendation_date_unparseable"] == 0
+    assert counts["description_missing"] == 1
+    assert counts["recommendation_date_missing"] == 1
+
+
+def test_a_changed_date_format_fails_the_build_instead_of_blanking_every_date(tmp_path) -> None:
+    rows = [
+        _sanctioned_row(600 + i, description="Road work", recommendation="2024-07-08")
+        for i in range(50)
+    ]
+    _write_tiles(tmp_path, rows)
+
+    with pytest.raises(UnreadableDateFormatError) as caught:
+        load_and_adapt(tmp_path, as_of=date(2026, 9, 4))
+
+    assert "recommendation_date" in str(caught.value)

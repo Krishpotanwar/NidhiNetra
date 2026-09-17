@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from nidhinetra_pipeline.ingest.mplads_adapter import UnreadableDateFormatError
 from nidhinetra_pipeline.ingest.rungs import (
     AllRungsFailedError,
     Rung,
@@ -217,3 +218,17 @@ def test_run_ladder_catches_not_implemented_and_continues():
     records, rung_number = run_ladder([FakeUnimplementedRung(), FakeSucceedingRung()])
 
     assert rung_number == 2
+
+
+def test_rung1_raises_on_unreadable_date_format_instead_of_falling_through(tmp_path):
+    """A portal date-format change must stop the build, not be swallowed as
+    just another bad tile and quietly dropped to a lower rung. `try_fetch()`
+    only catches `MpladsAdapterError`, and `UnreadableDateFormatError` is a
+    plain `Exception`, deliberately not a subclass of it, so it propagates
+    out instead of returning None here.
+    """
+    sanctioned = [_tile_row(i, RECOMMENDATION_DATE="2024-07-08") for i in range(50)]
+    _write_tiles(tmp_path, sanctioned=sanctioned)
+
+    with pytest.raises(UnreadableDateFormatError):
+        Rung1LiveApi(raw_dir=tmp_path).try_fetch()

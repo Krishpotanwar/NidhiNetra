@@ -68,6 +68,17 @@ class MpladsAdapterError(Exception):
     """
 
 
+# A portal format change must not pass silently. _parse_ddmmmyyyy() returns
+# None for anything it cannot read, including a plain "2024-07-08", so a
+# switch to ISO dates would blank every date without a single error. One odd
+# row must not block a refresh, which is why this is a rate and not a count.
+UNREADABLE_DATE_LIMIT = 0.01
+
+
+class UnreadableDateFormatError(Exception):
+    """Raised when too many non-empty date values fail to parse."""
+
+
 # --------------------------------------------------------------------------
 # Activity -> work_category
 # --------------------------------------------------------------------------
@@ -666,6 +677,35 @@ def load_and_adapt(
         "records": len(records),
         "dropped_no_work_id": len(sanctioned) - len(records),
     }
+
+    def _unreadable(raw_key: str) -> tuple[int, int]:
+        supplied = [row.get(raw_key) for row in sanctioned]
+        non_empty = [value for value in supplied if _clean(value) is not None]
+        failed = sum(1 for value in non_empty if _parse_ddmmmyyyy(value) is None)
+        return len(non_empty), failed
+
+    for raw_key, parsed_key in (
+        ("RECOMMENDATION_DATE", "recommendation_date"),
+        ("SANCTION_DATE", "sanction_date"),
+    ):
+        non_empty, failed = _unreadable(raw_key)
+        counts[f"{parsed_key}_unparseable"] = failed
+        if non_empty and failed / non_empty > UNREADABLE_DATE_LIMIT:
+            raise UnreadableDateFormatError(
+                f"{failed} of {non_empty} non-empty {raw_key} values could not be read as "
+                f"dd-Mon-yyyy ({parsed_key}). The portal's date format has probably changed; "
+                "nothing was written."
+            )
+
+    counts["description_present"] = sum(1 for r in records if r["work_description"])
+    counts["activity_present"] = sum(1 for r in records if r["activity_name"])
+    counts["recommendation_date_present"] = sum(1 for r in records if r["recommendation_date"])
+    counts["description_missing"] = counts["records"] - counts["description_present"]
+    counts["activity_missing"] = counts["records"] - counts["activity_present"]
+    counts["recommendation_date_missing"] = (
+        counts["records"] - counts["recommendation_date_present"]
+    )
+
     return records, counts
 
 
@@ -673,6 +713,7 @@ __all__ = [
     "CATEGORY_FALLBACK",
     "MPLADS_SOURCE_RUNG",
     "MpladsAdapterError",
+    "UnreadableDateFormatError",
     "VALID_CATEGORIES",
     "activity_of",
     "adapt",
