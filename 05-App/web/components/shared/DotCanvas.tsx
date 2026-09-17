@@ -36,7 +36,16 @@ export function DotCanvas({ className, children, as: Tag = "div", ...rest }: Dot
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // `matchMedia` is missing in some environments (jsdom has none at all, and
+    // older embedded webviews ship without it). Without this guard the effect
+    // throws while mounting, which would blank the very card this texture is
+    // decorating -- an empty or error state, i.e. exactly the moment the app
+    // has promised the reader an honest explanation. No matchMedia means no
+    // stated motion preference, so the highlight simply stays on.
+    const reducedMotion =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) return;
 
     const handleMove = (event: PointerEvent) => {
       const rect = el.getBoundingClientRect();

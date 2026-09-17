@@ -21,7 +21,8 @@
       "2026-09-11: redesign against the user's pinned reference (NidhiNetra_Vidhi.png). Added brand, dashboard, quota_card, view_options, presenter, pagination, search, specimen, reports and system_pages, and extended nav, filters, table, detail_panel and fund_flow. Changed table.columns.district from 'District' to 'Constituency': the column always showed the constituency and the source has no district field. Changed summary_strip.idle_beyond_12_months from 'Released, unspent beyond twelve months' to 'Sanctioned, unspent beyond twelve months': the figure sums sanctioned_amount_inr, and nothing in the source says the money was released. Changed table.column_tooltips.days_stale to say what last_updated actually is. The reference's 'across every district, every scheme, every citizen' was not adopted: this product covers one scheme, MPLADS.",
       "2026-09-11: fund_flow.cluster_paid 'Paid' became 'Sanctioned value' and fund_flow.edge_label now ends in 'sanctioned': build_graph.py sums sanctioned_amount_inr onto every edge, so 'Paid' overstated what the figure is (ultra-review F10). Added filters.panel_label and detail_panel.source_labels (rung 1 is the MPLADS public dashboard pull; other rungs keep their number until they have agreed copy).",
       "2026-09-12: removed the specimen sheet as a nav-reachable page and its whole string block (design brief section 4 material: type scale, swatches, elevation, shape, component samples). It was a live token inspector for development, not a product view for officers or judges; the user asked for it out of the shipped frontend. Four real tabs remain: Dashboard, Inspection list, Fund flow, Reports. nav.specimen is removed rather than left unused.",
-      "2026-09-14: added entity_alias_review for R-06's Fund Flow review queue. The copy presents ambiguous vendor-ID/name associations as records that may refer to the same company, keeps evidence work IDs visible, and uses the design-reviewed actions 'These are the same' / 'These are different'. No review is described as a verified identity decision."
+      "2026-09-14: added entity_alias_review for R-06's Fund Flow review queue. The copy presents ambiguous vendor-ID/name associations as records that may refer to the same company, keeps evidence work IDs visible, and uses the design-reviewed actions 'These are the same' / 'These are different'. No review is described as a verified identity decision.",
+      "2026-09-16: F-01. Added detail_panel.record_fields.district_authority and missing_fields.district_authority: the work record now shows the District Authority (IDA_NAME) and the Implementing agency (IA_NAME) as two fields instead of one mislabelled field. Added fund_flow.rebuild_required_title and .rebuild_required_body for the state where the API holds back a graph built before that split or before its edges carried work IDs."
     ]
   },
   "_measure": {
@@ -317,6 +318,7 @@
       "work_id": "Work ID",
       "mp_name": "Member of Parliament",
       "constituency": "Constituency",
+      "district_authority": "District Authority",
       "agency": "Implementing agency",
       "vendor": "Vendor",
       "category": "Category",
@@ -350,6 +352,8 @@
     "reset": "Reset view",
     "empty": "No connections in this filter.",
     "empty_body": "Widen the filter or select a different agency.",
+    "rebuild_required_title": "This view is waiting for a data rebuild.",
+    "rebuild_required_body": "The fund-flow data on disk was built before implementing agencies and supporting work IDs were recorded separately. It is held back rather than shown under the wrong labels.",
     "scale_caveat": "Concentration patterns are only meaningful across many districts.",
     "concentration_filter_label": "Filter",
     "concentration_filter_description": "Showing vendors paid on works recommended by {threshold} or more Members of Parliament. {matching} of {total} vendors in this filter match. Everything else is held back so the cluster reads.",
@@ -514,6 +518,7 @@
     "date": "Date not recorded",
     "amount": "Amount not yet recorded",
     "agency": "Agency not recorded",
+    "district_authority": "District Authority not recorded",
     "generic": "Not recorded",
     "render": "Muted ink, one step down, left aligned even inside a numeric column, because it is text and not a number.",
     "never": "A missing amount never renders as zero, as a dash, or as N/A. Rendering a missing amount as zero would make stalled_work appear to fire on absent data."

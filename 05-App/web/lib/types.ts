@@ -30,6 +30,7 @@ export interface NormalizedRecord {
   constituency: string;
   mp_name: string;
   tenure: string;
+  implementing_district_authority: string | null;
   implementing_agency: string | null;
   vendor_id: string | null;
   vendor_name: string | null;
@@ -102,6 +103,7 @@ export interface InspectionOutcome {
   inspector_id: string;
   state: string;
   constituency: string;
+  implementing_district_authority: string | null;
   implementing_agency: string | null;
   work_category: string;
   sanctioned_amount_inr: number;

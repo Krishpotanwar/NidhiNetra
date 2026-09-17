@@ -1,4 +1,4 @@
-import { fetchEnvelope } from "./api-client";
+import { fetchEnvelopeWithMeta } from "./api-client";
 
 export type GraphNodeType = "MP" | "Agency" | "Vendor";
 
@@ -30,6 +30,18 @@ export interface FundFlowGraph {
 }
 
 /**
+ * GET /api/graph's answer. `rebuildRequired` is true when the API holds back a
+ * graph.json built before F-01 (its middle tier would be District Authorities
+ * under the "Implementing agency" label) or before F-02 (edges without work
+ * IDs cannot be checked for a real shared work). The API then sends an empty
+ * graph with meta.graph_status = "rebuild_required".
+ */
+export interface FundFlowGraphResult {
+  graph: FundFlowGraph;
+  rebuildRequired: boolean;
+}
+
+/**
  * Wraps GET /api/graph, matching contracts/fund_flow_graph.schema.json.
  * agency/vendor filter by node label, matching the query params
  * contracts/openapi.yaml declares for this endpoint.
@@ -37,10 +49,13 @@ export interface FundFlowGraph {
 export async function fetchFundFlowGraph(
   filter?: { agency?: string; vendor?: string },
   signal?: AbortSignal,
-): Promise<FundFlowGraph> {
+): Promise<FundFlowGraphResult> {
   const params = new URLSearchParams();
   if (filter?.agency) params.set("agency", filter.agency);
   if (filter?.vendor) params.set("vendor", filter.vendor);
   const qs = params.toString();
-  return fetchEnvelope<FundFlowGraph>(`/api/graph${qs ? `?${qs}` : ""}`, { signal });
+  const result = await fetchEnvelopeWithMeta<FundFlowGraph>(`/api/graph${qs ? `?${qs}` : ""}`, {
+    signal,
+  });
+  return { graph: result.data, rebuildRequired: result.meta?.graph_status === "rebuild_required" };
 }

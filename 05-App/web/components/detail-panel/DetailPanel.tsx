@@ -100,6 +100,12 @@ function PanelBody({ row, onClose, quotaN }: { row: InspectionRow; onClose: () =
     { key: "mp_name", value: displayName(row.mp_name) },
     { key: "state", value: row.state },
     { key: "constituency", value: displayName(row.constituency) },
+    {
+      key: "district_authority",
+      value: row.implementing_district_authority
+        ? displayName(row.implementing_district_authority)
+        : missing.district_authority,
+    },
     { key: "agency", value: row.implementing_agency ? displayName(row.implementing_agency) : missing.agency },
     { key: "vendor", value: row.vendor_name ? displayName(row.vendor_name) : missing.vendor },
     { key: "category", value: row.work_category },

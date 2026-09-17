@@ -22,6 +22,7 @@ export interface AliasEvidenceWork {
   state: string;
   constituency: string;
   mp_name: string;
+  implementing_district_authority: string | null;
   implementing_agency: string | null;
   vendor_id: string | null;
   vendor_name: string | null;

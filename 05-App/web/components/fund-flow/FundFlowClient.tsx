@@ -48,9 +48,14 @@ export function FundFlowClient() {
   );
   const graph = useApiResource(load);
 
+  // Decision D6 (F-01/F-02): the API holds back a graph built before the
+  // IDA/IA split or before its edges carried work IDs.
+  const graphData = graph.data?.graph ?? null;
+  const rebuildRequired = graph.data?.rebuildRequired === true;
+
   const concentrations = useMemo(
-    () => (graph.data ? allVendorConcentrations(graph.data) : []),
-    [graph.data],
+    () => (graphData ? allVendorConcentrations(graphData) : []),
+    [graphData],
   );
   const matching = useMemo(() => matchingVendors(concentrations, threshold), [concentrations, threshold]);
   const listed = useMemo(() => matching.slice(0, MAX_VENDORS_LISTED), [matching]);
@@ -62,11 +67,11 @@ export function FundFlowClient() {
   );
 
   const displayGraph = useMemo(() => {
-    if (!graph.data) return null;
-    if (isDeepLink) return graph.data;
+    if (!graphData) return null;
+    if (isDeepLink) return graphData;
     if (!focused) return { nodes: [], edges: [] };
-    return subgraphFor(graph.data, new Set([focused.vendorId]));
-  }, [graph.data, isDeepLink, focused]);
+    return subgraphFor(graphData, new Set([focused.vendorId]));
+  }, [graphData, isDeepLink, focused]);
 
   if (graph.status === "error" && !graph.data) {
     const error = STRINGS.data_states.api_unreachable;
@@ -79,6 +84,18 @@ export function FundFlowClient() {
             {error.action}
           </button>
         </DotCanvas>
+      </div>
+    );
+  }
+
+  if (rebuildRequired) {
+    return (
+      <div className={`page ${styles.stack}`}>
+        <DotCanvas as="section" className={styles.card}>
+          <p className={styles.stateTitle}>{s.rebuild_required_title}</p>
+          <p className={styles.stateBody}>{s.rebuild_required_body}</p>
+        </DotCanvas>
+        <AliasReviewQueue />
       </div>
     );
   }
