@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { STRINGS } from "@/lib/strings";
-import { displayName } from "@/lib/format";
+import { displayName, formatDate } from "@/lib/format";
 import type { InspectionRow } from "@/lib/types";
 import { DetailPanel } from "./DetailPanel";
 
@@ -31,6 +31,9 @@ function row(overrides: Partial<InspectionRow> = {}): InspectionRow {
     vendor_id: "3562",
     vendor_name: "SHRINIVAS CONTRACTOR",
     work_category: "Road",
+    work_description: "PCC Road from Ram house to Shyam house",
+    activity_name: "Construction of roads",
+    recommendation_date: "2024-07-02",
     sanctioned_amount_inr: 497185,
     expenditure_amount_inr: 250000,
     sanction_date: "2024-07-09",
@@ -104,5 +107,29 @@ test("the fund-flow link follows the Implementing agency, not the District Autho
   expect(screen.getByRole("link", { name: STRINGS.detail_panel.fund_flow_entry })).toHaveAttribute(
     "href",
     `/fund-flow?agency=${encodeURIComponent("KRIDL DHARWAD")}`,
+  );
+});
+
+test("shows the portal's own description under the title", () => {
+  render(<DetailPanel row={row()} onClose={() => {}} quotaN={10} />);
+
+  expect(screen.getByText(fields.work_description)).toBeInTheDocument();
+  expect(screen.getByText("PCC Road from Ram house to Shyam house")).toBeInTheDocument();
+});
+
+test("says so plainly when the portal has no description", () => {
+  render(<DetailPanel row={row({ work_description: null })} onClose={() => {}} quotaN={10} />);
+
+  expect(screen.getByText(STRINGS.missing_fields.description)).toBeInTheDocument();
+});
+
+test("lists the portal activity and the recommendation date as published", () => {
+  render(<DetailPanel row={row()} onClose={() => {}} quotaN={10} />);
+
+  expect(screen.getByText(fields.activity).nextElementSibling).toHaveTextContent(
+    "Construction of roads",
+  );
+  expect(screen.getByText(fields.recommendation_date).nextElementSibling).toHaveTextContent(
+    formatDate("2024-07-02"),
   );
 });

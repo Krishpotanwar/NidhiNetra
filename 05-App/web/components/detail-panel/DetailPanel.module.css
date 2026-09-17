@@ -71,6 +71,19 @@
   color: var(--ink);
 }
 
+.description {
+  margin: var(--space-3) 0 0;
+  font-size: var(--font-sm);
+  line-height: var(--leading-normal);
+  color: var(--ink);
+}
+
+.descriptionLabel {
+  display: block;
+  font-size: var(--font-note);
+  color: var(--ink-faint);
+}
+
 .place {
   margin: var(--space-1) 0 0;
   font-size: var(--font-note);

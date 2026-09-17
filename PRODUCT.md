@@ -33,7 +33,7 @@ It never accuses anyone. Every flag is a recommendation to inspect, never a find
 - Every user-visible string lives in `05-App/contracts/strings.json`. Its lint lists are binding: never fraud, suspicious, corruption, verified, clean, confirmed anomaly, detected, and the rest of `lint.banned_*`. No em dash characters anywhere in the interface.
 - Indian digit grouping on every number (1,72,961). Tabular figures on every number. The risk score (0 to 100) orders a queue; it is never a probability.
 - The source has constituency, not district, and sanctioned value, not released value. Labels say what the field actually is.
-- Work descriptions are not in the source data yet. Titles are composed from category and constituency and are never invented.
+- Work descriptions come from the portal's Sanctioned tile and are shown as published, with only transport spacing tidied. Titles stay composed from category and constituency, because the portal's own text is free-form, often in capitals, and up to 500 characters.
 - No authentication exists. Officer identity is self-reported initials.
 - Presenter mode (`?present=1`) may expose the designed data states (loading, empty) for a demo. It never appears in the officer's default interface. Confirmed 2026-09-11.
 - Undecided: final spelling of the team name on any credit line; whether MoSPI supplies official emblem artwork.

@@ -20,6 +20,7 @@ running node in a Python test process.
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import date
 from pathlib import Path
@@ -209,3 +210,22 @@ class TestMinPeerGroupNMirror:
             f"MIN_PEER_GROUP_N drift: TS={m.group(1)} "
             f"Python={peer_groups.MIN_PEER_GROUP_N}"
         )
+
+
+def test_normalized_record_typescript_mirror_lists_every_contract_field() -> None:
+    """web/lib/types.ts is hand-written (make contracts codegen is not wired
+    up), so this test is the only thing stopping the frontend's idea of a work
+    from drifting away from the contract.
+    """
+    schema = json.loads(
+        (_APP_ROOT / "contracts" / "normalized_record.schema.json").read_text(encoding="utf-8")
+    )
+    source = (_APP_ROOT / "web" / "lib" / "types.ts").read_text(encoding="utf-8")
+    block = source.split("export interface NormalizedRecord {", 1)[1].split("}", 1)[0]
+    declared = {line.split(":", 1)[0].strip() for line in block.splitlines() if ":" in line}
+
+    assert declared == set(schema["properties"]), (
+        "types.ts and the contract disagree: only in the contract "
+        f"{set(schema['properties']) - declared}, only in types.ts "
+        f"{declared - set(schema['properties'])}"
+    )

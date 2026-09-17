@@ -101,6 +101,14 @@ function PanelBody({ row, onClose, quotaN }: { row: InspectionRow; onClose: () =
     { key: "state", value: row.state },
     { key: "constituency", value: displayName(row.constituency) },
     {
+      key: "activity",
+      value: row.activity_name || missing.generic,
+    },
+    {
+      key: "recommendation_date",
+      value: row.recommendation_date ? formatDate(row.recommendation_date) : missing.date,
+    },
+    {
       key: "district_authority",
       value: row.implementing_district_authority
         ? displayName(row.implementing_district_authority)
@@ -134,6 +142,10 @@ function PanelBody({ row, onClose, quotaN }: { row: InspectionRow; onClose: () =
         <h2 id="detail-panel-title" className={styles.title}>
           {workTitle(row)}
         </h2>
+        <p className={styles.description}>
+          <span className={styles.descriptionLabel}>{strings.record_fields.work_description}</span>
+          {row.work_description || missing.description}
+        </p>
         <p className={styles.place}>
           {displayName(row.constituency)}, {row.state}
         </p>

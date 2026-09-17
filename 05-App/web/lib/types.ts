@@ -35,6 +35,9 @@ export interface NormalizedRecord {
   vendor_id: string | null;
   vendor_name: string | null;
   work_category: WorkCategory;
+  work_description: string | null;
+  activity_name: string | null;
+  recommendation_date: string | null;
   sanctioned_amount_inr: number;
   expenditure_amount_inr: number;
   sanction_date: string | null;
