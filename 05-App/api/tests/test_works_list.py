@@ -69,6 +69,55 @@ def test_legacy_snapshot_without_source_fields_stays_queryable(tmp_path, works_f
     assert rows[0]["recommendation_date"] is None
 
 
+def test_legacy_snapshot_answers_detail_and_search_through_the_real_endpoints(
+    tmp_path, works_fixture, monkeypatch, client
+):
+    """The tests above query the compatibility view directly; this one goes
+    through the real endpoints. The committed production Parquet is the
+    14-column shape this builds: no vendor_id, no IDA/IA split and none of
+    Phase 0's three source fields. That is the shape the app actually serves
+    to an officer until someone performs the gated rebuild, so both the
+    detail endpoint and search have to answer on it correctly, not only the
+    SQL compatibility view underneath them.
+    """
+    legacy_snapshot = tmp_path / "legacy-committed-shape-snapshot"
+    legacy_snapshot.mkdir()
+    works_path = legacy_snapshot / "works.parquet"
+    with duckdb.connect(":memory:") as connection:
+        connection.execute(
+            "CREATE TABLE legacy_works AS SELECT * EXCLUDE "
+            "(implementing_district_authority, implementing_agency, vendor_id, "
+            "work_description, activity_name, recommendation_date), "
+            "implementing_district_authority AS implementing_agency "
+            "FROM read_parquet(?)",
+            [str(db.SNAPSHOT_DIR / "works.parquet")],
+        )
+        connection.execute("COPY legacy_works TO ? (FORMAT PARQUET)", [str(works_path)])
+    shutil.copyfile(db.SNAPSHOT_DIR / "scored.parquet", legacy_snapshot / "scored.parquet")
+
+    assert len(db.works_columns(legacy_snapshot)) == 14
+
+    monkeypatch.setattr(db, "SNAPSHOT_DIR", legacy_snapshot)
+
+    work_id = works_fixture[0]["work_id"]
+    detail = client.get(f"/api/works/{work_id}")
+    assert detail.status_code == 200
+    record = detail.json()["data"]
+    assert record["work_description"] is None
+    assert record["activity_name"] is None
+    assert record["recommendation_date"] is None
+    assert record["implementing_district_authority"] is not None
+
+    listing = client.get("/api/works", params={"q": "District Authority", "page_size": 200})
+    assert listing.status_code == 200
+    rows = listing.json()["data"]
+    assert len(rows) > 0
+    for row in rows:
+        assert row["work_description"] is None
+        assert row["activity_name"] is None
+        assert row["recommendation_date"] is None
+
+
 def test_legacy_snapshot_ida_values_are_never_served_as_the_agency(tmp_path):
     """F-01 legacy mode (decision D4). A snapshot built before the split has no
     implementing_district_authority column, and its implementing_agency column
