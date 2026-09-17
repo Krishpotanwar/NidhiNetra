@@ -11,6 +11,7 @@ import math
 from typing import Any
 
 from fastapi.testclient import TestClient
+from nidhinetra_api.routers import inspections as inspections_router
 from nidhinetra_pipeline.outcomes import store as outcomes_store
 
 
@@ -155,12 +156,32 @@ def test_quota_population_is_the_district_authority_not_the_agency(client: TestC
     )
 
 
-def test_in_control_sample_round_trips_true(client: TestClient) -> None:
+def test_client_supplied_in_control_sample_is_ignored_and_not_persisted(
+    client: TestClient,
+) -> None:
+    """F-09 (engineering-review task T7): the comparison group is the server's
+    decision. A client that sends in_control_sample=True must not be able to
+    put an outcome into the random group after seeing the work.
+    """
     row = _first_work_id(client)
     resp = client.post("/api/inspections", json=_payload(row["work_id"], in_control_sample=True))
-    assert resp.json()["data"]["in_control_sample"] is True
+
+    assert resp.status_code == 200
+    assert resp.json()["data"]["in_control_sample"] is False
     stored = outcomes_store.get_outcomes_for_work(row["work_id"])[0]
-    assert stored["in_control_sample"] is True
+    assert stored["in_control_sample"] is False
+
+
+def test_control_group_membership_comes_from_the_server_assignment(
+    client: TestClient, monkeypatch
+) -> None:
+    monkeypatch.setattr(inspections_router, "_server_control_assignment", lambda work_id: True)
+    row = _first_work_id(client)
+
+    resp = client.post("/api/inspections", json=_payload(row["work_id"]))
+
+    assert resp.json()["data"]["in_control_sample"] is True
+    assert outcomes_store.get_outcomes_for_work(row["work_id"])[0]["in_control_sample"] is True
 
 
 def test_unknown_work_id_is_rejected(client: TestClient) -> None:

@@ -46,10 +46,18 @@ def test_list_is_empty_before_any_inspection(client: TestClient) -> None:
     assert summary["comparison_ready"] is False
 
 
-def test_outcomes_come_back_newest_first_with_their_frozen_context(client: TestClient) -> None:
+def test_outcomes_come_back_newest_first_with_their_frozen_context(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     first, second = _works(client, 2)
+    # F-09: the server, not the request, puts an outcome in the spot-check group.
+    monkeypatch.setattr(
+        inspections_router,
+        "_server_control_assignment",
+        lambda work_id: work_id == second["work_id"],
+    )
     a = _record(client, first["work_id"])
-    b = _record(client, second["work_id"], in_control_sample=True)
+    b = _record(client, second["work_id"])
 
     data = client.get("/api/inspections").json()["data"]
 

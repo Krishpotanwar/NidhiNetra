@@ -24,7 +24,8 @@
       "2026-09-14: added entity_alias_review for R-06's Fund Flow review queue. The copy presents ambiguous vendor-ID/name associations as records that may refer to the same company, keeps evidence work IDs visible, and uses the design-reviewed actions 'These are the same' / 'These are different'. No review is described as a verified identity decision.",
       "2026-09-16: F-01. Added detail_panel.record_fields.district_authority and missing_fields.district_authority: the work record now shows the District Authority (IDA_NAME) and the Implementing agency (IA_NAME) as two fields instead of one mislabelled field. Added fund_flow.rebuild_required_title and .rebuild_required_body for the state where the API holds back a graph built before that split or before its edges carried work IDs.",
       "2026-09-17: Phase 0. Added detail_panel.record_fields.work_description, .activity and .recommendation_date, and missing_fields.description. The portal publishes a description, an activity string and a recommendation date on every work; the pipeline dropped all three. They are shown as published, with only transport spacing tidied, and nothing about them is derived or interpreted.",
-      "2026-09-17: Phase 0 follow-up. detail_panel.record_fields.work_description is now 'Portal description', matching 'Portal activity', so the text under the title says where it comes from. missing_fields.description is now 'Description not recorded', in the same form as the other missing values: until the snapshot is rebuilt it holds no description column, and the earlier sentence would have told the officer the portal published nothing for works where it did."
+      "2026-09-17: Phase 0 follow-up. detail_panel.record_fields.work_description is now 'Portal description', matching 'Portal activity', so the text under the title says where it comes from. missing_fields.description is now 'Description not recorded', in the same form as the other missing values: until the snapshot is rebuilt it holds no description column, and the earlier sentence would have told the officer the portal published nothing for works where it did.",
+      "2026-09-18: F-09. Removed inspection_capture.control_sample_label: an officer can no longer mark an outcome as a random spot-check after seeing the work, which made the comparison group meaningless; the server now assigns the group. Rewrote the end of reports.method to say so, and that no random sample has been assigned yet."
     ]
   },
   "_measure": {
@@ -791,7 +792,6 @@
     },
     "date_label": "Inspection date",
     "inspector_id_label": "Your initials",
-    "control_sample_label": "This is a random spot-check, not from the ranked list",
     "notes_label": "Notes (optional)",
     "submit": "Save inspection",
     "cancel": "Cancel",
@@ -910,7 +910,7 @@
     "comparison_title": "Ranked list against random spot-checks",
     "comparison_waiting": "The comparison appears once both groups have {need} inspections that reached the work.",
     "comparison_ready": "Issues were observed at {ranked} percent of ranked inspections and {spot} percent of spot-checks.",
-    "method": "An issue is any outcome other than the work existing and matching the record. Agency did not provide access is left out, because the work was not seen. Ranges are 95 percent Wilson intervals. Spot-checks are marked by the officer when recording; a pre-assigned random sample is not built yet.",
+    "method": "An issue is any outcome other than the work existing and matching the record. Agency did not provide access is left out, because the work was not seen. Ranges are 95 percent Wilson intervals. Spot-checks are assigned by the system before an inspection, never chosen while recording one. No random sample has been assigned yet, so every inspection recorded so far counts in the ranked group.",
     "table_title": "Recorded inspections",
     "col_date": "Date",
     "col_work": "Work",

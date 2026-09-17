@@ -36,6 +36,11 @@ function todayIsoDate(): string {
  * never from anything the client sends. See Checkpoints CP8 and the
  * contract's own docstring for why a client-supplied rank would corrupt
  * precision-at-quota later.
+ *
+ * The comparison group is not a field here either (F-09): the server decides
+ * whether an outcome belongs to a pre-assigned random sample
+ * (routers/inspections.py _server_control_assignment). An officer choosing it
+ * after seeing the work would make the Reports comparison meaningless.
  */
 export function InspectionCapture({ workId }: InspectionCaptureProps) {
   const [phase, setPhase] = useState<Phase>("closed");
@@ -51,21 +56,18 @@ export function InspectionCapture({ workId }: InspectionCaptureProps) {
   // guard against either: the server's copy of this component never
   // renders anything that depends on it.
   const [inspectorId, setInspectorId] = useState(() => officerInitials.get());
-  const [inControlSample, setInControlSample] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const outcomeId = useId();
   const dateId = useId();
   const inspectorIdFieldId = useId();
   const notesId = useId();
-  const controlSampleId = useId();
 
   function reset() {
     setPhase("closed");
     setOutcome(OUTCOME_ENTRIES[0][0]);
     setInspectedOn(todayIsoDate());
     setNotes("");
-    setInControlSample(false);
     setErrorMessage("");
   }
 
@@ -81,7 +83,6 @@ export function InspectionCapture({ workId }: InspectionCaptureProps) {
           outcome,
           notes,
           inspector_id: inspectorId,
-          in_control_sample: inControlSample,
         }),
       });
       // Remembered for the next recording, and shown in the header menu.
@@ -186,19 +187,6 @@ export function InspectionCapture({ workId }: InspectionCaptureProps) {
           rows={2}
           style={{ ...controlStyle, resize: "vertical" as const }}
         />
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-        <input
-          id={controlSampleId}
-          type="checkbox"
-          checked={inControlSample}
-          onChange={(e) => setInControlSample(e.target.checked)}
-          disabled={submitting}
-        />
-        <label htmlFor={controlSampleId} style={labelStyle}>
-          {strings.control_sample_label}
-        </label>
       </div>
 
       {phase === "error" && (

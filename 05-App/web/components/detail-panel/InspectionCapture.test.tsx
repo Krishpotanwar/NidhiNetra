@@ -102,9 +102,9 @@ test("submits the right payload, including inspector_id, and shows the success c
     outcome: "work_not_found_at_site",
     notes: "Empty plot, neighbours confirmed.",
     inspector_id: "AB",
-    in_control_sample: false,
   });
   expect(typeof sentBody.inspected_on).toBe("string");
+  expect(sentBody).not.toHaveProperty("in_control_sample");
 });
 
 test("inspector id is remembered across a remount via localStorage", async () => {
@@ -125,7 +125,7 @@ test("inspector id is remembered across a remount via localStorage", async () =>
   );
 });
 
-test("the control-sample checkbox is off by default and its state reaches the payload", async () => {
+test("offers no control-group choice and never sends one (F-09: the server assigns groups)", async () => {
   const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
   fetchMock.mockResolvedValueOnce(
     mockResponse(200, { success: true, data: {}, error: null, meta: null }),
@@ -135,16 +135,12 @@ test("the control-sample checkbox is off by default and its state reaches the pa
   render(<InspectionCapture workId="W1" />);
   await openAndIdentify(user);
 
-  const checkbox = screen.getByLabelText(strings.control_sample_label);
-  expect(checkbox).not.toBeChecked();
-
-  await user.click(checkbox);
-  expect(checkbox).toBeChecked();
+  expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: strings.submit }));
 
   const [, init] = fetchMock.mock.calls[0];
   const sentBody = JSON.parse((init as RequestInit).body as string);
-  expect(sentBody.in_control_sample).toBe(true);
+  expect(sentBody).not.toHaveProperty("in_control_sample");
 });
 
 test("shows the duplicate-specific message on a 409, and does not show the raw backend string", async () => {

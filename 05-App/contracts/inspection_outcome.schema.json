@@ -118,7 +118,7 @@
     },
     "in_control_sample": {
       "type": "boolean",
-      "description": "true if this work was inspected as a deliberately-drawn random check outside the ranked recommendation, specifically to give precision-at-quota a real comparison group. false if it came from the normal ranked list. See _outside_voice_corrections."
+      "description": "Assigned by the server (routers/inspections.py _server_control_assignment) and never accepted from the client (F-09): true only when the server pre-assigned this work to a random comparison sample before the inspection. No such registry exists yet (R-05), so every outcome recorded today is false. Rows stored before F-09 may carry an officer-chosen true."
     }
   }
 }

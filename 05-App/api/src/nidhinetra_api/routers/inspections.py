@@ -53,6 +53,11 @@ ingest/mplads_adapter.py, never observed (there has been exactly one real
 pull). If the portal ever re-issues WORK_RECOMMENDATION_DTL_IDs, an outcome
 would otherwise orphan silently on the next re-pull with no way to
 hand-rematch it to the work it was about.
+
+in_control_sample, the comparison-group flag, is also server-owned (F-09,
+fixed with Next Step 6): _server_control_assignment() decides it, and a
+client-sent value is ignored. Until the R-05 assignment registry exists, every
+outcome joins the ranked group.
 """
 
 from __future__ import annotations
@@ -63,7 +68,7 @@ from typing import Any
 import duckdb
 from fastapi import APIRouter, HTTPException
 from nidhinetra_pipeline.outcomes import store
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from .. import db
 from ..models import Envelope
@@ -93,13 +98,28 @@ class InspectionOutcomeRequest(BaseModel):
     future enum edit can't drift between two hand-maintained copies.
     """
 
+    # F-09: a client may not choose the comparison group. Unknown fields,
+    # including an old frontend's in_control_sample, are ignored rather than
+    # rejected, so that frontend keeps working while the server decides.
+    model_config = ConfigDict(extra="ignore")
+
     work_id: str
     inspected_on: str
     outcome: str
     notes: str = ""
     inspector_id: str
-    in_control_sample: bool = False
     supersedes: int | None = None
+
+
+def _server_control_assignment(work_id: str) -> bool:
+    """F-09 (nemotronreview.md): whether this work belongs to a pre-assigned
+    random comparison sample is decided here, by the server, and is never
+    accepted from the client. No assignment registry exists yet (R-05, in the
+    design backlog), so no work is a comparison-sample assignment and every
+    recorded outcome joins the ranked group. Tests monkeypatch this function to
+    exercise the spot-check grouping; R-05 replaces its body.
+    """
+    return False
 
 
 def _lookup_work_context(con: duckdb.DuckDBPyConnection, work_id: str) -> dict[str, object]:
@@ -189,6 +209,7 @@ def record_inspection(payload: InspectionOutcomeRequest) -> Envelope:
         )
     )
 
+    in_control_sample = _server_control_assignment(payload.work_id)
     try:
         outcome_id = store.record_outcome(
             work_id=payload.work_id,
@@ -206,7 +227,7 @@ def record_inspection(payload: InspectionOutcomeRequest) -> Envelope:
             risk_score_at_time=context["risk_score"],
             cutoff_rank_at_time=cutoff_rank_at_time,
             population_n_at_time=population_n_at_time,
-            in_control_sample=payload.in_control_sample,
+            in_control_sample=in_control_sample,
             supersedes=payload.supersedes,
         )
     except store.UnknownOutcomeEnumError as exc:
@@ -227,7 +248,7 @@ def record_inspection(payload: InspectionOutcomeRequest) -> Envelope:
             "risk_score_at_time": context["risk_score"],
             "cutoff_rank_at_time": cutoff_rank_at_time,
             "population_n_at_time": population_n_at_time,
-            "in_control_sample": payload.in_control_sample,
+            "in_control_sample": in_control_sample,
             "supersedes": payload.supersedes,
         },
     )
