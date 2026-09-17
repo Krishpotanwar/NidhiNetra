@@ -23,7 +23,8 @@
       "2026-09-12: removed the specimen sheet as a nav-reachable page and its whole string block (design brief section 4 material: type scale, swatches, elevation, shape, component samples). It was a live token inspector for development, not a product view for officers or judges; the user asked for it out of the shipped frontend. Four real tabs remain: Dashboard, Inspection list, Fund flow, Reports. nav.specimen is removed rather than left unused.",
       "2026-09-14: added entity_alias_review for R-06's Fund Flow review queue. The copy presents ambiguous vendor-ID/name associations as records that may refer to the same company, keeps evidence work IDs visible, and uses the design-reviewed actions 'These are the same' / 'These are different'. No review is described as a verified identity decision.",
       "2026-09-16: F-01. Added detail_panel.record_fields.district_authority and missing_fields.district_authority: the work record now shows the District Authority (IDA_NAME) and the Implementing agency (IA_NAME) as two fields instead of one mislabelled field. Added fund_flow.rebuild_required_title and .rebuild_required_body for the state where the API holds back a graph built before that split or before its edges carried work IDs.",
-      "2026-09-17: Phase 0. Added detail_panel.record_fields.work_description, .activity and .recommendation_date, and missing_fields.description. The portal publishes a description, an activity string and a recommendation date on every work; the pipeline dropped all three. They are shown as published, with only transport spacing tidied, and nothing about them is derived or interpreted."
+      "2026-09-17: Phase 0. Added detail_panel.record_fields.work_description, .activity and .recommendation_date, and missing_fields.description. The portal publishes a description, an activity string and a recommendation date on every work; the pipeline dropped all three. They are shown as published, with only transport spacing tidied, and nothing about them is derived or interpreted.",
+      "2026-09-17: Phase 0 follow-up. detail_panel.record_fields.work_description is now 'Portal description', matching 'Portal activity', so the text under the title says where it comes from. missing_fields.description is now 'Description not recorded', in the same form as the other missing values: until the snapshot is rebuilt it holds no description column, and the earlier sentence would have told the officer the portal published nothing for works where it did."
     ]
   },
   "_measure": {
@@ -319,7 +320,7 @@
       "work_id": "Work ID",
       "mp_name": "Member of Parliament",
       "constituency": "Constituency",
-      "work_description": "Work description",
+      "work_description": "Portal description",
       "activity": "Portal activity",
       "recommendation_date": "Recommended on",
       "district_authority": "District Authority",
@@ -523,7 +524,7 @@
     "amount": "Amount not yet recorded",
     "agency": "Agency not recorded",
     "district_authority": "District Authority not recorded",
-    "description": "The portal record has no description for this work.",
+    "description": "Description not recorded",
     "generic": "Not recorded",
     "render": "Muted ink, one step down, left aligned even inside a numeric column, because it is text and not a number.",
     "never": "A missing amount never renders as zero, as a dash, or as N/A. Rendering a missing amount as zero would make stalled_work appear to fire on absent data."

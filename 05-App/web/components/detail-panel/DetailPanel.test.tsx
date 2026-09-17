@@ -117,7 +117,7 @@ test("shows the portal's own description under the title", () => {
   expect(screen.getByText("PCC Road from Ram house to Shyam house")).toBeInTheDocument();
 });
 
-test("says so plainly when the portal has no description", () => {
+test("says so plainly when the record has no description", () => {
   render(<DetailPanel row={row({ work_description: null })} onClose={() => {}} quotaN={10} />);
 
   expect(screen.getByText(STRINGS.missing_fields.description)).toBeInTheDocument();

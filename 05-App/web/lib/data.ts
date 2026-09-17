@@ -109,10 +109,12 @@ export async function triggerRefresh(): Promise<void> {
 }
 
 /**
- * normalized_record.schema.json has no free-text work title field, so the
- * row's headline is composed from the two fields that identify the work: its
- * category and where it sits. Every word is the record's own value; the
- * constituency is only re-cased for reading (lib/format.ts displayName).
+ * The headline is composed from the two fields that identify the work: its
+ * category and where it sits. The record now carries the portal's own
+ * work_description, but that text is free-form, often in capitals and up to
+ * 500 characters, so the detail panel shows it beneath the title rather than
+ * as the title. Every word is the record's own value; the constituency is only
+ * re-cased for reading (lib/format.ts displayName).
  */
 export function workTitle(record: Pick<NormalizedRecord, "work_category" | "constituency">): string {
   return `${record.work_category} work, ${displayName(record.constituency)}`;
