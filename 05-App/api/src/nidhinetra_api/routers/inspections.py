@@ -62,6 +62,7 @@ outcome joins the ranked group.
 
 from __future__ import annotations
 
+import contextlib
 import math
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
@@ -222,13 +223,16 @@ def _district_population_and_rank(
 
 @router.post("")
 def record_inspection(payload: InspectionOutcomeRequest) -> Envelope:
-    con = db.connect()
-    context = _lookup_work_context(con, payload.work_id)
-    population_n_at_time, inspection_rank_at_time, cutoff_rank_at_time = (
-        _district_population_and_rank(
-            con, context["implementing_district_authority"], context["risk_score"], payload.work_id
+    with contextlib.closing(db.connect()) as con:
+        context = _lookup_work_context(con, payload.work_id)
+        population_n_at_time, inspection_rank_at_time, cutoff_rank_at_time = (
+            _district_population_and_rank(
+                con,
+                context["implementing_district_authority"],
+                context["risk_score"],
+                payload.work_id,
+            )
         )
-    )
 
     in_control_sample = _server_control_assignment(payload.work_id)
     try:

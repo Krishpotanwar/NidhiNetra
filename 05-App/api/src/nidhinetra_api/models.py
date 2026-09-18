@@ -96,8 +96,8 @@ class GraphQuery(BaseModel):
 
 
 def graph_query(
-    agency: str | None = None,
-    vendor: str | None = None,
+    agency: Annotated[str | None, Query(max_length=120)] = None,
+    vendor: Annotated[str | None, Query(max_length=120)] = None,
 ) -> GraphQuery:
     return GraphQuery(agency=agency, vendor=vendor)
 

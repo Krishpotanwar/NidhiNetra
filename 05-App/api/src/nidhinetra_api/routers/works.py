@@ -30,10 +30,10 @@ from __future__ import annotations
 import contextlib
 from collections import Counter
 from collections.abc import Sequence
-from typing import Any
+from typing import Annotated, Any
 
 import duckdb
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from nidhinetra_pipeline.risk import rank
 from nidhinetra_pipeline.risk.peer_groups import financial_year_of
 
@@ -241,7 +241,7 @@ def work_facets() -> Envelope:
 
 
 @router.get("/{work_id}")
-def get_work(work_id: str) -> Envelope:
+def get_work(work_id: Annotated[str, Path(min_length=1, max_length=64)]) -> Envelope:
     with contextlib.closing(db.connect()) as con:
         rows = db.rows_as_dicts(con, _MERGED_SELECT + " WHERE works.work_id = ?", [work_id])
     if not rows:

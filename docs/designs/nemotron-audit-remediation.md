@@ -275,6 +275,12 @@ Dated DONE entries for F-12, F-19 and every Step 7 item, newest last.
   identity (needs authentication), server-recorded snapshot/run IDs per outcome, idempotency keys and audit
   export. These are listed in the design backlog.
 
+- **F-23, DONE (2026-09-18).** `GET /api/stats/summary` and `POST /api/inspections` now close their DuckDB
+  connection like every other route. `GET /api/works/{work_id}` bounds the id at 64 characters, and the graph
+  filters `agency`/`vendor` at 120, both as 422s. `api/tests/test_connection_hygiene.py` proves closure with a
+  tracking wrapper around the real connection. Already true before this change: parameterised SQL, page-size
+  ceilings, and a generic 500 message that never leaks query details.
+
 ## What I noticed about how you think
 
 - You didn't accept the audit on the strength of its prose — you asked for it to be spot-checked against the actual code before trusting the rest of it, and it held up.
