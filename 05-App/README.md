@@ -26,7 +26,7 @@ for the dated build history.
 
 ```bash
 make validate   # prove the contracts and fixtures are internally consistent
-make contracts  # generate pydantic + TypeScript from the JSON Schemas
+make contracts  # not wired (F-20): types are hand-mirrored and drift-tested by pytest
 make api        # FastAPI dev server, port 8000
 make web        # Next.js dev server
 make demo       # both, wired together, against the current snapshot

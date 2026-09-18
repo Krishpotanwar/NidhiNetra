@@ -294,6 +294,14 @@ Dated DONE entries for F-12, F-19 and every Step 7 item, newest last.
   atomic pointer, rollback to the previous release, a stable snapshot ID on every response, and an
   authenticated refresh in production. These are one restructure, listed in the design backlog.
 
+- **F-20, DONE (2026-09-18).** The claim that `make contracts` generates Pydantic and TypeScript types is
+  corrected everywhere it appeared (the normalized-record schema description, the Makefile, both READMEs).
+  `make contracts` now says it is not wired and exits 1, and `make validate` runs in the uv environment
+  instead of the bare system Python. `pipeline/tests/test_contract_type_drift.py` reads the hand-written
+  TypeScript interfaces (`NormalizedRecord`, `RiskScoredRecord`, `InspectionOutcome`, `GraphNode`,
+  `GraphEdge`) and fails when a field or its nullability differs from the schema. **Deliberately NOT done:**
+  wiring real generators (they would add dev dependencies and a generated-file policy).
+
 ## What I noticed about how you think
 
 - You didn't accept the audit on the strength of its prose — you asked for it to be spot-checked against the actual code before trusting the rest of it, and it held up.

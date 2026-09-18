@@ -2,32 +2,18 @@
 
 # CP0 -- run the frozen-contract validator with real teeth (self-test included)
 validate:
-	python3 contracts/validate.py
-	python3 contracts/validate.py --self-test
+	uv run --package nidhinetra-pipeline python contracts/validate.py
+	uv run --package nidhinetra-pipeline python contracts/validate.py --self-test
 
-# Generate pydantic + TypeScript types from the JSON Schemas.
-# Eng review task T4: contracts/*.schema.json is the single source of truth.
-# Never hand-edit api/src/nidhinetra_api/models.py or web/lib/contracts.ts --
-# both are regenerated here.
+# F-20 (nemotronreview.md): code generation is NOT wired. The runtime types are
+# hand-mirrored (web/lib/types.ts, web/lib/graph-data.ts; the API and the
+# pipeline read records as plain dicts), and
+# pipeline/tests/test_contract_type_drift.py fails when a mirror drifts from
+# its schema. This target says so instead of pretending to generate files.
 contracts:
-	uv run datamodel-codegen \
-		--input contracts/normalized_record.schema.json \
-		--input-file-type jsonschema \
-		--output api/src/nidhinetra_api/generated/normalized_record.py \
-		--class-name NormalizedRecord
-	uv run datamodel-codegen \
-		--input contracts/risk_scored_record.schema.json \
-		--input-file-type jsonschema \
-		--output api/src/nidhinetra_api/generated/risk_scored_record.py \
-		--class-name RiskScoredRecord
-	uv run datamodel-codegen \
-		--input contracts/fund_flow_graph.schema.json \
-		--input-file-type jsonschema \
-		--output api/src/nidhinetra_api/generated/fund_flow_graph.py \
-		--class-name FundFlowGraph
-	cd web && npx json-schema-to-typescript ../contracts/normalized_record.schema.json > lib/generated/normalized-record.ts
-	cd web && npx json-schema-to-typescript ../contracts/risk_scored_record.schema.json > lib/generated/risk-scored-record.ts
-	cd web && npx json-schema-to-typescript ../contracts/fund_flow_graph.schema.json > lib/generated/fund-flow-graph.ts
+	@echo "make contracts is not wired: types are hand-mirrored from contracts/*.schema.json."
+	@echo "Drift is caught by pipeline/tests/test_contract_type_drift.py."
+	@exit 1
 
 # Acquisition ladder -> normalized cache in data/raw/ -> served snapshot in
 # data/snapshot/ (F-12). It stamps data_as_of with the build time, so run it

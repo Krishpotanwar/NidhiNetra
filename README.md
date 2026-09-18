@@ -50,7 +50,7 @@ Recorded inspection outcomes are compared against the ranked list with a **Wilso
 | Backend data engine | DuckDB over Parquet snapshots for the ranked work population; SQLite for recorded inspection outcomes |
 | Data pipeline | A dedicated `nidhinetra_pipeline` package: ingest → normalize → risk-score → fund-flow graph → snapshot, run via `uv` as a workspace package the API imports in-process (never shells out) |
 | Package management | `uv` (Python workspace: `api` + `pipeline`), `npm` (web) |
-| Contracts | `05-App/contracts/` — JSON Schemas generate both the Pydantic models and the TypeScript types, and `05-App/contracts/strings.json` is the single source of every user-visible string in the product, in English and Hindi (Devanagari, correctly tagged `lang="hi"`) |
+| Contracts | `05-App/contracts/` — JSON Schemas define every data shape (TypeScript mirrors them by hand, checked by a drift test; code generation is not wired), and `05-App/contracts/strings.json` is the single source of every user-visible string in the product, in English and Hindi (Devanagari, correctly tagged `lang="hi"`) |
 
 ## Screenshots
 
