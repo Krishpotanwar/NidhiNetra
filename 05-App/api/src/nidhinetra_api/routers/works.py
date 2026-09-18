@@ -117,6 +117,9 @@ def _where(query: WorksQuery) -> tuple[str, list[Any]]:
     if query.flag:
         clauses.append(f"list_contains({_FLAGS_AS_LIST}, ?)")
         params.append(query.flag)
+    if query.vendor_id:
+        clauses.append("works.vendor_id = ?")
+        params.append(query.vendor_id)
     if query.q:
         # strpos rather than LIKE: an officer who types "%" or "_" means those
         # characters, not "match anything".

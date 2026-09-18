@@ -29,6 +29,57 @@ export interface FundFlowGraph {
   edges: GraphEdge[];
 }
 
+const VENDOR_NODE_PREFIX = "vendor_";
+
+/**
+ * Recovers the real works.vendor_id from a Vendor node's graph id.
+ * build_graph.py's `_vendor_node_id` encodes it as `vendor_` + percent-
+ * encoding (`urllib.parse.quote(vendor_id, safe="")`) precisely so the node
+ * id and the source identifier are never confused for each other; this is
+ * that encoding's inverse, for the one place (linking to the Inspection
+ * List's vendor_id filter) that needs the source identifier back.
+ */
+export function realVendorId(vendorNodeId: string): string {
+  const encoded = vendorNodeId.startsWith(VENDOR_NODE_PREFIX)
+    ? vendorNodeId.slice(VENDOR_NODE_PREFIX.length)
+    : vendorNodeId;
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return encoded;
+  }
+}
+
+export interface GraphTotals {
+  flowInr: number;
+  mpCount: number;
+  agencyCount: number;
+  vendorCount: number;
+}
+
+/**
+ * Whole-graph totals for the page's stat-tile row. `flowInr` sums only the
+ * Agency -> Vendor edges (the same tier vendor-concentration.ts's own
+ * `paidInr` sums for one vendor) -- summing every edge, MP -> Agency
+ * included, would double-count the same sanctioned works once for the
+ * MP's recommendation and again for the agency's payment.
+ */
+export function graphTotals(graph: FundFlowGraph): GraphTotals {
+  const byId = new Map<string, GraphNode>(graph.nodes.map((n) => [n.id, n]));
+  let mpCount = 0;
+  let agencyCount = 0;
+  let vendorCount = 0;
+  for (const node of graph.nodes) {
+    if (node.type === "MP") mpCount++;
+    else if (node.type === "Agency") agencyCount++;
+    else vendorCount++;
+  }
+  const flowInr = graph.edges
+    .filter((edge) => byId.get(edge.source)?.type === "Agency")
+    .reduce((sum, edge) => sum + edge.total_amount_inr, 0);
+  return { flowInr, mpCount, agencyCount, vendorCount };
+}
+
 /**
  * GET /api/graph's answer. `rebuildRequired` is true when the API holds back a
  * graph.json built before F-01 (its middle tier would be District Authorities

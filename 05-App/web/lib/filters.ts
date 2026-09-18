@@ -71,20 +71,30 @@ export function financialYearOf(row: Pick<InspectionRow, "sanction_date" | "last
 }
 
 /** The API query for a filter state: repeatable state, sentinels dropped. */
-export function filtersToQuery(f: FilterState, q?: string | null): URLSearchParams {
+export function filtersToQuery(f: FilterState, q?: string | null, vendorId?: string | null): URLSearchParams {
   const params = new URLSearchParams();
   for (const state of f.states) params.append("state", state);
   if (f.year !== ALL) params.set("year", f.year);
   if (f.category !== ALL) params.set("category", f.category);
   if (f.flag !== ALL) params.set("flag", f.flag);
+  if (vendorId) params.set("vendor_id", vendorId);
   const search = q?.trim();
   if (search) params.set("q", search.slice(0, MAX_QUERY_LENGTH));
   return params;
 }
 
-/** The Inspection List's address-bar form: the API query plus the page. */
-export function listSearchParams(f: FilterState, q: string | null, page: number): URLSearchParams {
-  const params = filtersToQuery(f, q);
+/** The Inspection List's address-bar form: the API query plus the page.
+ *  vendorId is a link-in facet (arriving from a Fund Flow "View linked
+ *  works" link), the same pattern Fund Flow's own agency/vendor deep links
+ *  already use -- carried through the address bar, with no FilterPanel
+ *  chip of its own. */
+export function listSearchParams(
+  f: FilterState,
+  q: string | null,
+  page: number,
+  vendorId?: string | null,
+): URLSearchParams {
+  const params = filtersToQuery(f, q, vendorId);
   if (page > 1) params.set("page", String(page));
   return params;
 }
@@ -104,7 +114,9 @@ interface ReadableParams {
  * flags, malformed pages and over-long searches fall back to defaults
  * rather than reaching the API.
  */
-export function readListParams(params: ReadableParams): { filters: FilterState; q: string; page: number } {
+export function readListParams(
+  params: ReadableParams,
+): { filters: FilterState; q: string; page: number; vendorId: string | null } {
   const states = Array.from(new Set(params.getAll("state").map((s) => s.trim()).filter(Boolean))).slice(0, 64);
   const year = params.get("year")?.trim() || ALL;
   const category = params.get("category")?.trim() || ALL;
@@ -113,7 +125,8 @@ export function readListParams(params: ReadableParams): { filters: FilterState; 
   const q = (params.get("q") ?? "").trim().slice(0, MAX_QUERY_LENGTH);
   const parsedPage = Number.parseInt(params.get("page") ?? "1", 10);
   const page = Number.isFinite(parsedPage) && parsedPage >= 1 ? parsedPage : 1;
-  return { filters: { states, year, category, flag }, q, page };
+  const vendorId = params.get("vendor_id")?.trim() || null;
+  return { filters: { states, year, category, flag }, q, page, vendorId };
 }
 
 export interface SelectOption {

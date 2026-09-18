@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { renderTemplate, STRINGS } from "@/lib/strings";
 import { displayName, formatIndianInt } from "@/lib/format";
-import { fetchFundFlowGraph } from "@/lib/graph-data";
+import { fetchFundFlowGraph, graphTotals } from "@/lib/graph-data";
 import { useApiResource } from "@/lib/use-api-resource";
 import {
   allVendorConcentrations,
@@ -12,11 +12,12 @@ import {
   medianMemberCount,
   subgraphFor,
 } from "@/lib/vendor-concentration";
-import { GraphView } from "./GraphView";
+import { RibbonView } from "./RibbonView";
 import { DotCanvas } from "@/components/shared/DotCanvas";
 import { ClusterInFocus } from "./ClusterInFocus";
 import { ConcentrationFilter } from "./ConcentrationFilter";
 import { AliasReviewQueue } from "./AliasReviewQueue";
+import { StatTiles } from "./StatTiles";
 import styles from "./FundFlowClient.module.css";
 
 const s = STRINGS.fund_flow;
@@ -40,6 +41,7 @@ export function FundFlowClient() {
   const isDeepLink = Boolean(agency || vendor);
 
   const [threshold, setThreshold] = useState(DEFAULT_THRESHOLD);
+  const [search, setSearch] = useState("");
   const [focusedVendorId, setFocusedVendorId] = useState<string | null>(null);
 
   const load = useCallback(
@@ -58,8 +60,15 @@ export function FundFlowClient() {
     [graphData],
   );
   const matching = useMemo(() => matchingVendors(concentrations, threshold), [concentrations, threshold]);
-  const listed = useMemo(() => matching.slice(0, MAX_VENDORS_LISTED), [matching]);
+  const searched = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return matching;
+    return matching.filter((v) => displayName(v.vendorLabel).toLowerCase().includes(query));
+  }, [matching, search]);
+  const listed = useMemo(() => searched.slice(0, MAX_VENDORS_LISTED), [searched]);
   const medianMembers = useMemo(() => medianMemberCount(matching), [matching]);
+  const totals = useMemo(() => (graphData ? graphTotals(graphData) : null), [graphData]);
+  const isDefaultFilter = threshold === DEFAULT_THRESHOLD && search.trim() === "";
 
   const focused = useMemo(
     () => listed.find((v) => v.vendorId === focusedVendorId) ?? listed[0],
@@ -102,6 +111,8 @@ export function FundFlowClient() {
 
   return (
     <div className={`page ${styles.stack}`}>
+      {totals && <StatTiles totals={totals} />}
+
       {isDeepLink && (
         <p className={styles.deepLink}>
           {agency ? `${s.legend_agency}: ${displayName(agency)}` : `${s.legend_vendor}: ${displayName(vendor ?? "")}`}
@@ -111,7 +122,7 @@ export function FundFlowClient() {
       <div className={styles.layout}>
         <section className={styles.canvasCard} aria-label={s.focus_title}>
           {displayGraph ? (
-            <GraphView graph={displayGraph} highlightVendorId={isDeepLink ? undefined : focused?.vendorId} />
+            <RibbonView graph={displayGraph} highlightVendorId={isDeepLink ? undefined : focused?.vendorId} />
           ) : (
             <div className={styles.canvasSkeleton} aria-hidden="true" />
           )}
@@ -128,16 +139,34 @@ export function FundFlowClient() {
                   // manual focus can point at one no longer in the list.
                   setFocusedVendorId(null);
                 }}
+                search={search}
+                onSearchChange={(next) => {
+                  setSearch(next);
+                  setFocusedVendorId(null);
+                }}
                 matchingCount={matching.length}
                 totalVendorCount={concentrations.length}
-                drawnCount={matching.length > listed.length ? listed.length : null}
+                drawnCount={searched.length > listed.length ? listed.length : null}
+                isDefault={isDefaultFilter}
+                onReset={() => {
+                  setThreshold(DEFAULT_THRESHOLD);
+                  setSearch("");
+                  setFocusedVendorId(null);
+                }}
               />
 
               <section className={styles.card}>
                 <h2 className="t-label">{s.clusters_title}</h2>
                 <p className={styles.note}>{s.clusters_note}</p>
+                {listed.length > 0 && (
+                  <div className={styles.clusterHeader} aria-hidden="true">
+                    <span className={styles.clusterRank}>{s.clusters_column_rank}</span>
+                    <span>{s.clusters_column_vendor}</span>
+                    <span className={styles.clusterHeaderCount}>{s.clusters_column_mps}</span>
+                  </div>
+                )}
                 <ul className={styles.clusterList}>
-                  {listed.map((cluster) => {
+                  {listed.map((cluster, index) => {
                     const active = cluster.vendorId === focused?.vendorId;
                     return (
                       <li key={cluster.vendorId}>
@@ -147,13 +176,9 @@ export function FundFlowClient() {
                           aria-current={active ? "true" : undefined}
                           onClick={() => setFocusedVendorId(cluster.vendorId)}
                         >
+                          <span className={styles.clusterRank}>{index + 1}</span>
                           <span className={styles.clusterName}>{displayName(cluster.vendorLabel)}</span>
-                          <span className={styles.clusterCount}>
-                            {formatIndianInt(cluster.memberCount)}
-                            <span className={styles.clusterCountLabel}>
-                              {cluster.memberCount === 1 ? s.member_singular : s.member_plural}
-                            </span>
-                          </span>
+                          <span className={styles.clusterCount}>{formatIndianInt(cluster.memberCount)}</span>
                         </button>
                       </li>
                     );
@@ -171,7 +196,7 @@ export function FundFlowClient() {
       <AliasReviewQueue />
 
       <p className={styles.caveat}>{s.scale_caveat}</p>
-      {!isDeepLink && matching.length > listed.length && (
+      {!isDeepLink && searched.length > listed.length && (
         <p className={styles.caveat}>
           {renderTemplate(s.drawn_cap_note, { drawn: formatIndianInt(listed.length) })}
         </p>

@@ -382,7 +382,22 @@
     "back_to_clusters": "Back to the most concentrated vendors",
     "column_mp": "Members of Parliament",
     "column_agency": "Implementing agencies",
-    "column_vendor": "Vendor"
+    "column_vendor": "Vendor",
+    "totals_flow_label": "Flow represented",
+    "totals_vendor_label": "Vendors",
+    "search_label": "Search vendor or agency",
+    "search_placeholder": "Search vendor or agency",
+    "clusters_column_rank": "#",
+    "clusters_column_vendor": "Vendor",
+    "clusters_column_mps": "MPs",
+    "cluster_agencies": "Agencies",
+    "cluster_risk_flag_note": "{flagged} of {total} linked works carry a risk flag.",
+    "view_linked_works": "View linked works",
+    "ribbon_legend_plain": "Normal flow",
+    "ribbon_legend_flagged": "Has a risk-flagged work",
+    "ribbon_legend_selected": "Selected cluster",
+    "ribbon_more_note": "+ {count} more",
+    "ribbon_info_note": "Ribbon width reflects the number of works on that edge."
   },
   "entity_alias_review": {
     "pending_badge": "{count} pending",

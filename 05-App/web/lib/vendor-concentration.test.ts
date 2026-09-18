@@ -77,6 +77,28 @@ describe("allVendorConcentrations (F-02: two unrelated works sharing only an age
     expect(v1.workCount).toBe(1);
     expect(v1.paidInr).toBe(500_000);
   });
+
+  it("counts distinct agencies and sums flagged_work_count over every Agency->Vendor edge", () => {
+    const graph: FundFlowGraph = {
+      nodes: [
+        node("mp_a", "MP"),
+        node("agency_1", "Agency"),
+        node("agency_2", "Agency"),
+        node("vendor_v1", "Vendor"),
+      ],
+      edges: [
+        edge("mp_a", "agency_1", ["W1"]),
+        edge("mp_a", "agency_2", ["W2"]),
+        { ...edge("agency_1", "vendor_v1", ["W1"]), flagged_work_count: 1 },
+        { ...edge("agency_2", "vendor_v1", ["W2"]), flagged_work_count: 0 },
+      ],
+    };
+
+    const [v1] = allVendorConcentrations(graph);
+
+    expect(v1.agencyCount).toBe(2);
+    expect(v1.flaggedWorkCount).toBe(1);
+  });
 });
 
 describe("subgraphFor (F-02: the highlighted cluster must not include an unrelated MP)", () => {

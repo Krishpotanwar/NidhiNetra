@@ -50,6 +50,7 @@ class WorksQuery(BaseModel):
     year: str | None = None
     category: str | None = None
     flag: str | None = None
+    vendor_id: str | None = None
     q: str | None = None
     scope: WorksScope = "all"
     page: int = Field(default=1, ge=1)
@@ -61,6 +62,7 @@ def works_query(
     year: str | None = None,
     category: str | None = None,
     flag: str | None = None,
+    vendor_id: Annotated[str | None, Query(max_length=64)] = None,
     q: Annotated[str | None, Query(max_length=120)] = None,
     scope: Annotated[WorksScope, Query()] = "all",
     page: int = Query(1, ge=1),
@@ -81,6 +83,7 @@ def works_query(
         year=year or None,
         category=category or None,
         flag=flag or None,
+        vendor_id=vendor_id or None,
         q=search,
         scope=scope,
         page=page,

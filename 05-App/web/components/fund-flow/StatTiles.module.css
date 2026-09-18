@@ -1,0 +1,40 @@
+.row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.tileIcon {
+  flex: none;
+  color: var(--accent);
+}
+
+.tileLabel {
+  margin: 0;
+  font-size: var(--font-xs);
+  color: var(--ink-muted);
+}
+
+.tileValue {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+@media (max-width: 48rem) {
+  .row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -32,10 +32,15 @@ export interface VendorConcentration {
   vendorLabel: string;
   /** Distinct MPs reachable via any agency this vendor is paid through. */
   memberCount: number;
+  /** Distinct agencies with a direct Agency -> Vendor edge into this vendor. */
+  agencyCount: number;
   /** Sum of work_count across every Agency -> Vendor edge into this vendor. */
   workCount: number;
   /** Sum of total_amount_inr across the same edges. */
   paidInr: number;
+  /** Sum of flagged_work_count across the same edges -- real per-edge data
+   *  the graph already carries, not a fabricated concentration tier. */
+  flaggedWorkCount: number;
 }
 
 /**
@@ -92,18 +97,30 @@ export function allVendorConcentrations(graph: FundFlowGraph): VendorConcentrati
   for (const vendor of graph.nodes) {
     if (vendor.type !== "Vendor") continue;
     const members = new Set<string>();
+    const agencies = new Set<string>();
     let workCount = 0;
     let paidInr = 0;
+    let flaggedWorkCount = 0;
     for (const edge of agencyEdgesIntoVendor.get(vendor.id) ?? []) {
+      agencies.add(edge.source);
       workCount += edge.work_count;
       paidInr += edge.total_amount_inr;
+      flaggedWorkCount += edge.flagged_work_count;
 
       const agencyVendorWorkIds = new Set(edge.work_ids);
       for (const [mpId, mpWorkIds] of mpWorkIdsOfAgency.get(edge.source) ?? []) {
         if (hasSharedWork(mpWorkIds, agencyVendorWorkIds)) members.add(mpId);
       }
     }
-    result.push({ vendorId: vendor.id, vendorLabel: vendor.label, memberCount: members.size, workCount, paidInr });
+    result.push({
+      vendorId: vendor.id,
+      vendorLabel: vendor.label,
+      memberCount: members.size,
+      agencyCount: agencies.size,
+      workCount,
+      paidInr,
+      flaggedWorkCount,
+    });
   }
   return result;
 }

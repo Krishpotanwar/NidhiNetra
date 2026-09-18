@@ -27,6 +27,9 @@ paths:
         - name: flag
           in: query
           schema: { type: string }
+        - name: vendor_id
+          in: query
+          schema: { type: string }
         - name: page
           in: query
           schema: { type: integer, minimum: 1, default: 1 }

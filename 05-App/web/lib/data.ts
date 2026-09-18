@@ -38,6 +38,7 @@ export interface WorksPageRequest {
   q?: string | null;
   page: number;
   pageSize: number;
+  vendorId?: string | null;
 }
 
 export interface WorksPage {
@@ -64,7 +65,7 @@ function metaCount(meta: Record<string, unknown> | null, key: string, fallback =
  * (1..total, no gaps), which is what the quota cutoff is measured against.
  */
 export async function fetchWorksPage(request: WorksPageRequest, signal?: AbortSignal): Promise<WorksPage> {
-  const params = filtersToQuery(request.filters, request.q);
+  const params = filtersToQuery(request.filters, request.q, request.vendorId);
   params.set("scope", "under_implementation");
   params.set("page", String(request.page));
   params.set("page_size", String(request.pageSize));

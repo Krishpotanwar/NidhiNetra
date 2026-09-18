@@ -34,24 +34,30 @@ export function InspectionListClient() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
-  const { filters, q, page } = useMemo(() => readListParams(params), [params]);
+  const { filters, q, page, vendorId } = useMemo(() => readListParams(params), [params]);
 
   const [selected, setSelected] = useState<InspectionRow | null>(null);
   const [preview, setPreview] = useState<PreviewState>("loaded");
   const [refreshState, setRefreshState] = useState<RefreshState>("idle");
   const treatment = useRowTreatment();
 
+  // vendorId (a "View linked works" deep link, not a FilterPanel chip) rides
+  // along on every navigation unchanged -- the same address-bar-only pattern
+  // Fund Flow's own agency/vendor deep links already use.
   const navigate = useCallback(
     (next: FilterState, nextQ: string, nextPage: number) => {
-      const qs = listSearchParams(next, nextQ, nextPage).toString();
+      const qs = listSearchParams(next, nextQ, nextPage, vendorId).toString();
       router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     },
-    [pathname, router],
+    [pathname, router, vendorId],
   );
 
   const loadSummary = useCallback((signal: AbortSignal) => fetchSummary(signal), []);
   const loadFacets = useCallback((signal: AbortSignal) => fetchFacets(signal), []);
-  const request = useMemo(() => ({ filters, q, page, pageSize: PAGE_SIZE }), [filters, q, page]);
+  const request = useMemo(
+    () => ({ filters, q, page, pageSize: PAGE_SIZE, vendorId }),
+    [filters, q, page, vendorId],
+  );
   const loadWorks = useCallback((signal: AbortSignal) => fetchWorksPage(request, signal), [request]);
 
   const summary = useApiResource(loadSummary);

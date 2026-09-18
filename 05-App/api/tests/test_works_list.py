@@ -202,6 +202,16 @@ def test_list_works_filters_by_category(client, works_fixture):
     assert all(row["work_category"] == category for row in body["data"])
 
 
+def test_list_works_filters_by_vendor_id(client, works_fixture):
+    counts = Counter(row["vendor_id"] for row in works_fixture if row.get("vendor_id"))
+    vendor_id, expected_count = counts.most_common(1)[0]
+
+    body = client.get("/api/works", params={"vendor_id": vendor_id}).json()
+
+    assert body["meta"]["total"] == expected_count
+    assert all(row["vendor_id"] == vendor_id for row in body["data"])
+
+
 def test_list_works_filters_by_flag(client):
     """The CP0 fixture set is only 20 rows, below the eng-review peer-group
     floor of 30 (risk_scored_record.schema.json, engine.py), so no record

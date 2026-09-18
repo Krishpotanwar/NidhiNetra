@@ -50,10 +50,34 @@
   list-style: none;
 }
 
+.clusterHeader {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr auto;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0 var(--space-3);
+  font-size: var(--font-2xs);
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.clusterHeaderCount {
+  text-align: right;
+}
+
+.clusterRank {
+  font-family: var(--font-mono);
+  font-size: var(--font-note);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+
 .clusterButton {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1.5rem 1fr auto;
   align-items: baseline;
-  justify-content: space-between;
   gap: var(--space-3);
   width: 100%;
   padding: var(--space-2) var(--space-3);
@@ -87,13 +111,6 @@
   font-size: var(--font-note);
   font-variant-numeric: tabular-nums;
   color: var(--ink-2);
-}
-
-.clusterCountLabel {
-  margin-left: var(--space-1);
-  font-family: var(--font-sans);
-  font-size: var(--font-2xs);
-  color: var(--ink-muted);
 }
 
 .deepLink {

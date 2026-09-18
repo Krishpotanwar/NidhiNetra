@@ -1,6 +1,7 @@
 "use client";
 
-import { Minus, Plus } from "@phosphor-icons/react";
+import { useId } from "react";
+import { MagnifyingGlass, Minus, Plus } from "@phosphor-icons/react";
 import { renderTemplate, STRINGS } from "@/lib/strings";
 import { formatIndianInt } from "@/lib/format";
 import styles from "./SideCard.module.css";
@@ -10,10 +11,14 @@ const s = STRINGS.fund_flow;
 interface ConcentrationFilterProps {
   threshold: number;
   onThresholdChange: (next: number) => void;
+  search: string;
+  onSearchChange: (next: string) => void;
   matchingCount: number;
   totalVendorCount: number;
   /** How many of the matches the list offers, when fewer than all of them. */
   drawnCount: number | null;
+  isDefault: boolean;
+  onReset: () => void;
 }
 
 /**
@@ -24,13 +29,25 @@ interface ConcentrationFilterProps {
 export function ConcentrationFilter({
   threshold,
   onThresholdChange,
+  search,
+  onSearchChange,
   matchingCount,
   totalVendorCount,
   drawnCount,
+  isDefault,
+  onReset,
 }: ConcentrationFilterProps) {
+  const searchId = useId();
   return (
     <section className={styles.card}>
-      <h2 className="t-label">{s.concentration_filter_label}</h2>
+      <div className={styles.filterHeader}>
+        <h2 className="t-label">{s.concentration_filter_label}</h2>
+        {!isDefault && (
+          <button type="button" className={styles.resetButton} onClick={onReset}>
+            {s.reset}
+          </button>
+        )}
+      </div>
       <p className={styles.note}>
         {renderTemplate(s.concentration_filter_description, {
           threshold: formatIndianInt(threshold),
@@ -62,6 +79,22 @@ export function ConcentrationFilter({
           >
             <Plus size={14} weight="bold" aria-hidden="true" />
           </button>
+        </div>
+      </div>
+      <div className={styles.searchRow}>
+        <label className="t-label" htmlFor={searchId}>
+          {s.search_label}
+        </label>
+        <div className={styles.searchField}>
+          <MagnifyingGlass size={16} aria-hidden="true" className={styles.searchIcon} />
+          <input
+            id={searchId}
+            type="search"
+            className={styles.searchInput}
+            placeholder={s.search_placeholder}
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+          />
         </div>
       </div>
     </section>
