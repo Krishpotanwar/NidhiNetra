@@ -47,14 +47,36 @@ describe("buildRibbonLayout", () => {
   });
 
   it("marks an edge into a collapsed row as undrawable rather than pointing nowhere", () => {
-    const nodes = Array.from({ length: MAX_ROWS_PER_COLUMN + 1 }, (_, i) => node(`mp_${i}`, "MP", `MP ${i}`));
-    nodes.push(node("agency_1", "Agency"));
-    const overflowMpId = `mp_${MAX_ROWS_PER_COLUMN}`; // sorted last, so it's the one collapsed
-    const graph: FundFlowGraph = { nodes, edges: [edge(overflowMpId, "agency_1")] };
+    const mps = Array.from({ length: MAX_ROWS_PER_COLUMN + 1 }, (_, i) => node(`mp_${i}`, "MP", `MP ${i}`));
+    const nodes = [...mps, node("agency_1", "Agency")];
+    // Every MP feeds the same one agency, so the barycenter tie-break falls
+    // back to label order (same as plain alphabetical) -- one of them is
+    // still collapsed into "+1 more", whichever sorts last.
+    const edges = mps.map((m) => edge(m.id, "agency_1"));
+    const graph: FundFlowGraph = { nodes, edges };
 
     const layout = buildRibbonLayout(graph, undefined);
 
-    expect(layout.mpAgencyRibbons).toHaveLength(0);
+    expect(layout.mpAgencyRibbons).toHaveLength(MAX_ROWS_PER_COLUMN);
+  });
+
+  it("orders the Agency column by the average row of the MPs feeding it, not alphabetically", () => {
+    // mp_a (settles at row 0) feeds agency_z; mp_b (row 1) feeds agency_a.
+    // Alphabetical order would put agency_a first; barycenter order must
+    // put agency_z first instead, since the earlier-row MP feeds it.
+    const graph: FundFlowGraph = {
+      nodes: [
+        node("mp_a", "MP", "Alpha MP"),
+        node("mp_b", "MP", "Beta MP"),
+        node("agency_z", "Agency", "Zed Agency"),
+        node("agency_a", "Agency", "Aardvark Agency"),
+      ],
+      edges: [edge("mp_a", "agency_z"), edge("mp_b", "agency_a")],
+    };
+
+    const layout = buildRibbonLayout(graph, undefined);
+
+    expect(layout.columns.Agency.rows.map((r) => r.id)).toEqual(["agency_z", "agency_a"]);
   });
 
   it("colours an edge by its real share of flagged works, not by cluster selection", () => {
