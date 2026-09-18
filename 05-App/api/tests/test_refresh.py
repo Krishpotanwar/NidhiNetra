@@ -15,6 +15,7 @@ data layer.
 
 from __future__ import annotations
 
+import fcntl
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -79,3 +80,38 @@ def test_refresh_refuses_a_stale_normalized_cache_and_changes_nothing(
     assert response.status_code == 409
     assert response.json()["success"] is False
     assert (snapshot.SNAPSHOT_DIR / "works.parquet").read_bytes() == works_before
+
+
+def test_a_refresh_already_running_in_this_process_is_a_409(client):
+    """F-11: a second refresh while one is running is refused at once."""
+    _backdate_last_refresh(seconds=60)
+    assert snapshot._REFRESH_LOCK.acquire(blocking=False)
+    try:
+        response = client.post("/api/refresh")
+    finally:
+        snapshot._REFRESH_LOCK.release()
+
+    assert response.status_code == 409
+    assert response.json()["success"] is False
+
+
+def test_a_refresh_running_in_another_process_is_a_409(client):
+    """F-11: the advisory file lock covers other workers and processes."""
+    _backdate_last_refresh(seconds=60)
+    lock_path = snapshot.SNAPSHOT_DIR / ".refresh.lock"
+    with open(lock_path, "w", encoding="utf-8") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            response = client.post("/api/refresh")
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+    assert response.status_code == 409
+
+
+def test_the_guard_is_released_after_a_refresh(client):
+    _backdate_last_refresh(seconds=60)
+    assert client.post("/api/refresh").status_code == 202
+
+    assert snapshot._REFRESH_LOCK.acquire(blocking=False)
+    snapshot._REFRESH_LOCK.release()

@@ -27,6 +27,7 @@ krish.txt.pub
 05-App/.pytest_cache/
 05-App/data/raw/
 05-App/data/interim/
+05-App/data/snapshot/.refresh.lock
 05-App/.coverage
 05-App/web/coverage/
 __pycache__/

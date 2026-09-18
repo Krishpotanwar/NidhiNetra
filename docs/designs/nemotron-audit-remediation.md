@@ -287,6 +287,13 @@ Dated DONE entries for F-12, F-19 and every Step 7 item, newest last.
   **Deliberately NOT done:** a trusted-host allowlist and per-environment deployment profiles (they need
   the final production hostnames), and response-size and timeout limits beyond T06's compression.
 
+- **F-11, DONE (2026-09-18), single-flight half.** `POST /api/refresh` runs its rate-limit check and the rebuild
+  inside `snapshot.refresh_guard()`, which holds a non-blocking in-process lock plus an advisory
+  `fcntl.flock` on `data/snapshot/.refresh.lock` (gitignored). A concurrent refresh from the same or another
+  process gets a 409 at once. **Deliberately NOT done:** versioned snapshot directories swapped by one
+  atomic pointer, rollback to the previous release, a stable snapshot ID on every response, and an
+  authenticated refresh in production. These are one restructure, listed in the design backlog.
+
 ## What I noticed about how you think
 
 - You didn't accept the audit on the strength of its prose — you asked for it to be spot-checked against the actual code before trusting the rest of it, and it held up.

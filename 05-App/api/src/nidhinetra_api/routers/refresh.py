@@ -10,6 +10,10 @@ from whatever the ladder last cached; refreshing that cache is still a
 manual step (04 Prototype/NEXT-STEPS.md) because getTilesReportData needs
 a browser JSESSIONID that expires within hours. So the data-age label
 advances when the cache is refreshed, not on every click of this endpoint.
+
+Single-flight (F-11, 2026-09-18): the rate-limit check and the rebuild both run
+inside snapshot.refresh_guard(), so two requests or two workers can never both
+pass the check and rebuild at once; the loser gets a 409 immediately.
 """
 
 from __future__ import annotations
@@ -27,18 +31,25 @@ RATE_LIMIT_SECONDS = 30.0
 
 @router.post("", status_code=202)
 def refresh() -> Envelope:
-    elapsed = snapshot.seconds_since_last_refresh()
-    if elapsed is not None and elapsed < RATE_LIMIT_SECONDS:
-        retry_after = round(RATE_LIMIT_SECONDS - elapsed, 1)
+    try:
+        with snapshot.refresh_guard():
+            elapsed = snapshot.seconds_since_last_refresh()
+            if elapsed is not None and elapsed < RATE_LIMIT_SECONDS:
+                retry_after = round(RATE_LIMIT_SECONDS - elapsed, 1)
+                raise HTTPException(
+                    status_code=429,
+                    detail=(
+                        "The snapshot was refreshed less than 30 seconds ago. "
+                        f"Try again in {retry_after} seconds."
+                    ),
+                )
+            manifest = snapshot.rebuild()
+            entity_aliases.sync_alias_candidates_from_snapshot()
+    except snapshot.RefreshInProgressError as exc:
         raise HTTPException(
-            status_code=429,
-            detail=(
-                "The snapshot was refreshed less than 30 seconds ago. "
-                f"Try again in {retry_after} seconds."
-            ),
-        )
-    manifest = snapshot.rebuild()
-    entity_aliases.sync_alias_candidates_from_snapshot()
+            status_code=409,
+            detail="A refresh is already running. Try again when it finishes.",
+        ) from exc
     return Envelope(success=True, data=manifest)
 
 

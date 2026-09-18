@@ -6,7 +6,11 @@ the rebuild itself).
 
 from __future__ import annotations
 
+import fcntl
 import json
+import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -23,6 +27,47 @@ SNAPSHOT_DIR = _APP_ROOT / "data" / "snapshot"
 # isolate a rebuild from the operator's real 79k-record cache. None means
 # "use build_snapshot's own default", which is the production case.
 RAW_DIR: Path | None = None
+
+
+class RefreshInProgressError(Exception):
+    """Another snapshot refresh holds the single-flight guard (F-11)."""
+
+
+# One rebuild at a time in this process. The advisory file lock in
+# refresh_guard() extends that to every process on the machine (several
+# uvicorn workers, or a CLI run in another terminal).
+_REFRESH_LOCK = threading.Lock()
+
+
+@contextmanager
+def refresh_guard(snapshot_dir: Path | None = None) -> Iterator[None]:
+    """Single-flight guard for snapshot rebuilds (F-11, nemotronreview.md).
+
+    Takes a non-blocking in-process lock, then a non-blocking advisory lock on
+    <snapshot_dir>/.refresh.lock. If either is already held, raises
+    RefreshInProgressError immediately instead of queueing a second rebuild.
+    Callers run their rate-limit check inside this guard, so check-then-act
+    is one critical section. POSIX only (macOS, Linux, Render), like the rest
+    of the deployment.
+    """
+    if not _REFRESH_LOCK.acquire(blocking=False):
+        raise RefreshInProgressError("a snapshot refresh is already running in this process")
+    try:
+        directory = snapshot_dir or SNAPSHOT_DIR
+        directory.mkdir(parents=True, exist_ok=True)
+        with open(directory / ".refresh.lock", "w", encoding="utf-8") as handle:
+            try:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError as exc:
+                raise RefreshInProgressError(
+                    "a snapshot refresh is already running in another process"
+                ) from exc
+            try:
+                yield
+            finally:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    finally:
+        _REFRESH_LOCK.release()
 
 
 def _manifest_path(snapshot_dir: Path | None) -> Path:
@@ -79,9 +124,11 @@ def seconds_since_last_refresh(snapshot_dir: Path | None = None) -> float | None
 
 __all__ = [
     "RAW_DIR",
+    "RefreshInProgressError",
     "SNAPSHOT_DIR",
     "bootstrap_if_needed",
     "read_manifest",
     "rebuild",
+    "refresh_guard",
     "seconds_since_last_refresh",
 ]
