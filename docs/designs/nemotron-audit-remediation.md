@@ -319,6 +319,21 @@ Dated DONE entries for F-12, F-19 and every Step 7 item, newest last.
   34258, salvaged expenditure 72660 (incomplete). **Deliberately NOT done:** the provenance UI ("cached
   official snapshot, data as of ...") needs a design, and signed release records wait for R-13.
 
+- **Committed snapshot rebuilt offline (2026-09-18).** With the user's go-ahead (Gate G1,
+  `SIHGit/PROGRESS.md`), `data/snapshot/` was rebuilt from the three MPLADS tiles cached on 2026-09-04,
+  without contacting the portal (`SIHGit/kit/rebuild_snapshot_offline.py`). `data_as_of` stays
+  `2026-09-04T11:37:18Z`. It now carries F-01 (`implementing_district_authority` and
+  `implementing_agency` separate: 754 authorities, 5,867 agencies, 30,155 works with no recorded
+  agency), F-02 (every one of 25,066 edges carries its `work_ids`) and R-06 (vendor nodes keyed by
+  `VENDOR_ID`, 694 alias candidates). Graph: 536 MP, 5,856 Agency, 17,455 Vendor nodes, `graph.json`
+  10,586,826 bytes (about 10.1 MB). Works flagged under implementation: 16,190 (was 18,093), sanctioned
+  value ₹1,058.94 crore (was ₹1,155.87 crore). The stale pre-F-01 normalized cache is kept as
+  `data/raw/20260904T113718Z.json.pre-f01-backup`, and the regenerated cache replaces it under its
+  original name. Smoke-tested read-only through the real FastAPI app against a scratch outcomes DB:
+  `graph_status: current`, node/edge/alias counts matching the rebuild exactly, a sampled work carrying
+  its District Authority and its true Implementing Agency as two separate, real values, and
+  `/api/provenance` answering `acquisition_mode: cached_tiles`.
+
 ## What I noticed about how you think
 
 - You didn't accept the audit on the strength of its prose — you asked for it to be spot-checked against the actual code before trusting the rest of it, and it held up.

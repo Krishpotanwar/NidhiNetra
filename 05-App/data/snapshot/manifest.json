@@ -1,6 +1,88 @@
 {
   "row_count": 79068,
-  "generated_at": "2026-09-13T06:27:54Z",
+  "generated_at": "2026-09-18T13:35:32Z",
   "source": "mplads_live_api",
-  "data_as_of": "2026-09-04T11:37:18Z"
+  "data_as_of": "2026-09-04T11:37:18Z",
+  "provenance": {
+    "acquisition_mode": "cached_tiles",
+    "tile_receipts": [
+      {
+        "file": "mplads-sanctioned.json",
+        "role": "works_sanctioned",
+        "bytes": 64928839,
+        "sha256": "877c5e6e3beea71d9db0d9de6b261ffe27475ed258ee1337b2f4d6b51473f40c",
+        "rows": 79068,
+        "complete": true,
+        "note": null
+      },
+      {
+        "file": "mplads-completed.json",
+        "role": "works_completed",
+        "bytes": 23333325,
+        "sha256": "185e85a0972b5d58f76d9ca9b2d81a3725270cb56c44506cd29e023736d50a62",
+        "rows": 34258,
+        "complete": true,
+        "note": null
+      },
+      {
+        "file": "mplads-expenditure-salvaged.json",
+        "role": "expenditure_events",
+        "bytes": 52035068,
+        "sha256": "d5c8012c37c4172deaa43711d7328bec5dcddf2176406694f233729f33b24c05",
+        "rows": 72660,
+        "complete": false,
+        "note": "Salvaged from a capture the server truncated mid-record; how many payment events were lost is unknown."
+      },
+      {
+        "file": "mplads-expenditure.json",
+        "role": "expenditure_events_original_capture",
+        "bytes": 54151826,
+        "sha256": "06a9851dbcfefbf0e6faf435bab9540092e15a82986144f45dd409d1af447846",
+        "rows": null,
+        "complete": false,
+        "note": "The original capture, which is not valid JSON because the server truncated it. Kept as evidence; the build reads the salvaged copy instead."
+      }
+    ],
+    "normalized_cache": {
+      "file": "20260904T113718Z.json",
+      "sha256": "4562069d2c0f533b55f2a55f237b834c38a92d3e706736e45b8eb38d69a1bac8"
+    },
+    "contract_sha256": {
+      "entity_alias_candidate.schema.json": "a0eb358b5198dc5ce10cf816750fc1306840e427b4d4922f5a376e45b622a475",
+      "entity_alias_review.schema.json": "0a3c8d49c437ebdeac6a226c261e3bce3d22b1435e37832224281b04a03f8946",
+      "fund_flow_graph.schema.json": "ed7275ea750a8e9ded39e8445313e7e679b3d7949d8b79fac10d4c56b71b8135",
+      "inspection_outcome.schema.json": "27b98755de76738acde7152a9bd3aa4f8d2b7a128d2691998774512f5cb6572e",
+      "normalized_record.schema.json": "701e38d834ef09e9a7252d7fc21282a33cd14cd7f664f6ba5dd51c150fc33ddb",
+      "risk_scored_record.schema.json": "524d762dfcc1c4123e1c53bd5e4d505a7880e54e71ba932396ec9ca588500beb"
+    },
+    "scoring_config": {
+      "flag_weights": {
+        "cost_outlier": 30,
+        "stalled_work": 25,
+        "expenditure_mismatch": 25,
+        "agency_concentration": 20
+      },
+      "flags_component_cap": 80.0,
+      "ensemble_component_weight": 20.0,
+      "cost_z_threshold": 2.5,
+      "stall_months_threshold": 6,
+      "stall_spend_percent_threshold": 10,
+      "expenditure_ratio_z_threshold": 2.0,
+      "concentration_z_threshold": 2.0,
+      "min_span_for_concentration": 3,
+      "min_works_for_concentration_candidacy": 2,
+      "min_peer_group_n": 30,
+      "isolation_forest": {
+        "n_estimators": 200,
+        "contamination": 0.1,
+        "random_state": 42
+      },
+      "lof": {
+        "n_neighbors_default": 20,
+        "contamination": 0.1
+      }
+    },
+    "scoring_config_sha256": "c275bde17b621f70d74991945fa166ee892cee1f95ae374f28fef2481ae194c8",
+    "pipeline_version": "0.1.0"
+  }
 }

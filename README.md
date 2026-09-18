@@ -10,7 +10,7 @@ An inspection-targeting tool for MPLADS (Members of Parliament Local Area Develo
 
 - **79,068** MPLADS works are on record; **44,810** of them are under implementation right now, across **36** states and union territories and **535** constituencies.
 - District Authorities must inspect **10%** of that population every year (MPLADS guidelines clause 4.5.2). With a population this size, "which ones" is the entire problem: nobody can inspect all of them, and nothing ranks them today.
-- **18,093** works currently carry at least one risk flag, worth ₹1,155.87 crore in sanctioned value, a small fraction of which the quota will actually reach this year.
+- **16,190** works currently carry at least one risk flag, worth ₹1,058.94 crore in sanctioned value, a small fraction of which the quota will actually reach this year.
 
 NidhiNetra turns "inspect 10%, chosen how?" into a ranked, explainable, server-computed queue.
 
