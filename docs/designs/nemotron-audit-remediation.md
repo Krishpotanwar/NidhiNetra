@@ -302,6 +302,13 @@ Dated DONE entries for F-12, F-19 and every Step 7 item, newest last.
   `GraphEdge`) and fails when a field or its nullability differs from the schema. **Deliberately NOT done:**
   wiring real generators (they would add dev dependencies and a generated-file policy).
 
+- **F-21, DONE (2026-09-18), pending its first run.** `.github/workflows/ci.yml` runs on every push to `main` and
+  every pull request, with no secrets and no deploy: contract validation and self-test, the API and pipeline
+  suites on Python 3.11 (Render's version) from the locked uv workspace, and the web type check, lint,
+  vitest and production build on Node 22 from `package-lock.json`. Ruff is not a CI gate yet, because the
+  audit counted 49 pre-existing findings; secret scanning and dependency audits are also still to do. Both
+  are in the design backlog.
+
 ## What I noticed about how you think
 
 - You didn't accept the audit on the strength of its prose — you asked for it to be spot-checked against the actual code before trusting the rest of it, and it held up.

@@ -1,0 +1,70 @@
+# F-21 (nemotronreview.md): the repository's own automated gate. On every push
+# to main and every pull request it runs contract validation, both Python test
+# suites, and the web type check, lint, unit tests and production build. It
+# never deploys and needs no secrets. Deploys stay with Vercel and Render.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Contracts and Python tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: 05-App
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install the uv workspace exactly as locked
+        run: uv sync --all-packages --all-extras --locked --python 3.11
+      - name: Validate contracts
+        run: |
+          uv run --no-sync python contracts/validate.py
+          uv run --no-sync python contracts/validate.py --self-test
+      - name: API tests
+        run: uv run --no-sync pytest api/tests -q
+      - name: Pipeline tests
+        run: uv run --no-sync pytest pipeline/tests -q
+
+  web:
+    name: Web type check, lint, tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: 05-App/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: 05-App/web/package-lock.json
+      - name: Install exactly the locked packages
+        run: npm ci
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npx vitest run
+      - name: Production build
+        run: npm run build
