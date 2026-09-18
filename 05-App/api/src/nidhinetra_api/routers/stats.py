@@ -78,9 +78,7 @@ def get_summary() -> Envelope:
         data: dict[str, Any] = {
             "works_under_implementation": len(under_impl),
             "flagged_count": len(flagged),
-            "total_flagged_amount_inr": round(
-                sum(r["sanctioned_amount_inr"] for r in flagged), 2
-            ),
+            "total_flagged_amount_inr": round(sum(r["sanctioned_amount_inr"] for r in flagged), 2),
             "idle_beyond_12_months_amount_inr": round(
                 sum(r["sanctioned_amount_inr"] for r in idle), 2
             ),
