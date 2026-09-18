@@ -334,6 +334,26 @@ Dated DONE entries for F-12, F-19 and every Step 7 item, newest last.
   its District Authority and its true Implementing Agency as two separate, real values, and
   `/api/provenance` answering `acquisition_mode: cached_tiles`.
 
+- **F-17, part b, DONE (2026-09-19).** The Fund Flow page no longer downloads the national graph. `GET
+  /api/graph/concentrations` returns the top vendors, the matching count, the median and the whole-graph
+  stat-tile totals; `GET /api/graph/cluster` returns one vendor's evidence-backed cluster. Both are computed
+  server-side by `api/.../graph_analysis.py`, a parity-tested port of `web/lib/vendor-concentration.ts`
+  (F-02's shared-work rule included), and cached per `graph.json` version (module-level, one entry). Deep
+  links keep using the filtered `GET /api/graph`, unchanged. Measured against the real committed snapshot:
+  the bare graph was 7,075,584 bytes at 376.88ms; `/concentrations` is 6,369 bytes at 123.57ms cold / 7.29ms
+  warm; `/cluster` is 6,116 bytes at 17.78ms. T17: go was decided by the user directly, without the empirical
+  live-site check the task card asks for -- an explicit, informed call, recorded in `PROGRESS.md`.
+  **Two deliberate deviations from the card's original text, both required by work done since it was
+  written (this session's ribbon-chart Fund Flow redesign):** (1) `vendor_concentrations()`'s keys include
+  `agency_count` and `flagged_work_count`, not just the five keys the card listed, because
+  `vendor-concentration.ts` -- the card's own stated reference -- grew those two fields for the Cluster in
+  Focus panel's Agencies count and risk-flag banner; omitting them would have silently regressed those. (2)
+  `/concentrations`'s response also carries whole-graph `totals` (flow/MP/agency/vendor counts) for the
+  stat-tile row, and the web client requests `limit=100` rather than the illustrative `25`, so its own
+  client-side vendor-name search still has more than the displayed top 25 to search over. The search
+  itself stays client-side and local; this is not a new server capability, just a wider fetch within the
+  card's own stated `limit` bound (`ge=1, le=100`).
+
 ## What I noticed about how you think
 
 - You didn't accept the audit on the strength of its prose — you asked for it to be spot-checked against the actual code before trusting the rest of it, and it held up.

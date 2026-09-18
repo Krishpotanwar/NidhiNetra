@@ -25,10 +25,18 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
-from .. import db
-from ..models import Envelope, GraphQuery, graph_query
+from .. import db, graph_analysis
+from ..models import (
+    ClusterQuery,
+    ConcentrationsQuery,
+    Envelope,
+    GraphQuery,
+    cluster_query,
+    concentrations_query,
+    graph_query,
+)
 
 router = APIRouter(prefix="/api/graph", tags=["graph"])
 
@@ -51,6 +59,31 @@ def _graph_is_legacy(graph: dict[str, Any]) -> bool:
 def _load_graph() -> dict[str, Any]:
     path = db.SNAPSHOT_DIR / "graph.json"
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+# T17/F-17b: (path, st_mtime_ns, st_size) -> (graph, vendor_concentrations, graph_totals).
+# Computing vendor_concentrations over the whole national graph is the
+# expensive part this task exists to stop paying for on every request; a
+# rebuilt snapshot changes mtime/size, so a stale entry is never served, and
+# clearing before inserting keeps exactly one entry rather than accumulating
+# one per snapshot generation this process has ever seen.
+_ANALYSIS_CACHE: dict[tuple[str, int, int], tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]] = {}
+
+
+def _load_graph_analysis_cached() -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
+    path = db.SNAPSHOT_DIR / "graph.json"
+    stat = path.stat()
+    key = (str(path), stat.st_mtime_ns, stat.st_size)
+    cached = _ANALYSIS_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    graph = json.loads(path.read_text(encoding="utf-8"))
+    concentrations = graph_analysis.vendor_concentrations(graph)
+    totals = graph_analysis.graph_totals(graph)
+    _ANALYSIS_CACHE.clear()
+    _ANALYSIS_CACHE[key] = (graph, concentrations, totals)
+    return graph, concentrations, totals
 
 
 def _matches(node: dict[str, Any], node_type: str, needle: str) -> bool:
@@ -84,6 +117,63 @@ def _filter_graph(
         kept_ids.add(edge["target"])
     kept_nodes = [n for n in nodes if n["id"] in kept_ids]
     return {"nodes": kept_nodes, "edges": kept_edges}
+
+
+@router.get("/concentrations")
+def get_concentrations(query: ConcentrationsQuery = Depends(concentrations_query)) -> Envelope:  # noqa: B008
+    """T17/F-17b: the Fund Flow page's non-deep-link view. Returns only the
+    top `limit` vendors and the totals it needs (matching_count over the
+    WHOLE graph, not just the returned page, so the filter description
+    stays honest even when more matches exist than are returned).
+    """
+    graph, concentrations, totals = _load_graph_analysis_cached()
+    if _graph_is_legacy(graph):
+        return Envelope(
+            success=True,
+            data={
+                "vendors": [],
+                "matching_count": 0,
+                "total_vendor_count": 0,
+                "median_member_count": 0,
+                "totals": None,
+            },
+            meta={"graph_status": GRAPH_STATUS_REBUILD_REQUIRED},
+        )
+    matching = graph_analysis.matching_vendors(concentrations, query.min_members)
+    return Envelope(
+        success=True,
+        data={
+            "vendors": matching[: query.limit],
+            "matching_count": len(matching),
+            "total_vendor_count": len(concentrations),
+            "median_member_count": graph_analysis.median_member_count(matching),
+            "totals": totals,
+        },
+        meta={"graph_status": GRAPH_STATUS_CURRENT},
+    )
+
+
+@router.get("/cluster")
+def get_cluster(query: ClusterQuery = Depends(cluster_query)) -> Envelope:  # noqa: B008
+    """T17/F-17b: one vendor's own evidence-backed cluster, fetched on
+    demand instead of narrowing it out of an already-downloaded national
+    graph.
+    """
+    graph, _concentrations, _totals = _load_graph_analysis_cached()
+    if _graph_is_legacy(graph):
+        return Envelope(
+            success=True,
+            data={"nodes": [], "edges": []},
+            meta={"graph_status": GRAPH_STATUS_REBUILD_REQUIRED},
+        )
+    vendor_ids = {n["id"] for n in graph["nodes"] if n["type"] == "Vendor"}
+    if query.vendor_id not in vendor_ids:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No vendor found with id '{query.vendor_id}' in the current graph.",
+        )
+    subgraph = graph_analysis.subgraph_for(graph, {query.vendor_id})
+    return Envelope(success=True, data=subgraph, meta={"graph_status": GRAPH_STATUS_CURRENT})
 
 
 @router.get("")

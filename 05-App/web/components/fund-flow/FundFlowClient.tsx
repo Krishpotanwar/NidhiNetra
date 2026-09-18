@@ -4,14 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { renderTemplate, STRINGS } from "@/lib/strings";
 import { displayName, formatIndianInt } from "@/lib/format";
-import { fetchFundFlowGraph, graphTotals } from "@/lib/graph-data";
+import { fetchFundFlowGraph, fetchVendorCluster, fetchVendorConcentrations } from "@/lib/graph-data";
 import { useApiResource } from "@/lib/use-api-resource";
-import {
-  allVendorConcentrations,
-  matchingVendors,
-  medianMemberCount,
-  subgraphFor,
-} from "@/lib/vendor-concentration";
 import { RibbonView } from "./RibbonView";
 import { DotCanvas } from "@/components/shared/DotCanvas";
 import { ClusterInFocus } from "./ClusterInFocus";
@@ -24,15 +18,24 @@ const s = STRINGS.fund_flow;
 
 // The reference opens with a minimum of 3 Members per vendor, not 1.
 const DEFAULT_THRESHOLD = 3;
-// How many clusters the side list offers, most concentrated first.
+// How many clusters the side list displays, most concentrated first.
 const MAX_VENDORS_LISTED = 25;
+// The server's own maximum (models.py's ConcentrationsQuery, ge=1/le=100),
+// requested unconditionally rather than exactly MAX_VENDORS_LISTED: the text
+// search below filters vendor names client-side over whatever comes back,
+// and searching only the displayed 25 would make a real match ranked, say,
+// 40th unfindable. This is the fixed design's own stated bound, not a new
+// server capability -- see SIHGit/tasks/T17-F17b-server-side-concentration.md.
+const SERVER_FETCH_LIMIT = 100;
 
 /**
- * One cluster at a time. The view's whole purpose is to make concentration
- * visible, and drawing every matching vendor at national scale hid it in bulk
- * (4,845 vendors, 5,695 nodes, a graph 164,778px tall). The list ranks the
- * clusters; the canvas draws the one in focus, with its agencies and the
- * Members behind them.
+ * One cluster at a time. T17/F-17b: the server now ranks vendors and
+ * extracts one vendor's cluster (graph_analysis.py, a parity-tested port of
+ * this file's own vendor-concentration.ts), so the non-deep-link view never
+ * downloads the whole national graph.json (about 10 MB) just to draw the
+ * 25 most concentrated vendors and one cluster. Deep links
+ * (?agency=/?vendor= from a work's detail panel) are unchanged: one
+ * filtered GET /api/graph request, no concentration ranking involved.
  */
 export function FundFlowClient() {
   const params = useSearchParams();
@@ -44,30 +47,42 @@ export function FundFlowClient() {
   const [search, setSearch] = useState("");
   const [focusedVendorId, setFocusedVendorId] = useState<string | null>(null);
 
-  const load = useCallback(
-    (signal: AbortSignal) => fetchFundFlowGraph({ agency, vendor }, signal),
-    [agency, vendor],
+  // Both fetchers below are always called (React's rules of hooks), but each
+  // short-circuits to an instant, network-free empty result in the mode it
+  // does not serve -- otherwise a non-deep-link render would still fetch the
+  // bare national graph on the side, exactly the download T17 exists to cut.
+  const loadDeepLinkGraph = useCallback(
+    (signal: AbortSignal) =>
+      isDeepLink
+        ? fetchFundFlowGraph({ agency, vendor }, signal)
+        : Promise.resolve({ graph: { nodes: [], edges: [] }, rebuildRequired: false }),
+    [isDeepLink, agency, vendor],
   );
-  const graph = useApiResource(load);
+  const deepLinkGraph = useApiResource(loadDeepLinkGraph);
 
-  // Decision D6 (F-01/F-02): the API holds back a graph built before the
-  // IDA/IA split or before its edges carried work IDs.
-  const graphData = graph.data?.graph ?? null;
-  const rebuildRequired = graph.data?.rebuildRequired === true;
-
-  const concentrations = useMemo(
-    () => (graphData ? allVendorConcentrations(graphData) : []),
-    [graphData],
+  const loadConcentrations = useCallback(
+    (signal: AbortSignal) =>
+      isDeepLink
+        ? Promise.resolve({
+            vendors: [],
+            matchingCount: 0,
+            totalVendorCount: 0,
+            medianMemberCount: 0,
+            totals: null,
+            rebuildRequired: false,
+          })
+        : fetchVendorConcentrations(threshold, SERVER_FETCH_LIMIT, signal),
+    [isDeepLink, threshold],
   );
-  const matching = useMemo(() => matchingVendors(concentrations, threshold), [concentrations, threshold]);
+  const concentrationsResource = useApiResource(loadConcentrations);
+
+  const vendors = useMemo(() => concentrationsResource.data?.vendors ?? [], [concentrationsResource.data]);
   const searched = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return matching;
-    return matching.filter((v) => displayName(v.vendorLabel).toLowerCase().includes(query));
-  }, [matching, search]);
+    if (!query) return vendors;
+    return vendors.filter((v) => displayName(v.vendorLabel).toLowerCase().includes(query));
+  }, [vendors, search]);
   const listed = useMemo(() => searched.slice(0, MAX_VENDORS_LISTED), [searched]);
-  const medianMembers = useMemo(() => medianMemberCount(matching), [matching]);
-  const totals = useMemo(() => (graphData ? graphTotals(graphData) : null), [graphData]);
   const isDefaultFilter = threshold === DEFAULT_THRESHOLD && search.trim() === "";
 
   const focused = useMemo(
@@ -75,21 +90,49 @@ export function FundFlowClient() {
     [listed, focusedVendorId],
   );
 
-  const displayGraph = useMemo(() => {
-    if (!graphData) return null;
-    if (isDeepLink) return graphData;
-    if (!focused) return { nodes: [], edges: [] };
-    return subgraphFor(graphData, new Set([focused.vendorId]));
-  }, [graphData, isDeepLink, focused]);
+  // The focused vendor's own cluster, fetched on demand -- no network call
+  // at all until a vendor is actually known (before concentrations resolve).
+  // Keyed on the vendor id, not the `focused` object itself: a threshold
+  // change re-fetches a new `vendors` array (new object identities) even
+  // when the top vendor's id is unchanged, and re-fetching its cluster
+  // again would waste exactly the request this is meant to avoid.
+  const resolvedFocusVendorId = focused?.vendorId;
+  const loadCluster = useCallback(
+    (signal: AbortSignal) =>
+      resolvedFocusVendorId
+        ? fetchVendorCluster(resolvedFocusVendorId, signal)
+        : Promise.resolve({ graph: { nodes: [], edges: [] }, rebuildRequired: false }),
+    [resolvedFocusVendorId],
+  );
+  const clusterGraph = useApiResource(loadCluster);
 
-  if (graph.status === "error" && !graph.data) {
+  // Which resource speaks for "is the API actually reachable right now" and
+  // "is this graph.json build too old to serve" depends on the mode: a deep
+  // link never touches the concentrations/cluster endpoints at all.
+  const primaryResource = isDeepLink ? deepLinkGraph : concentrationsResource;
+  const displayGraph = isDeepLink ? deepLinkGraph.data?.graph ?? null : clusterGraph.data?.graph ?? null;
+  const rebuildRequired = isDeepLink
+    ? deepLinkGraph.data?.rebuildRequired === true
+    : concentrationsResource.data?.rebuildRequired === true;
+  const totals = concentrationsResource.data?.totals ?? null;
+
+  const handleReload = useCallback(() => {
+    if (isDeepLink) {
+      deepLinkGraph.reload();
+    } else {
+      concentrationsResource.reload();
+      clusterGraph.reload();
+    }
+  }, [isDeepLink, deepLinkGraph, concentrationsResource, clusterGraph]);
+
+  if (primaryResource.status === "error" && !primaryResource.data) {
     const error = STRINGS.data_states.api_unreachable;
     return (
       <div className={`page ${styles.stack}`}>
         <DotCanvas as="section" className={styles.card}>
           <p className={styles.stateTitle}>{error.title}</p>
           <p className={styles.stateBody}>{error.body}</p>
-          <button type="button" className={styles.action} onClick={graph.reload}>
+          <button type="button" className={styles.action} onClick={handleReload}>
             {error.action}
           </button>
         </DotCanvas>
@@ -111,7 +154,7 @@ export function FundFlowClient() {
 
   return (
     <div className={`page ${styles.stack}`}>
-      {totals && <StatTiles totals={totals} />}
+      {!isDeepLink && totals && <StatTiles totals={totals} />}
 
       {isDeepLink && (
         <p className={styles.deepLink}>
@@ -144,8 +187,8 @@ export function FundFlowClient() {
                   setSearch(next);
                   setFocusedVendorId(null);
                 }}
-                matchingCount={matching.length}
-                totalVendorCount={concentrations.length}
+                matchingCount={concentrationsResource.data?.matchingCount ?? 0}
+                totalVendorCount={concentrationsResource.data?.totalVendorCount ?? 0}
                 drawnCount={searched.length > listed.length ? listed.length : null}
                 isDefault={isDefaultFilter}
                 onReset={() => {
@@ -183,11 +226,18 @@ export function FundFlowClient() {
                       </li>
                     );
                   })}
-                  {listed.length === 0 && graph.status === "ready" && <li className={styles.note}>{s.empty}</li>}
+                  {listed.length === 0 && concentrationsResource.status === "ready" && (
+                    <li className={styles.note}>{s.empty}</li>
+                  )}
                 </ul>
               </section>
 
-              {focused && <ClusterInFocus vendor={focused} medianMemberCount={medianMembers} />}
+              {focused && (
+                <ClusterInFocus
+                  vendor={focused}
+                  medianMemberCount={concentrationsResource.data?.medianMemberCount ?? 0}
+                />
+              )}
             </>
           )}
         </aside>

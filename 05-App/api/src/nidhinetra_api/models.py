@@ -105,6 +105,30 @@ def graph_query(
     return GraphQuery(agency=agency, vendor=vendor)
 
 
+class ConcentrationsQuery(BaseModel):
+    """Query params for GET /api/graph/concentrations (T17/F-17b)."""
+
+    min_members: int = Field(default=1, ge=1, le=100)
+    limit: int = Field(default=25, ge=1, le=100)
+
+
+def concentrations_query(
+    min_members: int = Query(1, ge=1, le=100),
+    limit: int = Query(25, ge=1, le=100),
+) -> ConcentrationsQuery:
+    return ConcentrationsQuery(min_members=min_members, limit=limit)
+
+
+class ClusterQuery(BaseModel):
+    """Query params for GET /api/graph/cluster (T17/F-17b)."""
+
+    vendor_id: str
+
+
+def cluster_query(vendor_id: Annotated[str, Query(min_length=1, max_length=200)]) -> ClusterQuery:
+    return ClusterQuery(vendor_id=vendor_id)
+
+
 AliasStatus = Literal["pending", "confirmed_merge", "rejected_distinct"]
 
 

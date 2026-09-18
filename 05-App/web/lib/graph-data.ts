@@ -1,4 +1,5 @@
 import { fetchEnvelopeWithMeta } from "./api-client";
+import type { VendorConcentration } from "./vendor-concentration";
 
 export type GraphNodeType = "MP" | "Agency" | "Vendor";
 
@@ -108,5 +109,102 @@ export async function fetchFundFlowGraph(
   const result = await fetchEnvelopeWithMeta<FundFlowGraph>(`/api/graph${qs ? `?${qs}` : ""}`, {
     signal,
   });
+  return { graph: result.data, rebuildRequired: result.meta?.graph_status === "rebuild_required" };
+}
+
+interface RawVendorConcentration {
+  vendor_id: string;
+  vendor_label: string;
+  member_count: number;
+  agency_count: number;
+  work_count: number;
+  sanctioned_inr: number;
+  flagged_work_count: number;
+}
+
+interface RawGraphTotals {
+  flow_inr: number;
+  mp_count: number;
+  agency_count: number;
+  vendor_count: number;
+}
+
+interface RawConcentrationsResponse {
+  vendors: RawVendorConcentration[];
+  matching_count: number;
+  total_vendor_count: number;
+  median_member_count: number;
+  totals: RawGraphTotals | null;
+}
+
+function toVendorConcentration(raw: RawVendorConcentration): VendorConcentration {
+  return {
+    vendorId: raw.vendor_id,
+    vendorLabel: raw.vendor_label,
+    memberCount: raw.member_count,
+    agencyCount: raw.agency_count,
+    workCount: raw.work_count,
+    paidInr: raw.sanctioned_inr,
+    flaggedWorkCount: raw.flagged_work_count,
+  };
+}
+
+function toGraphTotals(raw: RawGraphTotals): GraphTotals {
+  return {
+    flowInr: raw.flow_inr,
+    mpCount: raw.mp_count,
+    agencyCount: raw.agency_count,
+    vendorCount: raw.vendor_count,
+  };
+}
+
+export interface VendorConcentrationsResult {
+  vendors: VendorConcentration[];
+  matchingCount: number;
+  totalVendorCount: number;
+  medianMemberCount: number;
+  totals: GraphTotals | null;
+  rebuildRequired: boolean;
+}
+
+/**
+ * GET /api/graph/concentrations (T17/F-17b): the server-ranked top vendors,
+ * plus the whole-graph totals the stat tiles need, so the non-deep-link
+ * Fund Flow view no longer downloads the national graph just to rank
+ * vendors and sum totals. `limit` is deliberately requested at the
+ * endpoint's own maximum (100), not the 25 actually displayed -- FundFlowClient's
+ * own text search filters vendor names client-side over whatever comes back,
+ * and searching only the displayed 25 would make a real, more-concentrated
+ * match outside the top 25 unfindable. This is the fixed design's own stated
+ * bound, not a new server capability.
+ */
+export async function fetchVendorConcentrations(
+  minMembers: number,
+  limit: number,
+  signal?: AbortSignal,
+): Promise<VendorConcentrationsResult> {
+  const params = new URLSearchParams({ min_members: String(minMembers), limit: String(limit) });
+  const result = await fetchEnvelopeWithMeta<RawConcentrationsResponse>(
+    `/api/graph/concentrations?${params.toString()}`,
+    { signal },
+  );
+  return {
+    vendors: result.data.vendors.map(toVendorConcentration),
+    matchingCount: result.data.matching_count,
+    totalVendorCount: result.data.total_vendor_count,
+    medianMemberCount: result.data.median_member_count,
+    totals: result.data.totals ? toGraphTotals(result.data.totals) : null,
+    rebuildRequired: result.meta?.graph_status === "rebuild_required",
+  };
+}
+
+/**
+ * GET /api/graph/cluster (T17/F-17b): one vendor's own evidence-backed
+ * subgraph, fetched on demand instead of narrowed client-side out of an
+ * already-downloaded national graph.
+ */
+export async function fetchVendorCluster(vendorId: string, signal?: AbortSignal): Promise<FundFlowGraphResult> {
+  const params = new URLSearchParams({ vendor_id: vendorId });
+  const result = await fetchEnvelopeWithMeta<FundFlowGraph>(`/api/graph/cluster?${params.toString()}`, { signal });
   return { graph: result.data, rebuildRequired: result.meta?.graph_status === "rebuild_required" };
 }
