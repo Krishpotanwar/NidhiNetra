@@ -58,6 +58,14 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: 05-App/web/package-lock.json
+      # Node 22 bundles npm 10.x, but package-lock.json was written by npm
+      # 11.6.2 (the Mac's version). npm's handling of optional platform
+      # packages (the @emnapi/*, @rolldown/binding-*, @tailwindcss/oxide-*
+      # entries) changed enough between those majors that npm ci on an
+      # older npm rejects this lockfile as "not in sync" even though nothing
+      # about it is actually stale. Match the npm that wrote it.
+      - name: Match the npm that wrote package-lock.json
+        run: npm install -g npm@11.6.2
       - name: Install exactly the locked packages
         run: npm ci
       - name: Type check
