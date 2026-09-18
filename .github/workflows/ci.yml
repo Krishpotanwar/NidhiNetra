@@ -68,11 +68,17 @@ jobs:
         run: npm install -g npm@11.6.2
       - name: Install exactly the locked packages
         run: npm ci
+      # Next.js generates its own ambient types (next-env.d.ts, .next/types
+      # -- LayoutProps, the typed image-import declarations) as a side
+      # effect of building. A real dev machine always has stale ones lying
+      # around from a previous `next dev`/`next build`, so this never shows
+      # up there; a CI checkout starts with neither, so type check must run
+      # after a build has generated them at least once, not before.
+      - name: Production build
+        run: npm run build
       - name: Type check
         run: npx tsc --noEmit
       - name: Lint
         run: npm run lint
       - name: Unit tests
         run: npx vitest run
-      - name: Production build
-        run: npm run build
