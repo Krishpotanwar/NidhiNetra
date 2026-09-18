@@ -309,6 +309,16 @@ Dated DONE entries for F-12, F-19 and every Step 7 item, newest last.
   audit counted 49 pre-existing findings; secret scanning and dependency audits are also still to do. Both
   are in the design backlog.
 
+- **F-18, DONE (2026-09-18), backend half.** Every snapshot build writes a `provenance` block into
+  `manifest.json` (the existing top-level keys are unchanged): the acquisition mode (`cached_tiles` or
+  `fixture`); a receipt per cached MPLADS tile (bytes, sha256, rows, completeness, where the salvaged
+  expenditure tile is marked incomplete because the server truncated the original capture, and the
+  truncated original has its own receipt); the normalized cache's name and hash; sha256 of every contract
+  schema; and the full scoring configuration with its canonical hash. `GET /api/provenance` serves it, and a
+  pre-F-18 manifest answers `provenance: null`. Real-tile receipts: sanctioned 79068 rows, completed
+  34258, salvaged expenditure 72660 (incomplete). **Deliberately NOT done:** the provenance UI ("cached
+  official snapshot, data as of ...") needs a design, and signed release records wait for R-13.
+
 ## What I noticed about how you think
 
 - You didn't accept the audit on the strength of its prose — you asked for it to be spot-checked against the actual code before trusting the rest of it, and it held up.

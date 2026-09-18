@@ -60,6 +60,7 @@ import pandas as pd
 from .graph.alias_candidates import build_alias_candidates
 from .ingest import cache
 from .normalize.normalize import normalize_records
+from .provenance import build_provenance
 from .risk.engine import score_all
 
 # A3's module in parallel: this file is written before graph/build_graph.py
@@ -433,6 +434,7 @@ def build_snapshot(
     raw_dir: Path | None = None,
     now: datetime | None = None,
     force: bool = False,
+    tiles_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Runs fixture-read -> normalize -> score -> graph + alias candidates,
     writes all five artifacts to `snapshot_dir` (default data/snapshot/),
@@ -442,6 +444,13 @@ def build_snapshot(
     and callers can pin a reference time; it also becomes the `as_of` date
     passed to score_all(), matching score_all's own advice to pass an
     explicit as_of for reproducible output within a single build.
+
+    manifest.json also carries a "provenance" block (F-18; see
+    provenance.build_provenance): tile receipts, the normalized cache read,
+    contract hashes and the scoring configuration with its hash. `tiles_dir`
+    says where the cached MPLADS tiles are when they are not in `raw_dir`
+    (the offline rebuild reads its cache from a temporary folder); it
+    defaults to `raw_dir`, then to data/raw/.
 
     Raises SnapshotDowngradeError (before anything is staged or written) if
     a manifest.json already exists in `snapshot_dir` and the rung this call
@@ -518,6 +527,14 @@ def build_snapshot(
         # for fixtures, which have no acquisition time of their own.
         "data_as_of": data_as_of or generated_at,
     }
+
+    acquisition_mode = "fixture" if source_rung == FIXTURE_SOURCE_RUNG else "cached_tiles"
+    manifest["provenance"] = build_provenance(
+        tiles_dir=tiles_dir or raw_dir or cache.default_raw_dir(),
+        contracts_dir=CONTRACTS_DIR,
+        acquisition_mode=acquisition_mode,
+        normalized_cache=cache.latest_good(raw_dir) if acquisition_mode == "cached_tiles" else None,
+    )
 
     # Stage every artifact BEFORE committing any of them. This is the
     # group-atomicity fix (2026-09-02): the previous version validated and

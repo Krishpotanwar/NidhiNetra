@@ -27,7 +27,7 @@ from nidhinetra_pipeline.build_snapshot import SnapshotDowngradeError, StaleCach
 
 from . import snapshot
 from .db import SnapshotNotReadyError
-from .routers import entity_aliases, graph, inspections, refresh, stats, works
+from .routers import entity_aliases, graph, inspections, provenance, refresh, stats, works
 
 logger = logging.getLogger("nidhinetra_api")
 
@@ -165,6 +165,7 @@ app.include_router(stats.router)
 app.include_router(refresh.router)
 app.include_router(inspections.router)
 app.include_router(entity_aliases.router)
+app.include_router(provenance.router)
 
 
 def _envelope_error(status_code: int, message: str) -> JSONResponse:
