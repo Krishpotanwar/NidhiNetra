@@ -24,11 +24,11 @@
   background: var(--accent);
 }
 
-.swatchFlagged {
+.swatchElevated {
   background: var(--risk-3);
 }
 
-.swatchSelected {
+.swatchHigh {
   background: var(--risk-4);
 }
 
@@ -109,9 +109,14 @@
   opacity: 0.35;
 }
 
-.ribbonFlagged {
+.ribbonElevated {
   stroke: var(--risk-3);
   opacity: 0.6;
+}
+
+.ribbonHigh {
+  stroke: var(--risk-4);
+  opacity: 0.75;
 }
 
 .infoNote {

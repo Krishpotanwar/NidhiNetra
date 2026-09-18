@@ -6,8 +6,20 @@ function node(id: string, type: "MP" | "Agency" | "Vendor", label = id): FundFlo
   return { id, type, label, risk_weight: 0 };
 }
 
-function edge(source: string, target: string, flagged_work_count = 0): FundFlowGraph["edges"][number] {
-  return { source, target, work_count: 1, total_amount_inr: 0, flagged_work_count, work_ids: ["W1"] };
+function edge(
+  source: string,
+  target: string,
+  overrides: Partial<FundFlowGraph["edges"][number]> = {},
+): FundFlowGraph["edges"][number] {
+  return {
+    source,
+    target,
+    work_count: 1,
+    total_amount_inr: 0,
+    flagged_work_count: 0,
+    work_ids: ["W1"],
+    ...overrides,
+  };
 }
 
 describe("buildRibbonLayout", () => {
@@ -45,17 +57,57 @@ describe("buildRibbonLayout", () => {
     expect(layout.mpAgencyRibbons).toHaveLength(0);
   });
 
-  it("colours an edge by its own flagged_work_count, not by cluster selection", () => {
+  it("colours an edge by its real share of flagged works, not by cluster selection", () => {
     const graph: FundFlowGraph = {
-      nodes: [node("agency_1", "Agency"), node("vendor_1", "Vendor"), node("vendor_2", "Vendor")],
-      edges: [edge("agency_1", "vendor_1", 2), edge("agency_1", "vendor_2", 0)],
+      nodes: [
+        node("agency_1", "Agency"),
+        node("vendor_1", "Vendor"),
+        node("vendor_2", "Vendor"),
+        node("vendor_3", "Vendor"),
+      ],
+      edges: [
+        edge("agency_1", "vendor_1", { work_count: 4, flagged_work_count: 4 }), // all flagged
+        edge("agency_1", "vendor_2", { work_count: 4, flagged_work_count: 1 }), // some flagged
+        edge("agency_1", "vendor_3", { work_count: 4, flagged_work_count: 0 }), // none flagged
+      ],
     };
 
     const layout = buildRibbonLayout(graph, undefined);
     const stateFor = (id: string) => layout.agencyVendorRibbons.find((r) => r.id.startsWith(id))?.state;
 
-    expect(stateFor("agency_1->vendor_1")).toBe("flagged");
-    expect(stateFor("agency_1->vendor_2")).toBe("plain");
+    expect(stateFor("agency_1->vendor_1")).toBe("high");
+    expect(stateFor("agency_1->vendor_2")).toBe("elevated");
+    expect(stateFor("agency_1->vendor_3")).toBe("plain");
+  });
+
+  it("widens a ribbon with the sanctioned amount, not the work count", () => {
+    const graph: FundFlowGraph = {
+      nodes: [node("agency_1", "Agency"), node("vendor_1", "Vendor"), node("vendor_2", "Vendor")],
+      edges: [
+        // vendor_1's edge has far fewer works but a far larger sanctioned amount.
+        edge("agency_1", "vendor_1", { work_count: 1, total_amount_inr: 50_00_00_000 }),
+        edge("agency_1", "vendor_2", { work_count: 50, total_amount_inr: 10_000 }),
+      ],
+    };
+
+    const layout = buildRibbonLayout(graph, undefined);
+    const widthFor = (id: string) => layout.agencyVendorRibbons.find((r) => r.id.startsWith(id))?.strokeWidth ?? 0;
+
+    expect(widthFor("agency_1->vendor_1")).toBeGreaterThan(widthFor("agency_1->vendor_2"));
+  });
+
+  it("normalises width across the whole layout, so the largest amount always reads widest", () => {
+    const graph: FundFlowGraph = {
+      nodes: [node("mp_1", "MP"), node("agency_1", "Agency"), node("vendor_1", "Vendor")],
+      edges: [
+        edge("mp_1", "agency_1", { total_amount_inr: 100 }),
+        edge("agency_1", "vendor_1", { total_amount_inr: 100_000_000 }),
+      ],
+    };
+
+    const layout = buildRibbonLayout(graph, undefined);
+
+    expect(layout.agencyVendorRibbons[0].strokeWidth).toBeGreaterThan(layout.mpAgencyRibbons[0].strokeWidth);
   });
 
   it("marks only the vendor passed as highlightVendorId as selected", () => {

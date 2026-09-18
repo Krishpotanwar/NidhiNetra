@@ -394,10 +394,10 @@
     "cluster_risk_flag_note": "{flagged} of {total} linked works carry a risk flag.",
     "view_linked_works": "View linked works",
     "ribbon_legend_plain": "Normal flow",
-    "ribbon_legend_flagged": "Has a risk-flagged work",
-    "ribbon_legend_selected": "Selected cluster",
+    "ribbon_legend_elevated": "Some works flagged",
+    "ribbon_legend_high": "All works flagged",
     "ribbon_more_note": "+ {count} more",
-    "ribbon_info_note": "Ribbon width reflects the number of works on that edge."
+    "ribbon_info_note": "Ribbon width reflects the sanctioned amount on that edge; colour reflects the share of its works carrying a risk flag."
   },
   "entity_alias_review": {
     "pending_badge": "{count} pending",

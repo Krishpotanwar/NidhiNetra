@@ -15,13 +15,15 @@ const COLUMN_LABEL: Record<GraphNodeType, string> = {
 
 const RIBBON_CLASS: Record<RibbonEdgeState, string> = {
   plain: styles.ribbonPlain,
-  flagged: styles.ribbonFlagged,
+  elevated: styles.ribbonElevated,
+  high: styles.ribbonHigh,
 };
 
 interface RibbonViewProps {
   graph: FundFlowGraph;
-  /** Draws this vendor's row in the selected colour; a static server-side
-   *  fact (flagged_work_count) drives every ribbon's colour regardless. */
+  /** Draws this vendor's row with the same highlight styling as a "high"
+   *  ribbon; every ribbon's own colour is driven entirely by its real
+   *  flagged-work share regardless. */
   highlightVendorId?: string;
 }
 
@@ -52,12 +54,12 @@ export function RibbonView({ graph, highlightVendorId }: RibbonViewProps) {
           {s.ribbon_legend_plain}
         </span>
         <span className={styles.legendItem}>
-          <span className={`${styles.swatch} ${styles.swatchFlagged}`} aria-hidden="true" />
-          {s.ribbon_legend_flagged}
+          <span className={`${styles.swatch} ${styles.swatchElevated}`} aria-hidden="true" />
+          {s.ribbon_legend_elevated}
         </span>
         <span className={styles.legendItem}>
-          <span className={`${styles.swatch} ${styles.swatchSelected}`} aria-hidden="true" />
-          {s.ribbon_legend_selected}
+          <span className={`${styles.swatch} ${styles.swatchHigh}`} aria-hidden="true" />
+          {s.ribbon_legend_high}
         </span>
       </div>
 

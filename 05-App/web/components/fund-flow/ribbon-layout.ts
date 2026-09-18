@@ -12,19 +12,26 @@ const s = STRINGS.fund_flow;
  * endpoints are computed from list position alone, never measured off the
  * rendered page.
  *
- * Colour is two real, already-collected signals, not an invented
- * "concentration tier": whether an edge carries any flagged work
- * (edge.flagged_work_count, from the server's own risk scoring) and whether
- * a node is the vendor currently in focus (highlightVendorId, the page's own
- * selection state). Nothing here approximates a number the graph does not
- * actually have.
+ * Colour and width are both real, already-collected signals, never an
+ * invented "concentration score":
+ * - width scales with edge.total_amount_inr (the sanctioned amount that
+ *   edge actually represents), log-normalised across every edge drawn in
+ *   this one layout so the thinnest and thickest ribbons on screen are
+ *   always visibly different regardless of the cluster's absolute scale.
+ * - colour is the real share of that edge's works carrying a risk flag
+ *   (edge.flagged_work_count / edge.work_count): none flagged (plain),
+ *   some flagged (elevated), or all flagged (high) -- three honest tiers
+ *   from data the graph already carries, not a fabricated "concentration"
+ *   number.
  */
 
 export const ROW_HEIGHT = 32;
 export const MAX_ROWS_PER_COLUMN = 8;
 const LABEL_MAX = 34;
+const MIN_RIBBON_WIDTH = 1.5;
+const MAX_RIBBON_WIDTH = 12;
 
-export type RibbonEdgeState = "plain" | "flagged";
+export type RibbonEdgeState = "plain" | "elevated" | "high";
 
 export interface RibbonRow {
   id: string;
@@ -88,10 +95,43 @@ function buildColumn(
   };
 }
 
+function edgeState(edge: GraphEdge): RibbonEdgeState {
+  if (edge.work_count <= 0 || edge.flagged_work_count <= 0) return "plain";
+  if (edge.flagged_work_count >= edge.work_count) return "high";
+  return "elevated";
+}
+
+/**
+ * Log-normalises total_amount_inr across every edge this one layout draws
+ * (both MP -> Agency and Agency -> Vendor together, so a rupee is the same
+ * width regardless of which hop it is on), into [MIN_RIBBON_WIDTH,
+ * MAX_RIBBON_WIDTH]. Log rather than linear: sanctioned amounts on a single
+ * vendor's cluster commonly span two or three orders of magnitude, and a
+ * linear map would flatten everything but the single largest edge down to
+ * the minimum width, which reads as "every edge is the same" -- the exact
+ * complaint this replaces work_count-based width to fix.
+ */
+function widthScale(edges: GraphEdge[]): (amountInr: number) => number {
+  if (edges.length === 0) return () => MIN_RIBBON_WIDTH;
+  const logAmounts = edges.map((e) => Math.log(Math.max(0, e.total_amount_inr) + 1));
+  const min = Math.min(...logAmounts);
+  const max = Math.max(...logAmounts);
+  if (max === min) return () => (MIN_RIBBON_WIDTH + MAX_RIBBON_WIDTH) / 2;
+  return (amountInr: number) => {
+    const t = (Math.log(Math.max(0, amountInr) + 1) - min) / (max - min);
+    return MIN_RIBBON_WIDTH + t * (MAX_RIBBON_WIDTH - MIN_RIBBON_WIDTH);
+  };
+}
+
+// Draw order back-to-front, so a thinner but more severe ribbon is never
+// buried under a thicker ordinary one.
+const STATE_RANK: Record<RibbonEdgeState, number> = { plain: 0, elevated: 1, high: 2 };
+
 function ribbonsBetween(
   edges: GraphEdge[],
   sourceY: Map<string, number>,
   targetY: Map<string, number>,
+  widthFor: (amountInr: number) => number,
 ): RibbonPath[] {
   const paths: RibbonPath[] = [];
   edges.forEach((edge, index) => {
@@ -102,17 +142,15 @@ function ribbonsBetween(
     paths.push({
       id: `${edge.source}->${edge.target}-${index}`,
       d: `M0,${y1} C33,${y1} 66,${y2} 100,${y2}`,
-      state: edge.flagged_work_count > 0 ? "flagged" : "plain",
-      strokeWidth: Math.min(10, 2 + Math.log2(edge.work_count + 1) * 2),
+      state: edgeState(edge),
+      strokeWidth: widthFor(edge.total_amount_inr),
       title: renderTemplate(s.edge_label, {
         work_count: formatIndianInt(edge.work_count),
         amount: formatCurrencyFull(edge.total_amount_inr),
       }),
     });
   });
-  // Flagged ribbons render on top of plain ones, so a thin flagged ribbon is
-  // never hidden under a thicker ordinary one.
-  return paths.sort((a, b) => (a.state === b.state ? 0 : a.state === "flagged" ? 1 : -1));
+  return paths.sort((a, b) => STATE_RANK[a.state] - STATE_RANK[b.state]);
 }
 
 export function buildRibbonLayout(graph: FundFlowGraph, highlightVendorId: string | undefined): RibbonLayout {
@@ -126,11 +164,12 @@ export function buildRibbonLayout(graph: FundFlowGraph, highlightVendorId: strin
   const byId = new Map<string, GraphNode>(graph.nodes.map((n) => [n.id, n]));
   const mpEdges = graph.edges.filter((e) => byId.get(e.source)?.type === "MP");
   const agencyVendorEdges = graph.edges.filter((e) => byId.get(e.source)?.type === "Agency");
+  const widthFor = widthScale([...mpEdges, ...agencyVendorEdges]);
 
   return {
     columns: { MP: mp.column, Agency: agency.column, Vendor: vendor.column },
     height: totalRows * ROW_HEIGHT,
-    mpAgencyRibbons: ribbonsBetween(mpEdges, mp.yById, agency.yById),
-    agencyVendorRibbons: ribbonsBetween(agencyVendorEdges, agency.yById, vendor.yById),
+    mpAgencyRibbons: ribbonsBetween(mpEdges, mp.yById, agency.yById, widthFor),
+    agencyVendorRibbons: ribbonsBetween(agencyVendorEdges, agency.yById, vendor.yById, widthFor),
   };
 }
