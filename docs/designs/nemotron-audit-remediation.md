@@ -281,6 +281,12 @@ Dated DONE entries for F-12, F-19 and every Step 7 item, newest last.
   tracking wrapper around the real connection. Already true before this change: parameterised SQL, page-size
   ceilings, and a generic 500 message that never leaks query details.
 
+- **F-22, DONE (2026-09-18), in-app half.** CORS now allows only `GET`, `POST` and `OPTIONS`, only the
+  `Content-Type` request header, and no credentials; the origin rules are unchanged. Every response carries
+  `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` and `Referrer-Policy: no-referrer`.
+  **Deliberately NOT done:** a trusted-host allowlist and per-environment deployment profiles (they need
+  the final production hostnames), and response-size and timeout limits beyond T06's compression.
+
 ## What I noticed about how you think
 
 - You didn't accept the audit on the strength of its prose — you asked for it to be spot-checked against the actual code before trusting the rest of it, and it held up.

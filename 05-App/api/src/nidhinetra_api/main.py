@@ -15,10 +15,10 @@ from __future__ import annotations
 
 import logging
 import os
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -126,9 +126,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_PRODUCTION_ORIGINS,
     allow_origin_regex=_ALLOW_ORIGIN_REGEX,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    # F-22: the app uses no cookies or other credentials, and the browser only
+    # ever sends GET, POST with a JSON body, and the preflight OPTIONS.
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type"],
 )
 
 # F-17 companion: the rebuilt national graph is about 10 MB of JSON.
@@ -136,6 +138,26 @@ app.add_middleware(
 # that transfer roughly tenfold for the browser. Responses under 1 KB, like
 # /health, are left alone.
 app.add_middleware(GZipMiddleware, minimum_size=1024)
+
+# F-22: baseline headers for a JSON API that is never framed and never needs to
+# send a referrer. Added last, so this middleware is the outermost layer and
+# also covers CORS preflight and error responses.
+_SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+}
+
+
+@app.middleware("http")
+async def _security_headers(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    response = await call_next(request)
+    for name, value in _SECURITY_HEADERS.items():
+        response.headers.setdefault(name, value)
+    return response
+
 
 app.include_router(works.router)
 app.include_router(graph.router)
