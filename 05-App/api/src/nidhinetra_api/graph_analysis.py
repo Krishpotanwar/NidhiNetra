@@ -22,6 +22,7 @@ already reads graph.json the same untyped way).
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 from typing import Any
 
 Graph = dict[str, Any]
@@ -159,6 +160,51 @@ def subgraph_for(graph: Graph, vendor_ids: set[str]) -> Graph:
         "nodes": [n for n in graph["nodes"] if n["id"] in keep_nodes],
         "edges": [e for e in graph["edges"] if keep_edge(e)],
     }
+
+
+def restrict_to_vendor_works(subgraph: Graph, facts: Mapping[str, Mapping[str, Any]]) -> Graph:
+    """`subgraph` (from `subgraph_for`) with every MP -> Agency edge cut down to the works that
+    agency paid to the vendor in it, so the MP side of a cluster adds up to its vendor side.
+
+    `subgraph_for` keeps a whole MP -> Agency edge once it shares one work with the vendor's
+    edges, so that edge still carries the MP's entire spend through the agency. Measured on the
+    live snapshot: 7.65 Cr drawn for a vendor paid 0.72 Cr. Every work has exactly one MP, one
+    agency and one vendor, so restricted to the works the agency paid the vendor, the two sides
+    are equal.
+
+    work_count, total_amount_inr and flagged_work_count are recomputed by build_graph.py's rules:
+    the amount is `sanctioned_amount_inr or 0` rounded to paise, and a work is flagged when its
+    scored `flags` list is non-empty. `facts` maps work_id to a row holding those two keys; a
+    work id it lacks counts as Rs 0 and unflagged, as build_graph.py treats a work with no
+    scored record. Agency -> Vendor edges and every node pass through unchanged, and `subgraph`
+    is not modified.
+    """
+    by_id: dict[str, Node] = {n["id"]: n for n in subgraph["nodes"]}
+
+    # agency id -> every work_id that agency paid to a vendor in this subgraph.
+    paid_by_agency: dict[str, set[str]] = {}
+    for edge in subgraph["edges"]:
+        source = by_id.get(edge["source"])
+        if source and source["type"] == "Agency":
+            paid_by_agency.setdefault(edge["source"], set()).update(edge["work_ids"])
+
+    def restricted(edge: Edge) -> Edge:
+        source = by_id.get(edge["source"])
+        target = by_id.get(edge["target"])
+        if not (source and source["type"] == "MP" and target and target["type"] == "Agency"):
+            return edge
+        paid = paid_by_agency.get(edge["target"], set())
+        work_ids = [w for w in edge["work_ids"] if w in paid]
+        rows = [facts.get(w, {}) for w in work_ids]
+        return {
+            **edge,
+            "work_ids": work_ids,
+            "work_count": len(work_ids),
+            "total_amount_inr": round(sum(r.get("sanctioned_amount_inr") or 0 for r in rows), 2),
+            "flagged_work_count": sum(1 for r in rows if r.get("flags")),
+        }
+
+    return {"nodes": subgraph["nodes"], "edges": [restricted(e) for e in subgraph["edges"]]}
 
 
 def graph_totals(graph: Graph) -> dict[str, Any]:

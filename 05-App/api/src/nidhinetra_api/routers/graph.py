@@ -22,6 +22,7 @@ empty graph with meta.graph_status = "rebuild_required" instead, and
 
 from __future__ import annotations
 
+import contextlib
 import json
 from typing import Any
 
@@ -153,11 +154,34 @@ def get_concentrations(query: ConcentrationsQuery = Depends(concentrations_query
     )
 
 
+def _work_facts(work_ids: list[str]) -> dict[str, dict[str, Any]]:
+    """work_id -> sanctioned_amount_inr and the decoded scored flags, for exactly these works. A
+    work id the snapshot does not hold is simply absent, which restrict_to_vendor_works counts as
+    Rs 0 and unflagged.
+    """
+    if not work_ids:
+        return {}
+    marks = ", ".join("?" for _ in work_ids)
+    with contextlib.closing(db.connect()) as con:
+        rows = db.rows_as_dicts(
+            con,
+            "SELECT works.work_id, works.sanctioned_amount_inr, scored.flags "
+            f"FROM works LEFT JOIN scored USING (work_id) WHERE works.work_id IN ({marks})",
+            work_ids,
+        )
+    return {row["work_id"]: row for row in db.decode_scored_json(rows, columns=("flags",))}
+
+
 @router.get("/cluster")
 def get_cluster(query: ClusterQuery = Depends(cluster_query)) -> Envelope:  # noqa: B008
     """T17/F-17b: one vendor's own evidence-backed cluster, fetched on
     demand instead of narrowing it out of an already-downloaded national
     graph.
+
+    Inside a cluster an MP -> Agency edge carries only the works that agency paid to this
+    vendor (graph_analysis.restrict_to_vendor_works), so at every agency the MP side adds up
+    to the vendor side. GET /api/graph, which the ?agency= deep link uses, still returns whole
+    edges.
     """
     graph, _concentrations, _totals = _load_graph_analysis_cached()
     if _graph_is_legacy(graph):
@@ -173,7 +197,11 @@ def get_cluster(query: ClusterQuery = Depends(cluster_query)) -> Envelope:  # no
             detail=f"No vendor found with id '{query.vendor_id}' in the current graph.",
         )
     subgraph = graph_analysis.subgraph_for(graph, {query.vendor_id})
-    return Envelope(success=True, data=subgraph, meta={"graph_status": GRAPH_STATUS_CURRENT})
+    paid_work_ids = sorted(
+        {w for e in subgraph["edges"] if e["target"] == query.vendor_id for w in e["work_ids"]}
+    )
+    cluster = graph_analysis.restrict_to_vendor_works(subgraph, _work_facts(paid_work_ids))
+    return Envelope(success=True, data=cluster, meta={"graph_status": GRAPH_STATUS_CURRENT})
 
 
 @router.get("")

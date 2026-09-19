@@ -8,6 +8,7 @@ rank vendors and narrow to one cluster client-side.
 
 from __future__ import annotations
 
+import pytest
 from nidhinetra_api import graph_analysis
 from nidhinetra_api.routers import graph as graph_router
 
@@ -191,3 +192,60 @@ def test_cluster_rebuild_required_for_a_legacy_graph(monkeypatch, client):
     assert body["success"] is True
     assert body["data"] == {"nodes": [], "edges": []}
     assert body["meta"] == {"graph_status": "rebuild_required"}
+
+
+def _cluster(client, vendor_id: str) -> dict:
+    return client.get("/api/graph/cluster", params={"vendor_id": vendor_id}).json()["data"]
+
+
+def test_cluster_mp_edges_carry_only_the_works_paid_to_this_vendor(client, works_fixture):
+    # In the fixture, rajesh_oraon recommended both MPLADS-FX-0001 (paid to vendor V001) and
+    # MPLADS-FX-0008 (paid to V004) through one agency. V004's cluster must show only the second.
+    cluster = _cluster(client, "vendor_SYNTH-V004")
+
+    [mp_edge] = [
+        e
+        for e in cluster["edges"]
+        if e["source"] == "mp_rajesh_oraon" and e["target"] == "agency_zilla_parishad_works_dept"
+    ]
+    sanctioned = {w["work_id"]: w["sanctioned_amount_inr"] for w in works_fixture}
+    assert mp_edge["work_ids"] == ["MPLADS-FX-0008"]
+    assert mp_edge["work_count"] == 1
+    assert mp_edge["total_amount_inr"] == pytest.approx(sanctioned["MPLADS-FX-0008"])
+
+
+def test_cluster_balances_at_every_agency(client):
+    nodes = client.get("/api/graph").json()["data"]["nodes"]
+    vendor_ids = [n["id"] for n in nodes if n["type"] == "Vendor"]
+    assert vendor_ids
+
+    for vendor_id in vendor_ids:
+        cluster = _cluster(client, vendor_id)
+        kind = {n["id"]: n["type"] for n in cluster["nodes"]}
+        for agency in (n["id"] for n in cluster["nodes"] if n["type"] == "Agency"):
+            paid = [e for e in cluster["edges"] if e["source"] == agency]
+            mine = [
+                e for e in cluster["edges"] if e["target"] == agency and kind[e["source"]] == "MP"
+            ]
+            # The MP edges are subsets of what the agency paid this vendor, and together cover it.
+            assert {w for e in mine for w in e["work_ids"]} == {
+                w for e in paid for w in e["work_ids"]
+            }
+            assert sum(e["work_count"] for e in mine) == sum(e["work_count"] for e in paid)
+            assert sum(e["total_amount_inr"] for e in mine) == pytest.approx(
+                sum(e["total_amount_inr"] for e in paid), abs=0.01
+            )
+
+
+def test_cluster_for_a_vendor_no_agency_paid_is_just_that_vendor(monkeypatch, client):
+    lone = {
+        "nodes": [{"id": "vendor_lone", "type": "Vendor", "label": "L", "risk_weight": 0}],
+        "edges": [],
+    }
+    monkeypatch.setattr(graph_router, "_load_graph_analysis_cached", lambda: (lone, [], {}))
+
+    body = client.get("/api/graph/cluster", params={"vendor_id": "vendor_lone"}).json()
+
+    assert body["success"] is True
+    assert body["data"] == lone
+    assert body["meta"] == {"graph_status": "current"}
