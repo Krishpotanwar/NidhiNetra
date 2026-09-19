@@ -1,60 +1,79 @@
 import Link from "next/link";
+import { ArrowRight, Bank, Database, FileText, type Icon, UsersThree, Warning } from "@phosphor-icons/react";
 import { renderTemplate, STRINGS } from "@/lib/strings";
-import { displayName, formatCurrencyFull, formatIndianInt } from "@/lib/format";
+import { displayName, formatCurrency, formatIndianInt } from "@/lib/format";
 import { realVendorId } from "@/lib/graph-data";
 import type { VendorConcentration } from "@/lib/vendor-concentration";
-import styles from "./SideCard.module.css";
+import styles from "./ClusterInFocus.module.css";
 
 const s = STRINGS.fund_flow;
 
 interface ClusterInFocusProps {
   vendor: VendorConcentration;
-  medianMemberCount: number;
 }
 
 /**
- * Four figures, not five: the graph has no district field, so a Districts
- * count would have to be invented (see lib/vendor-concentration.ts). The
- * amount is the sanctioned value on those works, which is what the graph's
- * edges actually carry; the risk-flag line below sums the same edges'
- * real flagged_work_count, never an invented concentration tier.
+ * Four figures, not five: the graph has no district field, so a Districts count would have to be
+ * invented (see lib/vendor-concentration.ts). The amount is the sanctioned value on those works,
+ * which is what the graph's edges actually carry; the risk box below sums the same edges' real
+ * flagged_work_count, never an invented concentration tier.
  */
-export function ClusterInFocus({ vendor, medianMemberCount }: ClusterInFocusProps) {
-  const memberWord = medianMemberCount === 1 ? s.member_singular : s.member_plural;
+export function ClusterInFocus({ vendor }: ClusterInFocusProps) {
   return (
     <section className={styles.card}>
       <h2 className="t-label">{s.cluster_in_focus_label}</h2>
-      <p className={styles.clusterName}>{displayName(vendor.vendorLabel)}</p>
-      <dl className={styles.figures}>
-        <dt>{s.cluster_members}</dt>
-        <dd className="t-num">{formatIndianInt(vendor.memberCount)}</dd>
-        <dt>{s.cluster_agencies}</dt>
-        <dd className="t-num">{formatIndianInt(vendor.agencyCount)}</dd>
-        <dt>{s.cluster_works}</dt>
-        <dd className="t-num">{formatIndianInt(vendor.workCount)}</dd>
-        <dt>{s.cluster_paid}</dt>
-        <dd className="t-num">{formatCurrencyFull(vendor.paidInr)}</dd>
-      </dl>
+      <p className={styles.name}>{displayName(vendor.vendorLabel)}</p>
+      <ul className={styles.figures}>
+        <Figure icon={UsersThree} label={s.cluster_members} value={formatIndianInt(vendor.memberCount)} />
+        <Figure icon={Bank} label={s.cluster_agencies} value={formatIndianInt(vendor.agencyCount)} />
+        <Figure icon={FileText} label={s.cluster_works} value={formatIndianInt(vendor.workCount)} />
+        <Figure icon={Database} tone="rose" label={s.cluster_paid} value={formatCurrency(vendor.paidInr)} />
+      </ul>
       {vendor.flaggedWorkCount > 0 && (
-        <p className={styles.riskNote}>
-          {renderTemplate(s.cluster_risk_flag_note, {
-            flagged: formatIndianInt(vendor.flaggedWorkCount),
-            total: formatIndianInt(vendor.workCount),
-          })}
-        </p>
+        <div className={styles.risk}>
+          <Warning size={24} weight="fill" aria-hidden="true" className={styles.riskIcon} />
+          <div>
+            <p className={styles.riskLine}>
+              {renderTemplate(s.cluster_risk_flag_note, {
+                flagged: formatIndianInt(vendor.flaggedWorkCount),
+                total: formatIndianInt(vendor.workCount),
+              })}
+            </p>
+            <p className={styles.riskNote}>{STRINGS.framing.standing_note}</p>
+          </div>
+        </div>
       )}
-      <p className={styles.note}>
-        {renderTemplate(s.cluster_median_note, {
-          median: formatIndianInt(medianMemberCount),
-          member_word: memberWord,
-        })}
-      </p>
       <Link
         href={`/inspections?vendor_id=${encodeURIComponent(realVendorId(vendor.vendorId))}`}
         className={styles.viewLinkedWorks}
       >
         {s.view_linked_works}
+        <ArrowRight size={16} weight="bold" aria-hidden="true" />
       </Link>
     </section>
+  );
+}
+
+function Figure({
+  icon: Glyph,
+  label,
+  value,
+  tone = "blue",
+}: {
+  icon: Icon;
+  label: string;
+  value: string;
+  tone?: "blue" | "rose";
+}) {
+  return (
+    <li className={styles.figure} data-tone={tone}>
+      <span className={styles.figureIcon} aria-hidden="true">
+        <Glyph size={20} />
+      </span>
+      <div>
+        <p className={styles.figureValue}>{value}</p>
+        <p className={styles.figureLabel}>{label}</p>
+      </div>
+    </li>
   );
 }

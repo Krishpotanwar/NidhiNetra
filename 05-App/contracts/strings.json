@@ -25,7 +25,8 @@
       "2026-09-16: F-01. Added detail_panel.record_fields.district_authority and missing_fields.district_authority: the work record now shows the District Authority (IDA_NAME) and the Implementing agency (IA_NAME) as two fields instead of one mislabelled field. Added fund_flow.rebuild_required_title and .rebuild_required_body for the state where the API holds back a graph built before that split or before its edges carried work IDs.",
       "2026-09-17: Phase 0. Added detail_panel.record_fields.work_description, .activity and .recommendation_date, and missing_fields.description. The portal publishes a description, an activity string and a recommendation date on every work; the pipeline dropped all three. They are shown as published, with only transport spacing tidied, and nothing about them is derived or interpreted.",
       "2026-09-17: Phase 0 follow-up. detail_panel.record_fields.work_description is now 'Portal description', matching 'Portal activity', so the text under the title says where it comes from. missing_fields.description is now 'Description not recorded', in the same form as the other missing values: until the snapshot is rebuilt it holds no description column, and the earlier sentence would have told the officer the portal published nothing for works where it did.",
-      "2026-09-18: F-09. Removed inspection_capture.control_sample_label: an officer can no longer mark an outcome as a random spot-check after seeing the work, which made the comparison group meaningless; the server now assigns the group. Rewrote the end of reports.method to say so, and that no random sample has been assigned yet."
+      "2026-09-18: F-09. Removed inspection_capture.control_sample_label: an officer can no longer mark an outcome as a random spot-check after seeing the work, which made the comparison group meaningless; the server now assigns the group. Rewrote the end of reports.method to say so, and that no random sample has been assigned yet.",
+      "2026-09-19: Fund Flow Sankey rebuild. Changed fund_flow.subtitle to 'Trace concentrated MP, agency and vendor relationships in the MPLADS record.', and fund_flow.search_label and .search_placeholder to 'Search vendors': the search matches vendor names only, so 'or agency' claimed something it never did. Added fund_flow.toolbar_count, .members_pill, .view_all, .show_fewer, .works_count, .flow_table_caption, .flow_table_from, .flow_table_to, .flow_table_amount, .flow_table_works and .flow_table_flagged for the redesigned toolbar, cluster header, vendor list, vendor boxes and the chart's text table. fund_flow.concentration_filter_description, .cluster_median_note and .clusters_note are no longer shown; they stay in the contract because nothing checks for unused keys."
     ]
   },
   "_measure": {
@@ -348,7 +349,7 @@
   },
   "fund_flow": {
     "title": "Fund flow",
-    "subtitle": "MPs, implementing agencies and vendors. Edges are money.",
+    "subtitle": "Trace concentrated MP, agency and vendor relationships in the MPLADS record.",
     "legend_mp": "Member of Parliament",
     "legend_agency": "Implementing agency",
     "legend_vendor": "Vendor",
@@ -385,8 +386,8 @@
     "column_vendor": "Vendor",
     "totals_flow_label": "Flow represented",
     "totals_vendor_label": "Vendors",
-    "search_label": "Search vendor or agency",
-    "search_placeholder": "Search vendor or agency",
+    "search_label": "Search vendors",
+    "search_placeholder": "Search vendors",
     "clusters_column_rank": "#",
     "clusters_column_vendor": "Vendor",
     "clusters_column_mps": "MPs",
@@ -397,7 +398,18 @@
     "ribbon_legend_elevated": "Some works flagged",
     "ribbon_legend_high": "All works flagged",
     "ribbon_more_note": "+ {count} more",
-    "ribbon_info_note": "Ribbon width reflects the sanctioned amount on that edge; colour reflects the share of its works carrying a risk flag."
+    "ribbon_info_note": "Ribbon width reflects the sanctioned amount on that edge; colour reflects the share of its works carrying a risk flag.",
+    "toolbar_count": "{shown} of {matching} matching vendors shown",
+    "members_pill": "{count} MPs",
+    "view_all": "View all {count}",
+    "show_fewer": "Show fewer",
+    "works_count": "{count} works",
+    "flow_table_caption": "Every flow in this chart",
+    "flow_table_from": "From",
+    "flow_table_to": "To",
+    "flow_table_amount": "Sanctioned",
+    "flow_table_works": "Works",
+    "flow_table_flagged": "Flagged works"
   },
   "entity_alias_review": {
     "pending_badge": "{count} pending",

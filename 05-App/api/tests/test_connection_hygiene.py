@@ -46,6 +46,14 @@ def test_read_endpoints_close_their_connection(client, tracked, path: str) -> No
     assert all(connection.closed for connection in tracked)
 
 
+def test_the_cluster_endpoint_closes_its_connection(client, tracked) -> None:
+    response = client.get("/api/graph/cluster", params={"vendor_id": "vendor_SYNTH-V004"})
+
+    assert response.status_code == 200
+    assert tracked
+    assert all(connection.closed for connection in tracked)
+
+
 def test_recording_an_inspection_closes_its_connection(client, tracked) -> None:
     work_id = client.get("/api/works", params={"page_size": 1}).json()["data"][0]["work_id"]
     tracked.clear()

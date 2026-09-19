@@ -6,18 +6,59 @@
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 22rem;
+  grid-template-columns: minmax(0, 1fr) 26rem;
   gap: var(--space-5);
   align-items: start;
 }
 
-.canvasCard,
+.chartCard,
 .card {
   padding: var(--space-6);
   background: var(--surface);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
+}
+
+.chartHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.chartTitle {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--font-xl);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  letter-spacing: var(--track-heading);
+  color: var(--ink);
+}
+
+.pill {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--accent-wash);
+  font-size: var(--font-note);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+
+.back {
+  font-size: var(--font-sm);
+  font-weight: 600;
 }
 
 .canvasSkeleton {
@@ -30,93 +71,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-}
-
-.note {
-  margin: var(--space-2) 0 0;
-  font-size: var(--font-note);
-  line-height: var(--leading-normal);
-  color: var(--ink-muted);
-}
-
-.clusterList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  margin: var(--space-4) 0 0;
-  padding: 0;
-  max-height: 22rem;
-  overflow-y: auto;
-  list-style: none;
-}
-
-.clusterHeader {
-  display: grid;
-  grid-template-columns: 1.5rem 1fr auto;
-  gap: var(--space-3);
-  margin: var(--space-4) 0 0;
-  padding: 0 var(--space-3);
-  font-size: var(--font-2xs);
-  font-weight: 600;
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-
-.clusterHeaderCount {
-  text-align: right;
-}
-
-.clusterRank {
-  font-family: var(--font-mono);
-  font-size: var(--font-note);
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-muted);
-}
-
-.clusterButton {
-  display: grid;
-  grid-template-columns: 1.5rem 1fr auto;
-  align-items: baseline;
-  gap: var(--space-3);
-  width: 100%;
-  padding: var(--space-2) var(--space-3);
-  border: 0;
-  border-radius: var(--radius-control);
-  background: none;
-  text-align: left;
-  cursor: pointer;
-}
-
-.clusterButton:hover {
-  background: var(--row-hover);
-}
-
-.clusterButton[aria-current="true"] {
-  background: var(--accent-wash);
-}
-
-.clusterName {
-  overflow: hidden;
-  font-size: var(--font-note);
-  font-weight: 500;
-  color: var(--ink);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.clusterCount {
-  flex: none;
-  font-family: var(--font-mono);
-  font-size: var(--font-note);
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-2);
-}
-
-.deepLink {
-  margin: 0;
-  font-size: var(--font-sm);
-  color: var(--ink-2);
 }
 
 .caveat {
@@ -154,9 +108,9 @@
 @media (max-width: 75rem) {
   .layout {
     /* minmax(0, ...), not a bare 1fr: a bare 1fr track's automatic minimum
-       is its content's min-content size, and the graph canvas is wide by
-       design, so without the explicit 0 floor this track (and the page
-       under it) would refuse to shrink below the canvas's natural width. */
+       is its content's min-content size, and the chart is wide by design, so
+       without the explicit 0 floor this track (and the page under it) would
+       refuse to shrink below the chart's natural width. */
     grid-template-columns: minmax(0, 1fr);
   }
 }
