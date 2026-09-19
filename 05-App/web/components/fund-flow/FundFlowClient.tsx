@@ -1,14 +1,16 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { renderTemplate, STRINGS } from "@/lib/strings";
 import { displayName, formatIndianInt } from "@/lib/format";
 import { fetchFundFlowGraph, fetchVendorCluster, fetchVendorConcentrations } from "@/lib/graph-data";
 import { useApiResource } from "@/lib/use-api-resource";
-import { RibbonView } from "./RibbonView";
+import { SankeyChart } from "./SankeyChart";
 import { DotCanvas } from "@/components/shared/DotCanvas";
 import { ClusterInFocus } from "./ClusterInFocus";
+import { ConcentratedVendors } from "./ConcentratedVendors";
 import { ConcentrationFilter } from "./ConcentrationFilter";
 import { AliasReviewQueue } from "./AliasReviewQueue";
 import { StatTiles } from "./StatTiles";
@@ -84,6 +86,8 @@ export function FundFlowClient() {
   }, [vendors, search]);
   const listed = useMemo(() => searched.slice(0, MAX_VENDORS_LISTED), [searched]);
   const isDefaultFilter = threshold === DEFAULT_THRESHOLD && search.trim() === "";
+  // With a search active the honest "matching" is what the search found; otherwise it is the whole graph's count.
+  const matchingCount = search.trim() ? searched.length : (concentrationsResource.data?.matchingCount ?? 0);
 
   const focused = useMemo(
     () => listed.find((v) => v.vendorId === focusedVendorId) ?? listed[0],
@@ -154,93 +158,75 @@ export function FundFlowClient() {
 
   return (
     <div className={`page ${styles.stack}`}>
-      {!isDeepLink && totals && <StatTiles totals={totals} />}
+      {!isDeepLink && <StatTiles totals={totals} />}
 
-      {isDeepLink && (
-        <p className={styles.deepLink}>
-          {agency ? `${s.legend_agency}: ${displayName(agency)}` : `${s.legend_vendor}: ${displayName(vendor ?? "")}`}
-        </p>
+      {!isDeepLink && (
+        <ConcentrationFilter
+          threshold={threshold}
+          onThresholdChange={(next) => {
+            setThreshold(next);
+            // A changed threshold changes which vendors match, so a
+            // manual focus can point at one no longer in the list.
+            setFocusedVendorId(null);
+          }}
+          search={search}
+          onSearchChange={(next) => {
+            setSearch(next);
+            setFocusedVendorId(null);
+          }}
+          shown={listed.length}
+          matching={matchingCount}
+          isDefault={isDefaultFilter}
+          onReset={() => {
+            setThreshold(DEFAULT_THRESHOLD);
+            setSearch("");
+            setFocusedVendorId(null);
+          }}
+        />
       )}
 
-      <div className={styles.layout}>
-        <section className={styles.canvasCard} aria-label={s.focus_title}>
+      <div className={isDeepLink ? undefined : styles.layout}>
+        <section className={styles.chartCard} aria-label={s.focus_title}>
+          {isDeepLink ? (
+            <header className={styles.chartHeader}>
+              <div>
+                <p className="t-eyebrow">{agency ? s.legend_agency : s.legend_vendor}</p>
+                <h2 className={styles.chartTitle}>{displayName(agency ?? vendor ?? "")}</h2>
+              </div>
+              <Link href="/fund-flow" className={styles.back}>
+                {s.back_to_clusters}
+              </Link>
+            </header>
+          ) : (
+            focused && (
+              <header className={styles.chartHeader}>
+                <div className={styles.titleRow}>
+                  <h2 className={styles.chartTitle}>{displayName(focused.vendorLabel)}</h2>
+                  <span className={styles.pill}>
+                    {renderTemplate(s.members_pill, { count: formatIndianInt(focused.memberCount) })}
+                  </span>
+                </div>
+              </header>
+            )
+          )}
           {displayGraph ? (
-            <RibbonView graph={displayGraph} highlightVendorId={isDeepLink ? undefined : focused?.vendorId} />
+            <SankeyChart graph={displayGraph} />
           ) : (
             <div className={styles.canvasSkeleton} aria-hidden="true" />
           )}
         </section>
 
-        <aside className={styles.side}>
-          {!isDeepLink && (
-            <>
-              <ConcentrationFilter
-                threshold={threshold}
-                onThresholdChange={(next) => {
-                  setThreshold(next);
-                  // A changed threshold changes which vendors match, so a
-                  // manual focus can point at one no longer in the list.
-                  setFocusedVendorId(null);
-                }}
-                search={search}
-                onSearchChange={(next) => {
-                  setSearch(next);
-                  setFocusedVendorId(null);
-                }}
-                matchingCount={concentrationsResource.data?.matchingCount ?? 0}
-                totalVendorCount={concentrationsResource.data?.totalVendorCount ?? 0}
-                drawnCount={searched.length > listed.length ? listed.length : null}
-                isDefault={isDefaultFilter}
-                onReset={() => {
-                  setThreshold(DEFAULT_THRESHOLD);
-                  setSearch("");
-                  setFocusedVendorId(null);
-                }}
-              />
-
-              <section className={styles.card}>
-                <h2 className="t-label">{s.clusters_title}</h2>
-                <p className={styles.note}>{s.clusters_note}</p>
-                {listed.length > 0 && (
-                  <div className={styles.clusterHeader} aria-hidden="true">
-                    <span className={styles.clusterRank}>{s.clusters_column_rank}</span>
-                    <span>{s.clusters_column_vendor}</span>
-                    <span className={styles.clusterHeaderCount}>{s.clusters_column_mps}</span>
-                  </div>
-                )}
-                <ul className={styles.clusterList}>
-                  {listed.map((cluster, index) => {
-                    const active = cluster.vendorId === focused?.vendorId;
-                    return (
-                      <li key={cluster.vendorId}>
-                        <button
-                          type="button"
-                          className={styles.clusterButton}
-                          aria-current={active ? "true" : undefined}
-                          onClick={() => setFocusedVendorId(cluster.vendorId)}
-                        >
-                          <span className={styles.clusterRank}>{index + 1}</span>
-                          <span className={styles.clusterName}>{displayName(cluster.vendorLabel)}</span>
-                          <span className={styles.clusterCount}>{formatIndianInt(cluster.memberCount)}</span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                  {listed.length === 0 && concentrationsResource.status === "ready" && (
-                    <li className={styles.note}>{s.empty}</li>
-                  )}
-                </ul>
-              </section>
-
-              {focused && (
-                <ClusterInFocus
-                  vendor={focused}
-                  medianMemberCount={concentrationsResource.data?.medianMemberCount ?? 0}
-                />
-              )}
-            </>
-          )}
-        </aside>
+        {!isDeepLink && (
+          <aside className={styles.side}>
+            {focused && <ClusterInFocus vendor={focused} />}
+            <ConcentratedVendors
+              vendors={listed}
+              focusedId={focused?.vendorId}
+              onFocus={setFocusedVendorId}
+              loaded={concentrationsResource.status === "ready"}
+            />
+          </aside>
+        )}
       </div>
 
       <AliasReviewQueue />

@@ -1,0 +1,112 @@
+.card {
+  padding: var(--space-5) var(--space-6);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.header {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--font-xs);
+  color: var(--ink-muted);
+}
+
+.headerCount {
+  text-align: right;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Expanded, the list scrolls in place instead of pushing the page down. */
+.scroll {
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-bottom: 1px solid var(--hairline);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--row-hover);
+}
+
+.row[aria-current="true"] {
+  background: var(--accent-wash);
+}
+
+.rank,
+.count {
+  font-family: var(--font-mono);
+  font-size: var(--font-note);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+
+.count {
+  color: var(--ink-2);
+}
+
+.name {
+  overflow: hidden;
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  padding: var(--space-3);
+  font-size: var(--font-note);
+  color: var(--ink-muted);
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  width: 100%;
+  margin-top: var(--space-3);
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.toggle:hover {
+  color: var(--accent-hover);
+}
