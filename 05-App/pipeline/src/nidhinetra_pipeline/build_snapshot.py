@@ -27,7 +27,7 @@ than a hand-copy of its output, so validation happens on every build
 regardless of which source won.
 
 Every artifact (works.parquet, scored.parquet, graph.json,
-alias_candidates.json, manifest.json) follows the same
+alias_candidates.json, duplicate_candidates.json, manifest.json) follows the same
 stage/validate/commit discipline as ingest/cache.py's
 write_snapshot(): serialize to a temp file in the target directory, read
 it back to confirm it landed intact, only then rename it into place. Since
@@ -57,6 +57,7 @@ from typing import Any
 
 import pandas as pd
 
+from .duplicates.candidates import build_duplicate_candidates
 from .graph.alias_candidates import build_alias_candidates
 from .ingest import cache
 from .normalize.normalize import normalize_records
@@ -375,6 +376,12 @@ def _stage_json(obj: Any, final_path: Path) -> Path:
     return _stage_bytes(payload, final_path)
 
 
+def _stage_compact_json(obj: Any, final_path: Path) -> Path:
+    """`_stage_json` without indentation, for duplicate_candidates.json, which is large."""
+    payload = json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    return _stage_bytes(payload, final_path)
+
+
 def _stage_parquet(df: pd.DataFrame, final_path: Path) -> Path:
     """Parquet counterpart to `_stage_bytes`: parquet bytes can't be
     byte-compared after a round trip the way JSON text can (pyarrow is free
@@ -436,9 +443,9 @@ def build_snapshot(
     force: bool = False,
     tiles_dir: Path | None = None,
 ) -> dict[str, Any]:
-    """Runs fixture-read -> normalize -> score -> graph + alias candidates,
-    writes all five artifacts to `snapshot_dir` (default data/snapshot/),
-    and returns the manifest dict.
+    """Runs fixture-read -> normalize -> score -> graph + alias candidates +
+    duplicate candidates, writes all six artifacts to `snapshot_dir` (default
+    data/snapshot/), and returns the manifest dict.
 
     `now` is accepted (rather than always calling datetime.now()) so tests
     and callers can pin a reference time; it also becomes the `as_of` date
@@ -494,6 +501,7 @@ def build_snapshot(
     scored = score_all(normalized, as_of=as_of)
     graph = _build_graph(normalized, scored)
     alias_candidates = build_alias_candidates(normalized)
+    duplicate_candidates = build_duplicate_candidates(normalized)
 
     # columns= explicit, not inferred from row dicts -- see _schema_columns'
     # docstring for the empty-input crash this fixes.
@@ -556,6 +564,7 @@ def build_snapshot(
         (scored_df, snapshot_dir / "scored.parquet", _stage_parquet),
         (graph, snapshot_dir / "graph.json", _stage_json),
         (alias_candidates, snapshot_dir / "alias_candidates.json", _stage_json),
+        (duplicate_candidates, snapshot_dir / "duplicate_candidates.json", _stage_compact_json),
         (manifest, snapshot_dir / "manifest.json", _stage_json),
     ]
 

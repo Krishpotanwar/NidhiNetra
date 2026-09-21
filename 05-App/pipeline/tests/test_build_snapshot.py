@@ -22,6 +22,10 @@ from pathlib import Path
 import pandas as pd
 import pytest
 from nidhinetra_pipeline import build_snapshot as bs
+from nidhinetra_pipeline.duplicates.candidates import (
+    canonical_description_v1,
+    validate_duplicate_candidates,
+)
 
 REAL_FIXTURE = Path(__file__).parents[2] / "contracts" / "fixtures" / "works.fixture.json"
 
@@ -292,6 +296,7 @@ class TestBuildSnapshotAtomicity:
             "scored.parquet",
             "graph.json",
             "alias_candidates.json",
+            "duplicate_candidates.json",
             "manifest.json",
         )
         before = {name: (tmp_path / name).read_bytes() for name in artifact_names}
@@ -306,6 +311,31 @@ class TestBuildSnapshotAtomicity:
         monkeypatch.setattr(bs, "_stage_json", _fail_on_aliases)
 
         with pytest.raises(RuntimeError, match="alias candidate"):
+            bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
+
+        assert {name: (tmp_path / name).read_bytes() for name in artifact_names} == before
+        assert list(tmp_path.glob(".*tmp")) == []
+
+    def test_duplicate_candidate_stage_failure_leaves_the_whole_snapshot_unchanged(
+        self, tmp_path, monkeypatch
+    ):
+        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
+        artifact_names = (
+            "works.parquet",
+            "scored.parquet",
+            "graph.json",
+            "alias_candidates.json",
+            "duplicate_candidates.json",
+            "manifest.json",
+        )
+        before = {name: (tmp_path / name).read_bytes() for name in artifact_names}
+
+        def _fail(obj, final_path):
+            raise RuntimeError("simulated duplicate candidate staging failure")
+
+        monkeypatch.setattr(bs, "_stage_compact_json", _fail)
+
+        with pytest.raises(RuntimeError, match="duplicate candidate"):
             bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
 
         assert {name: (tmp_path / name).read_bytes() for name in artifact_names} == before
@@ -571,3 +601,17 @@ def test_the_three_source_fields_never_change_a_score_rank_flag_or_reason(tmp_pa
     bs.build_snapshot(snapshot_dir=second, raw_dir=tmp_path / "raw", now=pinned)
 
     assert _decisions(first) == _decisions(second)
+
+
+class TestDuplicateCandidatesArtifact:
+    def test_the_build_writes_a_valid_compact_duplicate_candidates_file(self, tmp_path):
+        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
+
+        text = (tmp_path / "duplicate_candidates.json").read_text(encoding="utf-8")
+        artifact = json.loads(text)
+
+        validate_duplicate_candidates(artifact)
+        assert "\n" not in text
+        fixture = json.loads(bs.WORKS_FIXTURE_PATH.read_text(encoding="utf-8"))
+        readable = [w for w in fixture if canonical_description_v1(w["work_description"] or "")]
+        assert artifact["meta"]["counts"]["works_considered"] == len(readable)
