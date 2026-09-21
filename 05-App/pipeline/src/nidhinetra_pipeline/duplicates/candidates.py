@@ -360,12 +360,48 @@ def _near_copy_pairs(
     return pairs
 
 
+def _district_audit(
+    by_district: _Members,
+    register: _Register,
+    groups: dict[str, dict[str, Any]],
+    index: _Index,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Finder 3, the quiet audit: one district authority, works in different constituencies."""
+    row_of, tfidf, tokens = index
+    batches: list[dict[str, Any]] = []
+    pairs: list[dict[str, Any]] = []
+    block_texts: dict[str, list[str]] = defaultdict(list)
+    for authority, canonical in sorted(by_district):
+        block_texts[authority].append(canonical)
+        members = by_district[(authority, canonical)]
+        if len({member["constituency"] for member in members}) >= 2:
+            _, group_id, _ = register(authority, canonical, members)
+            batches.append(
+                _batch("district_identical_batch", authority, group_id, groups[group_id])
+            )
+    for authority, block in block_texts.items():
+        idx = [row_of[canonical] for canonical in block]
+        for i, j, cosine, _hits in _similar_pairs(
+            idx, tfidf, tokens, DISTRICT_CHARACTER_SIMILARITY_MIN, use_tokens=False
+        ):
+            members_i = by_district[(authority, block[i])]
+            members_j = by_district[(authority, block[j])]
+            if len({member["constituency"] for member in members_i + members_j}) < 2:
+                continue  # one constituency only: Finder 2 already looked there
+            side_i = register(authority, block[i], members_i)
+            side_j = register(authority, block[j], members_j)
+            pairs.append(
+                _pair("district_near_copy", authority, side_i, side_j, cosine, ["character"])
+            )
+    return batches, pairs
+
+
 def build_duplicate_candidates(records: list[dict[str, Any]]) -> dict[str, Any]:
-    """Finder 1 (identical batches) and Finder 2 (near-copy pairs) over the works whose
-    description has at least one letter or digit. Validated against
+    """Finder 1 (identical batches), Finder 2 (near-copy pairs) and Finder 3 (the quiet district
+    audit) over the works whose description has at least one letter or digit. Validated against
     duplicate_candidates.schema.json before it is returned. Never modifies `records`.
     """
-    by_constituency, _, considered = _index(records)
+    by_constituency, by_district, considered = _index(records)
     groups: dict[str, dict[str, Any]] = {}
     register = _registrar(groups)
     batches = _identical_batches(by_constituency, register, groups)
@@ -373,4 +409,7 @@ def build_duplicate_candidates(records: list[dict[str, Any]]) -> dict[str, Any]:
     if by_constituency:
         index = _similarity_index(sorted({canonical for _, canonical in by_constituency}))
         pairs += _near_copy_pairs(by_constituency, register, index)
+        district_batches, district_pairs = _district_audit(by_district, register, groups, index)
+        batches += district_batches
+        pairs += district_pairs
     return _artifact(considered, groups, batches, pairs)

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import copy
+import json
+import random
 import unicodedata
 from typing import Any
 
@@ -405,3 +408,123 @@ class TestNearCopyPairs:
         (pair,) = _pairs(records)
 
         assert pair["hits"] == ["character", "token"]
+
+
+class TestDistrictAudit:
+    def test_identical_text_in_two_constituencies_of_one_district_is_a_quiet_batch(self) -> None:
+        records = [
+            _rec("W1", "Construction of Community Center", constituency="C1"),
+            _rec("W2", "Construction of Community Center", constituency="C2"),
+        ]
+
+        artifact = build_duplicate_candidates(records)
+
+        (batch,) = artifact["batches"]
+        assert (batch["finder"], batch["scope"]) == ("district_identical_batch", "D1")
+        assert artifact["groups"][batch["group"]]["constituencies"] == ["C1", "C2"]
+
+    def test_similar_text_across_constituencies_of_one_district_is_a_district_pair(self) -> None:
+        records = [
+            _rec("W1", "Providing and installation of Open Gym Equipment", constituency="C1"),
+            _rec("W2", "Providing and installation of Open Gym Equipments", constituency="C2"),
+        ]
+
+        (pair,) = _pairs(records, "district_near_copy")
+
+        assert (pair["scope"], pair["hits"]) == ("D1", ["character"])
+        assert pair["character_similarity"] >= 0.90
+
+    def test_two_texts_that_sit_in_one_constituency_are_left_to_finder_two(self) -> None:
+        records = [
+            _rec("W1", "Providing and installation of Open Gym Equipment", constituency="C1"),
+            _rec("W2", "Providing and installation of Open Gym Equipments", constituency="C1"),
+        ]
+
+        artifact = build_duplicate_candidates(records)
+
+        assert [p["finder"] for p in artifact["pairs"]] == ["near_copy"]
+
+    def test_across_constituencies_only_the_stricter_district_threshold_applies(self) -> None:
+        # Cosine 0.87: a Finder 2 pair inside one constituency, but not a district pair.
+        records = [
+            _rec("W1", "Installation of high mask light at Kheda", constituency="C1"),
+            _rec("W2", "Installation of high mast light at Kheda", constituency="C2"),
+        ]
+
+        assert build_duplicate_candidates(records)["pairs"] == []
+
+    def test_works_without_a_district_authority_are_not_audited(self) -> None:
+        records = [
+            _rec(
+                "W1",
+                "Construction of Community Center",
+                constituency="C1",
+                implementing_district_authority=None,
+            ),
+            _rec(
+                "W2",
+                "Construction of Community Center",
+                constituency="C2",
+                implementing_district_authority=None,
+            ),
+        ]
+
+        assert build_duplicate_candidates(records)["batches"] == []
+
+
+class TestArtifact:
+    @staticmethod
+    def _mixed_records() -> list[dict[str, Any]]:
+        return [
+            _rec("W1", "Solar street lights", sanctioned_amount_inr=900_000.0),
+            _rec("W2", "Solar street lights", sanctioned_amount_inr=900_000.0),
+            _rec("W3", "Solar street lights", sanctioned_amount_inr=900_000.0),
+            _rec("W4", "Installation of high mask light at Kheda"),
+            _rec("W5", "Installation of high mast light at Kheda"),
+            _rec("W6", "Construction of Community Center", constituency="C2"),
+            _rec("W7", "Construction of Community Center", constituency="C3"),
+        ]
+
+    def test_the_output_does_not_depend_on_the_input_order(self) -> None:
+        records = self._mixed_records()
+        shuffled = records[:]
+        random.Random(7).shuffle(shuffled)
+
+        assert json.dumps(build_duplicate_candidates(records)) == json.dumps(
+            build_duplicate_candidates(shuffled)
+        )
+
+    def test_every_reference_resolves_and_no_group_is_orphaned(self) -> None:
+        artifact = build_duplicate_candidates(self._mixed_records())
+
+        referenced = {batch["group"] for batch in artifact["batches"]}
+        referenced |= {pair[side] for pair in artifact["pairs"] for side in ("a", "b")}
+
+        assert referenced == set(artifact["groups"])
+        assert artifact["meta"]["counts"]["groups"] == len(artifact["groups"])
+
+    def test_the_input_records_are_not_modified(self) -> None:
+        records = self._mixed_records()
+        before = copy.deepcopy(records)
+
+        build_duplicate_candidates(records)
+
+        assert records == before
+
+    def test_candidate_ids_are_unique(self) -> None:
+        artifact = build_duplicate_candidates(self._mixed_records())
+        ids = [c["candidate_id"] for c in artifact["batches"] + artifact["pairs"]]
+
+        assert len(ids) == len(set(ids)) > 0
+
+    def test_the_counts_add_up(self) -> None:
+        artifact = build_duplicate_candidates(self._mixed_records())
+        counts = artifact["meta"]["counts"]
+
+        assert counts["works_considered"] == 7
+        assert counts["identical_batches"] == 1
+        assert counts["threshold_crossing_batches"] == 1
+        assert counts["district_identical_batches"] == 1
+        assert counts["near_copy_pairs"] == (
+            counts["reworded_match"] + counts["one_sided_detail"] + counts["conflicting_detail"]
+        )
