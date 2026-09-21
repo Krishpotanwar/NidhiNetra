@@ -13,11 +13,14 @@ import hashlib
 import json
 import unicodedata
 from collections import Counter, defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
 
 import jsonschema
+import numpy as np
+from scipy.sparse import csr_matrix
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 # duplicates/candidates.py -> parents[4] is "05-App/".
 _APP_ROOT = Path(__file__).resolve().parents[4]
@@ -233,13 +236,141 @@ def _artifact(
     return artifact
 
 
+_Index = tuple[dict[str, int], csr_matrix, csr_matrix]  # row of each text, TF-IDF, content tokens
+
+
+def _difference_group(only_a: list[str], only_b: list[str]) -> str:
+    if not only_a and not only_b:
+        return "reworded_match"
+    if not only_a or not only_b:
+        return "one_sided_detail"
+    return "conflicting_detail"
+
+
+def _pair(
+    finder: str,
+    scope: str,
+    side_a: _Side,
+    side_b: _Side,
+    cosine: float,
+    hits: list[str],
+) -> dict[str, Any]:
+    """Each side is (canonical text, group id, text fingerprint). The finders walk a block in
+    sorted order, so `a` is always the side whose canonical text sorts first.
+    """
+    (canonical_a, group_a, fp_a), (canonical_b, group_b, fp_b) = side_a, side_b
+    tokens_a, tokens_b = set(content_tokens(canonical_a)), set(content_tokens(canonical_b))
+    union = tokens_a | tokens_b
+    only_a, only_b = sorted(tokens_a - tokens_b), sorted(tokens_b - tokens_a)
+    return {
+        "candidate_id": _candidate_id(finder, scope, fp_a, fp_b),
+        "finder": finder,
+        "scope": scope,
+        "hits": hits,
+        "character_similarity": cosine,
+        "token_overlap": (
+            round(len(tokens_a & tokens_b) / len(union), SCORE_DECIMALS) if union else 0.0
+        ),
+        "difference_group": _difference_group(only_a, only_b),
+        "shared_tokens": sorted(tokens_a & tokens_b),
+        "only_a_tokens": only_a,
+        "only_b_tokens": only_b,
+        "a": group_a,
+        "b": group_b,
+    }
+
+
+def _token_matrix(canonicals: list[str]) -> csr_matrix:
+    """Row per text, column per content token, 1 where the text has the token."""
+    vocabulary: dict[str, int] = {}
+    rows: list[int] = []
+    cols: list[int] = []
+    for row, canonical in enumerate(canonicals):
+        for token in set(content_tokens(canonical)):
+            rows.append(row)
+            cols.append(vocabulary.setdefault(token, len(vocabulary)))
+    return csr_matrix(
+        (np.ones(len(rows), dtype=np.int32), (rows, cols)),
+        shape=(len(canonicals), max(len(vocabulary), 1)),
+    )
+
+
+def _similar_pairs(
+    idx: list[int],
+    tfidf: csr_matrix,
+    tokens: csr_matrix,
+    character_min: float,
+    use_tokens: bool,
+) -> Iterator[tuple[int, int, float, list[str]]]:
+    """(i, j, cosine, hits) for every pair of the texts at matrix rows `idx` that clears the
+    character threshold or, when `use_tokens`, the token-overlap threshold. i < j are positions
+    within `idx`. The whole block is compared, one dense matrix at a time (largest block: 1,371).
+    """
+    if len(idx) < 2:
+        return
+    cosine = np.round((tfidf[idx] @ tfidf[idx].T).toarray(), SCORE_DECIMALS)
+    by_character = cosine >= character_min
+    by_token = np.zeros_like(by_character)
+    if use_tokens:
+        shared = (tokens[idx] @ tokens[idx].T).toarray()
+        size = np.asarray(tokens[idx].sum(axis=1)).ravel()
+        union = size[:, None] + size[None, :] - shared
+        jaccard = np.round(
+            np.divide(shared, union, out=np.zeros(shared.shape), where=union > 0), SCORE_DECIMALS
+        )
+        by_token = (shared >= TOKEN_SHARED_MIN) & (jaccard >= TOKEN_JACCARD_MIN)
+    for i, j in np.argwhere(np.triu(by_character | by_token, 1)):
+        hit_by = (("character", by_character[i, j]), ("token", by_token[i, j]))
+        yield int(i), int(j), float(cosine[i, j]), [name for name, hit in hit_by if hit]
+
+
+def _similarity_index(canonicals: list[str]) -> _Index:
+    """Row per distinct canonical text: character TF-IDF (fitted on all of them, so every block
+    shares one vocabulary) and the content-token matrix.
+    """
+    row_of = {canonical: row for row, canonical in enumerate(canonicals)}
+    tfidf = (
+        TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), lowercase=False)
+        .fit(canonicals)
+        .transform(canonicals)
+        .tocsr()
+    )
+    return row_of, tfidf, _token_matrix(canonicals)
+
+
+def _near_copy_pairs(
+    by_constituency: _Members, register: _Register, index: _Index
+) -> list[dict[str, Any]]:
+    """Finder 2: distinct texts in the same constituency. Blocking by constituency is a blocking
+    rule, not a claim that works cannot repeat across constituencies (Finder 3 looks there).
+    """
+    row_of, tfidf, tokens = index
+    block_texts: dict[str, list[str]] = defaultdict(list)
+    for scope, canonical in sorted(by_constituency):
+        block_texts[scope].append(canonical)
+    pairs = []
+    for scope, block in block_texts.items():
+        idx = [row_of[canonical] for canonical in block]
+        for i, j, cosine, hits in _similar_pairs(
+            idx, tfidf, tokens, CHARACTER_SIMILARITY_MIN, use_tokens=True
+        ):
+            side_i = register(scope, block[i], by_constituency[(scope, block[i])])
+            side_j = register(scope, block[j], by_constituency[(scope, block[j])])
+            pairs.append(_pair("near_copy", scope, side_i, side_j, cosine, hits))
+    return pairs
+
+
 def build_duplicate_candidates(records: list[dict[str, Any]]) -> dict[str, Any]:
-    """Finder 1: works in one constituency whose descriptions are identical once canonicalised.
-    Validated against duplicate_candidates.schema.json before it is returned. Never modifies
-    `records`.
+    """Finder 1 (identical batches) and Finder 2 (near-copy pairs) over the works whose
+    description has at least one letter or digit. Validated against
+    duplicate_candidates.schema.json before it is returned. Never modifies `records`.
     """
     by_constituency, _, considered = _index(records)
     groups: dict[str, dict[str, Any]] = {}
     register = _registrar(groups)
     batches = _identical_batches(by_constituency, register, groups)
-    return _artifact(considered, groups, batches, [])
+    pairs: list[dict[str, Any]] = []
+    if by_constituency:
+        index = _similarity_index(sorted({canonical for _, canonical in by_constituency}))
+        pairs += _near_copy_pairs(by_constituency, register, index)
+    return _artifact(considered, groups, batches, pairs)

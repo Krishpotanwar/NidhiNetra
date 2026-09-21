@@ -8,12 +8,14 @@ from typing import Any
 import pytest
 from nidhinetra_pipeline.duplicates.candidates import (
     DuplicateCandidateValidationError,
+    _similar_pairs,
     build_duplicate_candidates,
     canonical_description_v1,
     content_tokens,
     fingerprint,
     validate_duplicate_candidates,
 )
+from scipy.sparse import csr_matrix
 
 
 class TestCanonicalDescription:
@@ -217,3 +219,115 @@ class TestIdenticalBatches:
 
         assert (artifact["groups"], artifact["batches"], artifact["pairs"]) == ({}, [], [])
         validate_duplicate_candidates(artifact)
+
+
+def _pairs(records: list[dict[str, Any]], finder: str = "near_copy") -> list[dict[str, Any]]:
+    return [p for p in build_duplicate_candidates(records)["pairs"] if p["finder"] == finder]
+
+
+class TestNearCopyPairs:
+    def test_a_typo_is_paired_by_character_similarity(self) -> None:
+        records = [
+            _rec("W1", "Installation of high mask light at Kheda"),
+            _rec("W2", "Installation of high mast light at Kheda"),
+        ]
+
+        (pair,) = _pairs(records)
+
+        assert pair["hits"] == ["character"]
+        assert pair["character_similarity"] >= 0.80
+        assert pair["difference_group"] == "conflicting_detail"
+        assert sorted((pair["only_a_tokens"], pair["only_b_tokens"])) == [["mask"], ["mast"]]
+
+    def test_many_shared_words_pair_by_token_overlap_when_the_letters_differ_a_lot(self) -> None:
+        records = [
+            _rec("W1", "ram sai raj may day sun venkatanarasimharajuvaripeta"),
+            _rec("W2", "ram sai raj may day sun chandrasekharapuramcolony"),
+        ]
+
+        (pair,) = _pairs(records)
+
+        assert pair["hits"] == ["token"]
+        assert pair["character_similarity"] < 0.80
+        assert pair["token_overlap"] == 0.75
+        assert pair["shared_tokens"] == ["day", "may", "raj", "ram", "sai", "sun"]
+
+    def test_the_same_words_in_another_order_are_a_reworded_match(self) -> None:
+        records = [
+            _rec("W1", "Road to Ram Mandir at village Kheda"),
+            _rec("W2", "Kheda village road near Ram Mandir"),
+        ]
+
+        (pair,) = _pairs(records)
+
+        assert pair["difference_group"] == "reworded_match"
+        assert (pair["only_a_tokens"], pair["only_b_tokens"]) == ([], [])
+        assert pair["shared_tokens"] == ["kheda", "mandir", "ram"]
+
+    def test_extra_detail_on_one_side_is_one_sided_detail(self) -> None:
+        records = [
+            _rec("W1", "ram sai raj may day sun mandir"),
+            _rec("W2", "ram sai raj may day sun mandir sector"),
+        ]
+
+        (pair,) = _pairs(records)
+
+        assert pair["difference_group"] == "one_sided_detail"
+        assert sorted((pair["only_a_tokens"], pair["only_b_tokens"])) == [[], ["sector"]]
+
+    def test_numbers_count_so_numbered_siblings_are_conflicting_detail(self) -> None:
+        records = [
+            _rec("W1", "Community hall no 3 ward 9"),
+            _rec("W2", "Community hall no 4 ward 9"),
+        ]
+
+        (pair,) = _pairs(records)
+
+        assert pair["difference_group"] == "conflicting_detail"
+        assert sorted((pair["only_a_tokens"], pair["only_b_tokens"])) == [["3"], ["4"]]
+
+    def test_two_shared_words_are_not_enough_for_token_overlap(self) -> None:
+        records = [
+            _rec("W1", "Construction of road to Ram Mandir in village"),
+            _rec("W2", "Installation near house at Mandir Ram gram panchayat"),
+        ]
+
+        assert _pairs(records) == []
+
+    def test_token_overlap_below_three_quarters_is_not_a_pair(self) -> None:
+        records = [
+            _rec("W1", "ram sai raj may day sun venkatanarasimharajuvaripeta"),
+            _rec("W2", "ram sai raj may day chandrasekharapuramcolony"),
+        ]
+
+        assert _pairs(records) == []
+
+    def test_a_cosine_just_under_the_character_threshold_is_not_a_pair(self) -> None:
+        # Cosine 0.79. Stage D may move the line; until then this pair is below it.
+        records = [
+            _rec("W1", "cremation ground at village"),
+            _rec("W2", "cremation ground at village chak dana"),
+        ]
+
+        assert _pairs(records) == []
+
+    def test_side_a_is_the_text_that_sorts_first(self) -> None:
+        records = [
+            _rec("W1", "Installation of high mast light at Kheda"),
+            _rec("W2", "Installation of high mask light at Kheda"),
+        ]
+
+        (pair,) = build_duplicate_candidates(records)["pairs"]
+
+        assert (pair["only_a_tokens"], pair["only_b_tokens"]) == (["mask"], ["mast"])
+
+    def test_a_score_is_rounded_before_it_meets_a_threshold(self) -> None:
+        # Rows [1, 0] and [0.79996, 0.6] have a dot product of 0.79996, which rounds to 0.8.
+        just_over = csr_matrix([[1.0, 0.0], [0.79996, 0.6]])
+        just_under = csr_matrix([[1.0, 0.0], [0.79994, 0.6]])
+        no_tokens = csr_matrix((2, 1))
+
+        assert [p[:3] for p in _similar_pairs([0, 1], just_over, no_tokens, 0.80, False)] == [
+            (0, 1, 0.8)
+        ]
+        assert list(_similar_pairs([0, 1], just_under, no_tokens, 0.80, False)) == []
