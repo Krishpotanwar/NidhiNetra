@@ -57,6 +57,7 @@ The user may overrule any of these. Each one is small to reverse before Task 7 a
 7. **The clause 4.4.2 sentence is not attached by code.** The artifact carries the boolean `threshold_crossing_batch` and the two amounts (`meta.thresholds`). The sentence is user-visible copy, so it belongs in `strings.json` with an amendment-log entry, which Stage C writes when a screen exists.
 8. **The real artifact comes from `cli duplicates --write`, not from a full rebuild.** `build_snapshot()` scores against the day it runs (the offline rebuild kit calls it without `now`), and `stalled_work` and the anomaly ensemble both read that date, so a second full rebuild on another day can move scores. The new command reads the committed `works.parquet` and writes one file. `build_snapshot()` also produces the artifact, so a future full rebuild stays consistent. The kit (`SIHGit/kit/rebuild_snapshot_offline.py`) names five artifacts and lives outside this repository: if it is ever run again, add `duplicate_candidates.json` to its `ARTIFACTS`.
 9. **Deferred, with reasons.** No `contracts/validate.py` wiring and no fixture file: the builder validates its own output, and a hand-written fixture only earns its keep once Stage C has a screen. The parked demo-fixture cleanup stays parked for the same reason (the 20 fixture works share no description, so their artifact is empty). `_clean()` is not touched: the canonical form already turns a stray line break into a space. **For Stage C:** do not `json.load` this 23.6 MB file at API start-up on Render's free tier; filter to the pairs a judgment makes eligible, or read it with DuckDB.
+10. **Candidate ids carry the finder version.** `_candidate_id` hashes `FINDER_VERSION` in, as the spec's identity line reads (scope, both text fingerprints, finder version). When Stage D revises the thresholds and `candidate_generation_v0` becomes `v1`, every candidate id and every group id will change, including those of pairs the revision does not touch. **Open, for the user before Task 7:** either leave it and have Stage C key durable officer decisions on `(scope, groups[a].text_fingerprint, groups[b].text_fingerprint)`, which the artifact already carries, or drop `FINDER_VERSION` from the id hash now (one token in `_candidate_id`; the artifact's sha256 then stops being `7340fc4dc2755730`, which this plan records only as a note in Task 7 Step 6). The final review recommends the first: it costs nothing and keeps that hash as a cross-machine check.
 
 ## Vocabulary
 
@@ -240,7 +241,7 @@ class TestSchema:
 ```bash
 (cd 05-App && uv run pytest pipeline/tests/duplicates -q)
 ```
-Expected: FAIL at collection with `ModuleNotFoundError: No module named 'nidhinetra_pipeline.duplicates.candidates'`.
+Expected: FAIL at collection with `ModuleNotFoundError: No module named 'nidhinetra_pipeline.duplicates'` (the package does not exist yet at this step).
 
 - [ ] **Step 4: Add the contract**
 
@@ -2016,7 +2017,7 @@ Report the counts, the file size and the hashes. The user pushes.
 
 ## Done when
 
-- `uv run pytest pipeline/tests api/tests -q` is green: the pipeline suite went from 332 to 377 tests and the API suite is unchanged.
+- `uv run pytest pipeline/tests api/tests -q` is green: the pipeline suite went from 332 to 403 tests (the plan counted 377 before the review rounds added tests) and the API suite is unchanged (163 tests).
 - `make validate` passes, and ruff is clean on every file this plan touches.
 - The committed `build_snapshot()` tests prove a failure while staging the sixth file leaves all six real files untouched, and the CLI test proves `--write` changes exactly one file.
 - (Only if Task 7 was authorised) `data/snapshot/duplicate_candidates.json` is committed, the five other snapshot files hash exactly as before, and nothing has been pushed.
