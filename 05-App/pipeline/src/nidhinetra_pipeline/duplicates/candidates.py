@@ -171,6 +171,11 @@ def _registrar(groups: dict[str, dict[str, Any]]) -> _Register:
         group_id = _candidate_id("group", scope, text_fingerprint)
         if group_id not in groups:
             groups[group_id] = _text_group(scope, canonical, members)
+        elif groups[group_id]["work_ids"] != sorted(member["work_id"] for member in members):
+            raise DuplicateCandidateValidationError(
+                f"{scope!r} names both a constituency and a district authority, so two different "
+                "groups would share one id"
+            )
         return canonical, group_id, text_fingerprint
 
     return register

@@ -528,3 +528,131 @@ class TestArtifact:
         assert counts["near_copy_pairs"] == (
             counts["reworded_match"] + counts["one_sided_detail"] + counts["conflicting_detail"]
         )
+
+
+class TestDistrictAuditGuarantees:
+    """Finder 3 inside the artifact-level guarantees: order, orphans, counters and shared pairs."""
+
+    GYM = "Providing and installation of Open Gym Equipment"
+    GYMS = "Providing and installation of Open Gym Equipments"
+
+    @classmethod
+    def _records(cls) -> list[dict[str, Any]]:
+        def rec(work_id: str, text: str, constituency: str, authority: str) -> dict[str, Any]:
+            return _rec(
+                work_id,
+                text,
+                constituency=constituency,
+                implementing_district_authority=authority,
+            )
+
+        centre = "Construction of Community Center"
+        return [
+            rec("A1", centre, "C2", "D1"),  # a district batch across two constituencies
+            rec("A2", centre, "C3", "D1"),
+            rec("B1", centre, "C5", "D2"),  # a second district batch, in another authority
+            rec("B2", centre, "C6", "D2"),
+            rec("P1", cls.GYM, "C7", "D3"),  # a district pair across two constituencies
+            rec("P2", cls.GYMS, "C8", "D3"),
+            rec("Q1", cls.GYM, "C9", "D4"),  # one constituency only: Finder 2 alone
+            rec("Q2", cls.GYMS, "C9", "D4"),
+            rec("R1", cls.GYM, "C10", "D5"),  # found by both finders
+            rec("R2", cls.GYMS, "C10", "D5"),
+            rec("R3", cls.GYMS, "C11", "D5"),
+            rec("T1", "ram sai raj may day sun venkatanarasimharajuvaripeta", "C12", "D6"),
+            rec(
+                "T2", "ram sai raj may day sun chandrasekharapuramcolony", "C13", "D6"
+            ),  # tokens only
+            rec("U1", "purchase books for library", "C16", "D9"),
+            rec("U2", "Purchase of books for library", "C17", "D9"),
+            rec("S1", "Solar street lights", "C14", "D7"),  # two Finder 1 batches
+            rec("S2", "Solar street lights", "C14", "D7"),
+            rec("S3", "Solar street lights", "C15", "D8"),
+            rec("S4", "Solar street lights", "C15", "D8"),
+        ]
+
+    def test_the_output_does_not_depend_on_the_input_order_with_finder_three_in_play(self) -> None:
+        records = self._records()
+        expected = json.dumps(build_duplicate_candidates(records))
+        shuffled = records[:]
+        random.Random(7).shuffle(shuffled)
+
+        assert json.dumps(build_duplicate_candidates(records[::-1])) == expected
+        assert json.dumps(build_duplicate_candidates(shuffled)) == expected
+
+    def test_no_group_is_orphaned_and_every_reference_resolves(self) -> None:
+        artifact = build_duplicate_candidates(self._records())
+
+        referenced = {batch["group"] for batch in artifact["batches"]}
+        referenced |= {pair[side] for pair in artifact["pairs"] for side in ("a", "b")}
+
+        assert referenced == set(artifact["groups"])
+
+    def test_every_counter_counts_its_own_finder(self) -> None:
+        counts = build_duplicate_candidates(self._records())["meta"]["counts"]
+
+        assert (
+            counts["identical_batches"],
+            counts["district_identical_batches"],
+            counts["near_copy_pairs"],
+            counts["district_near_copy_pairs"],
+            counts["groups"],
+        ) == (2, 3, 2, 3, 14)
+
+    def test_a_pair_found_by_both_finders_keeps_its_own_id_and_groups(self) -> None:
+        artifact = build_duplicate_candidates(self._records())
+        groups = artifact["groups"]
+
+        def texts(pair: dict[str, Any]) -> frozenset[str]:
+            return frozenset(groups[pair[side]]["text_fingerprint"] for side in ("a", "b"))
+
+        (near,) = [
+            p for p in artifact["pairs"] if p["finder"] == "near_copy" and p["scope"] == "C10"
+        ]
+        (district,) = [
+            p
+            for p in artifact["pairs"]
+            if p["finder"] == "district_near_copy" and p["scope"] == "D5"
+        ]
+
+        assert texts(near) == texts(district)
+        assert near["candidate_id"] != district["candidate_id"]
+        assert not {near["a"], near["b"]} & {district["a"], district["b"]}
+        assert groups[district["b"]]["constituencies"] == ["C10", "C11"]
+        assert groups[near["b"]]["constituencies"] == ["C10"]
+
+    def test_a_cosine_just_over_the_district_line_is_a_district_pair(self) -> None:
+        # Cosine 0.9016: over the district line of 0.90 by a hair.
+        records = [
+            _rec("W1", "Purchase of books for the village library", constituency="C1"),
+            _rec("W2", "Purchase of books for the village librarys", constituency="C2"),
+        ]
+
+        (pair,) = _pairs(records, "district_near_copy")
+
+        assert 0.90 <= pair["character_similarity"] < 0.91
+
+    def test_a_cosine_just_under_the_district_line_is_not_a_district_pair(self) -> None:
+        # Cosine 0.8982: over the near-copy line of 0.80, under the district line of 0.90.
+        records = [
+            _rec("W1", "Purchase of books for the village library", constituency="C1"),
+            _rec("W2", "Purchase of book for the village library", constituency="C2"),
+        ]
+
+        assert _pairs(records, "district_near_copy") == []
+
+    def test_a_constituency_and_a_district_authority_with_one_name_fail_loudly(self) -> None:
+        records = [
+            _rec(
+                "W1", "Solar street lights", constituency="X", implementing_district_authority="X"
+            ),
+            _rec(
+                "W2", "Solar street lights", constituency="X", implementing_district_authority="X"
+            ),
+            _rec(
+                "W3", "Solar street lights", constituency="Y", implementing_district_authority="X"
+            ),
+        ]
+
+        with pytest.raises(DuplicateCandidateValidationError, match="constituency and a district"):
+            build_duplicate_candidates(records)
