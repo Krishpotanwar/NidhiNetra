@@ -3,6 +3,7 @@
 Usage:
     python -m nidhinetra_pipeline.cli pull-live   # optional, see below
     python -m nidhinetra_pipeline.cli build
+    python -m nidhinetra_pipeline.cli duplicates [--write]
 
 `build` runs the acquisition ladder (`ingest/rungs.py`), normalizes whatever
 it returns (`normalize/normalize.py`), atomically caches the result
@@ -34,7 +35,14 @@ import sys
 import tempfile
 from pathlib import Path
 
-from .build_snapshot import SnapshotDowngradeError, SnapshotWriteError, build_snapshot
+from .build_snapshot import (
+    SnapshotDowngradeError,
+    SnapshotWriteError,
+    build_snapshot,
+    duplicate_candidates_from_snapshot,
+    write_duplicate_candidates,
+)
+from .duplicates.candidates import DuplicateCandidateValidationError
 from .ingest import cache, mplads_adapter
 from .ingest.mplads_api import MpladsClient, MpladsClientError
 from .ingest.rungs import AllRungsFailedError, run_ladder
@@ -248,6 +256,25 @@ def pull_live(*, raw_dir: Path | None = None, client: MpladsClient | None = None
     return 0
 
 
+def duplicates(*, snapshot_dir: Path | None = None, write: bool = False) -> int:
+    """Phase 1 Stage A candidates for the works in the served snapshot. Prints the counts and
+    writes nothing unless `write` is set; with it, only duplicate_candidates.json is written,
+    so no score, rank or flag can move.
+    """
+    try:
+        artifact = duplicate_candidates_from_snapshot(snapshot_dir)
+        path = write_duplicate_candidates(artifact, snapshot_dir) if write else None
+    except (OSError, SnapshotWriteError, DuplicateCandidateValidationError) as exc:
+        logger.error("Duplicate candidates were not written: %s", exc)
+        return 1
+    print(json.dumps(artifact["meta"]["counts"], indent=2))
+    if path is None:
+        print("Dry run: nothing was written. Add --write to write duplicate_candidates.json.")
+    else:
+        print(f"Wrote {path} ({path.stat().st_size / 1e6:.1f} MB)")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="nidhinetra_pipeline")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -263,6 +290,13 @@ def main(argv: list[str] | None = None) -> int:
             "cloud sandbox. Follow with `build` to turn the fresh tiles into a snapshot."
         ),
     )
+    duplicates_parser = subparsers.add_parser(
+        "duplicates",
+        help="Find identical and near-identical work descriptions in data/snapshot/works.parquet.",
+    )
+    duplicates_parser.add_argument(
+        "--write", action="store_true", help="Write data/snapshot/duplicate_candidates.json."
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -271,6 +305,8 @@ def main(argv: list[str] | None = None) -> int:
         return build()
     if args.command == "pull-live":
         return pull_live()
+    if args.command == "duplicates":
+        return duplicates(write=args.write)
 
     parser.error(f"unknown command {args.command!r}")
     return 2  # pragma: no cover - argparse.error() exits before this

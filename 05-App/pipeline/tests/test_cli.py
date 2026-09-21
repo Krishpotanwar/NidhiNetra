@@ -28,6 +28,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from nidhinetra_pipeline import cli
 from nidhinetra_pipeline.ingest import cache
@@ -430,3 +431,65 @@ def test_pull_live_output_is_readable_by_the_real_adapter(raw_dir):
     assert counts["records"] == 1
     assert records[0]["work_id"] == "1"
     assert records[0]["state"] == "Bihar"
+
+
+def _write_works_parquet(snapshot_dir: Path) -> None:
+    """A works.parquet with two identical descriptions in one constituency and one null."""
+    base = {
+        "constituency": "C1",
+        "implementing_district_authority": "D1",
+        "implementing_agency": None,
+        "activity_name": "Street lights",
+        "sanctioned_amount_inr": 900000.0,
+        "sanction_date": "2024-07-09",
+        "completion_status": "Sanctioned",
+    }
+    rows = [
+        {**base, "work_id": "W1", "work_description": "Solar street lights"},
+        {**base, "work_id": "W2", "work_description": "Solar street lights"},
+        {**base, "work_id": "W3", "work_description": None},
+    ]
+    frame = pd.DataFrame(rows)
+    for column in ("implementing_agency", "work_description"):
+        frame[column] = frame[column].astype("string")
+    frame.to_parquet(snapshot_dir / "works.parquet", index=False)
+
+
+def test_duplicates_dry_run_prints_the_counts_and_writes_nothing(snapshot_dir, capsys):
+    _write_works_parquet(snapshot_dir)
+
+    assert cli.duplicates(snapshot_dir=snapshot_dir) == 0
+
+    assert '"identical_batches": 1' in capsys.readouterr().out
+    assert not (snapshot_dir / "duplicate_candidates.json").exists()
+
+
+def test_duplicates_write_adds_only_the_candidates_file(snapshot_dir):
+    _write_works_parquet(snapshot_dir)
+    (snapshot_dir / "scored.parquet").write_bytes(b"scored")
+    (snapshot_dir / "manifest.json").write_text('{"row_count": 3}')
+    before = {p.name: p.read_bytes() for p in snapshot_dir.iterdir()}
+
+    assert cli.duplicates(snapshot_dir=snapshot_dir, write=True) == 0
+
+    after = {p.name: p.read_bytes() for p in snapshot_dir.iterdir()}
+    written = json.loads(after.pop("duplicate_candidates.json"))
+    assert after == before
+    assert written["meta"]["counts"]["identical_batches"] == 1
+
+
+def test_duplicates_reports_a_missing_snapshot_and_writes_nothing(snapshot_dir):
+    assert cli.duplicates(snapshot_dir=snapshot_dir, write=True) == 1
+    assert list(snapshot_dir.iterdir()) == []
+
+
+@pytest.mark.parametrize(
+    ("argv", "write"), [(["duplicates"], False), (["duplicates", "--write"], True)]
+)
+def test_the_duplicates_command_passes_its_flag_through(monkeypatch, argv, write):
+    calls = []
+    monkeypatch.setattr(cli, "duplicates", lambda **kwargs: calls.append(kwargs) or 0)
+
+    assert cli.main(argv) == 0
+
+    assert calls == [{"write": write}]

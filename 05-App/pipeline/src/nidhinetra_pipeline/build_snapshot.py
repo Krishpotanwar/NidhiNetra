@@ -584,6 +584,23 @@ def build_snapshot(
     return manifest
 
 
+def duplicate_candidates_from_snapshot(snapshot_dir: Path | None = None) -> dict[str, Any]:
+    """Stage A candidates for the works already in `snapshot_dir`, read back from works.parquet."""
+    works = pd.read_parquet((snapshot_dir or SNAPSHOT_DIR) / "works.parquet")
+    return build_duplicate_candidates(
+        works.astype(object).where(works.notna(), None).to_dict("records")
+    )
+
+
+def write_duplicate_candidates(artifact: dict[str, Any], snapshot_dir: Path | None = None) -> Path:
+    """Add or refresh duplicate_candidates.json in an existing snapshot and touch nothing else.
+    A full rebuild would score again as of today; this cannot move a score, rank or flag.
+    """
+    final_path = (snapshot_dir or SNAPSHOT_DIR) / "duplicate_candidates.json"
+    _commit_staged(_stage_compact_json(artifact, final_path), final_path)
+    return final_path
+
+
 def main(argv: list[str] | None = None) -> int:  # noqa: ARG001 - CLI entry point
     manifest = build_snapshot()
     print(
@@ -603,5 +620,7 @@ __all__ = [
     "SNAPSHOT_DIR",
     "StaleCacheError",
     "build_snapshot",
+    "duplicate_candidates_from_snapshot",
     "main",
+    "write_duplicate_candidates",
 ]
