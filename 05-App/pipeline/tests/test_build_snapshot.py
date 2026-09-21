@@ -316,30 +316,63 @@ class TestBuildSnapshotAtomicity:
         assert {name: (tmp_path / name).read_bytes() for name in artifact_names} == before
         assert list(tmp_path.glob(".*tmp")) == []
 
-    def test_duplicate_candidate_stage_failure_leaves_the_whole_snapshot_unchanged(
+    ARTIFACTS = (
+        "works.parquet",
+        "scored.parquet",
+        "graph.json",
+        "alias_candidates.json",
+        "duplicate_candidates.json",
+        "manifest.json",
+    )
+
+    @staticmethod
+    def _use_a_shorter_fixture(tmp_path, monkeypatch):
+        """Point the next builds at a fixture with one work fewer, so a build that got through
+        would write different bytes into every artifact that carries works.
+        """
+        fixture = json.loads(bs.WORKS_FIXTURE_PATH.read_text(encoding="utf-8"))
+        shorter = tmp_path / "shorter.fixture.json"
+        shorter.write_text(json.dumps(fixture[:-1]), encoding="utf-8")
+        monkeypatch.setattr(bs, "WORKS_FIXTURE_PATH", shorter)
+
+    def test_a_different_input_changes_every_artifact_that_carries_works(
         self, tmp_path, monkeypatch
     ):
-        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
-        artifact_names = (
-            "works.parquet",
-            "scored.parquet",
-            "graph.json",
-            "alias_candidates.json",
-            "duplicate_candidates.json",
-            "manifest.json",
-        )
-        before = {name: (tmp_path / name).read_bytes() for name in artifact_names}
+        bs.build_snapshot(snapshot_dir=tmp_path / "full", raw_dir=tmp_path / "raw")
+        self._use_a_shorter_fixture(tmp_path, monkeypatch)
+        bs.build_snapshot(snapshot_dir=tmp_path / "short", raw_dir=tmp_path / "raw")
 
-        def _fail(obj, final_path):
-            raise RuntimeError("simulated duplicate candidate staging failure")
+        changed = {
+            name
+            for name in self.ARTIFACTS
+            if (tmp_path / "full" / name).read_bytes() != (tmp_path / "short" / name).read_bytes()
+        }
 
-        monkeypatch.setattr(bs, "_stage_compact_json", _fail)
+        assert {"works.parquet", "scored.parquet", "graph.json"} <= changed
 
-        with pytest.raises(RuntimeError, match="duplicate candidate"):
-            bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
+    @pytest.mark.parametrize("failing", ARTIFACTS)
+    def test_a_failed_stage_leaves_every_real_file_untouched(self, tmp_path, monkeypatch, failing):
+        snapshot_dir = tmp_path / "snap"
+        bs.build_snapshot(snapshot_dir=snapshot_dir, raw_dir=tmp_path / "raw")
+        before = {name: (snapshot_dir / name).read_bytes() for name in self.ARTIFACTS}
+        self._use_a_shorter_fixture(tmp_path, monkeypatch)
 
-        assert {name: (tmp_path / name).read_bytes() for name in artifact_names} == before
-        assert list(tmp_path.glob(".*tmp")) == []
+        def fail_on_the_named_artifact(real_stage):
+            def stage(obj, final_path):
+                if final_path.name == failing:
+                    raise RuntimeError(f"simulated staging failure for {failing}")
+                return real_stage(obj, final_path)
+
+            return stage
+
+        for stage_name in ("_stage_parquet", "_stage_json", "_stage_compact_json"):
+            monkeypatch.setattr(bs, stage_name, fail_on_the_named_artifact(getattr(bs, stage_name)))
+
+        with pytest.raises(RuntimeError, match=failing):
+            bs.build_snapshot(snapshot_dir=snapshot_dir, raw_dir=tmp_path / "raw")
+
+        assert {name: (snapshot_dir / name).read_bytes() for name in self.ARTIFACTS} == before
+        assert list(snapshot_dir.glob(".*tmp")) == []
 
     def test_a_failed_stage_never_leaves_a_partial_snapshot_in_place(self, tmp_path, monkeypatch):
         """Mirrors ingest/cache.py's atomic-swap test: build a good snapshot
