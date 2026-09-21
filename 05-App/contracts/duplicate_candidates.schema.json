@@ -1,0 +1,191 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nidhinetra.local/contracts/duplicate_candidates.schema.json",
+  "title": "DuplicateCandidates",
+  "description": "Phase 1 Stage A output: works whose portal descriptions are identical or nearly identical. Facts about text and money only; nothing here says a work is a duplicate. A text group is stored once and referenced by id from the batches and pairs that use it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["meta", "groups", "batches", "pairs"],
+  "properties": {
+    "meta": { "$ref": "#/definitions/meta" },
+    "groups": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[0-9a-f]{16}$": { "$ref": "#/definitions/text_group" }
+      }
+    },
+    "batches": { "type": "array", "items": { "$ref": "#/definitions/batch" } },
+    "pairs": { "type": "array", "items": { "$ref": "#/definitions/pair" } }
+  },
+  "definitions": {
+    "id": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+    "date": { "type": ["string", "null"], "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "tokens": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical_version", "finder_version", "thresholds", "common_tokens", "counts"],
+      "properties": {
+        "canonical_version": { "const": "canonical_description_v1" },
+        "finder_version": { "const": "candidate_generation_v0" },
+        "thresholds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "character_similarity_min",
+            "token_jaccard_min",
+            "token_shared_min",
+            "district_character_similarity_min",
+            "per_work_limit_inr",
+            "group_total_floor_inr"
+          ],
+          "properties": {
+            "character_similarity_min": { "type": "number" },
+            "token_jaccard_min": { "type": "number" },
+            "token_shared_min": { "type": "integer" },
+            "district_character_similarity_min": { "type": "number" },
+            "per_work_limit_inr": { "type": "number" },
+            "group_total_floor_inr": { "type": "number" }
+          }
+        },
+        "common_tokens": { "$ref": "#/definitions/tokens" },
+        "counts": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 },
+          "required": [
+            "works_considered",
+            "groups",
+            "identical_batches",
+            "threshold_crossing_batches",
+            "district_identical_batches",
+            "near_copy_pairs",
+            "reworded_match",
+            "one_sided_detail",
+            "conflicting_detail",
+            "district_near_copy_pairs"
+          ]
+        }
+      }
+    },
+    "text_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "text_fingerprint",
+        "text",
+        "activity",
+        "constituencies",
+        "work_ids",
+        "work_count",
+        "amount_min_inr",
+        "amount_max_inr",
+        "amount_total_inr",
+        "sanction_date_first",
+        "sanction_date_last",
+        "agencies",
+        "statuses"
+      ],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1 },
+        "text_fingerprint": { "$ref": "#/definitions/id" },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The description as published, spacing tidied: the most common variant among the group's works."
+        },
+        "activity": {
+          "type": ["string", "null"],
+          "description": "The most common portal activity among the group's works."
+        },
+        "constituencies": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "work_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "work_count": { "type": "integer", "minimum": 1 },
+        "amount_min_inr": { "type": "number", "minimum": 0 },
+        "amount_max_inr": { "type": "number", "minimum": 0 },
+        "amount_total_inr": { "type": "number", "minimum": 0 },
+        "sanction_date_first": { "$ref": "#/definitions/date" },
+        "sanction_date_last": { "$ref": "#/definitions/date" },
+        "agencies": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "statuses": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "batch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_id", "finder", "scope", "threshold_crossing_batch", "group"],
+      "properties": {
+        "candidate_id": { "$ref": "#/definitions/id" },
+        "finder": { "enum": ["identical_batch", "district_identical_batch"] },
+        "scope": { "type": "string", "minLength": 1 },
+        "threshold_crossing_batch": {
+          "type": "boolean",
+          "description": "True when every work in the group is below Rs 15 lakh and the group total is Rs 25 lakh or more (MPLADS Guidelines 2023, clause 4.4.2). A fact about amounts; the wording shown to an officer lives in strings.json."
+        },
+        "group": { "$ref": "#/definitions/id" }
+      }
+    },
+    "pair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "finder",
+        "scope",
+        "hits",
+        "character_similarity",
+        "token_overlap",
+        "difference_group",
+        "shared_tokens",
+        "only_a_tokens",
+        "only_b_tokens",
+        "a",
+        "b"
+      ],
+      "properties": {
+        "candidate_id": { "$ref": "#/definitions/id" },
+        "finder": { "enum": ["near_copy", "district_near_copy"] },
+        "scope": { "type": "string", "minLength": 1 },
+        "hits": {
+          "type": "array",
+          "items": { "enum": ["character", "token"] },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "character_similarity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "token_overlap": { "type": "number", "minimum": 0, "maximum": 1 },
+        "difference_group": {
+          "enum": ["reworded_match", "one_sided_detail", "conflicting_detail"],
+          "description": "Names what the code knows about the words, not what it suspects: reworded_match has no word on only one side, one_sided_detail has words on one side only, conflicting_detail has different words on both."
+        },
+        "shared_tokens": { "$ref": "#/definitions/tokens" },
+        "only_a_tokens": { "$ref": "#/definitions/tokens" },
+        "only_b_tokens": { "$ref": "#/definitions/tokens" },
+        "a": { "$ref": "#/definitions/id" },
+        "b": { "$ref": "#/definitions/id" }
+      }
+    }
+  }
+}
