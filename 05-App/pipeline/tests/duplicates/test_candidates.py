@@ -331,3 +331,77 @@ class TestNearCopyPairs:
             (0, 1, 0.8)
         ]
         assert list(_similar_pairs([0, 1], just_under, no_tokens, 0.80, False)) == []
+
+    def test_a_typo_in_another_constituency_is_not_paired(self) -> None:
+        records = [
+            _rec("W1", "Installation of high mask light at Kheda"),
+            _rec(
+                "W2",
+                "Installation of high mast light at Kheda",
+                constituency="C2",
+                implementing_district_authority="D2",
+            ),
+        ]
+
+        assert build_duplicate_candidates(records)["pairs"] == []
+
+    def test_a_lookalike_in_another_constituency_adds_no_pair(self) -> None:
+        records = [
+            _rec("W1", "Installation of high mask light at Kheda"),
+            _rec("W2", "Installation of high mast light at Kheda"),
+            _rec(
+                "W3",
+                "Installation of high mast light at Kheda",
+                constituency="C2",
+                implementing_district_authority="D2",
+            ),
+        ]
+
+        (pair,) = _pairs(records)
+
+        assert pair["scope"] == "C1"
+
+    def test_three_shared_words_at_exactly_three_quarters_are_enough(self) -> None:
+        # Both token-channel lines at once: exactly three shared content words and Jaccard exactly
+        # 0.75. The texts share almost no letters, so only the token channel fires.
+        records = [
+            _rec("W1", "ram sai raj road in village kheda"),
+            _rec("W2", "ram sai raj installation near house"),
+        ]
+
+        (pair,) = _pairs(records)
+
+        assert pair["hits"] == ["token"]
+        assert pair["token_overlap"] == 0.75
+        assert len(pair["shared_tokens"]) == 3
+
+    def test_five_shared_words_of_seven_are_not_enough(self) -> None:
+        records = [
+            _rec("W1", "ram sai raj may day venkatanarasimharajuvaripeta"),
+            _rec("W2", "ram sai raj may day chandrasekharapuramcolony"),
+        ]
+
+        assert _pairs(records) == []  # Jaccard 5/7 = 0.714, under 0.75
+
+    def test_a_cosine_a_little_over_the_character_line_is_a_character_only_pair(self) -> None:
+        # Cosine 0.84: over 0.80 and under 0.85. One shared content word, so the token channel is
+        # silent.
+        records = [
+            _rec("W1", "Installation of high mask light at Kheda"),
+            _rec("W2", "Installation of high mast light at Kheda no"),
+        ]
+
+        (pair,) = _pairs(records)
+
+        assert pair["hits"] == ["character"]
+        assert 0.80 <= pair["character_similarity"] < 0.85
+
+    def test_a_pair_found_by_both_channels_lists_character_first(self) -> None:
+        records = [
+            _rec("W1", "Road to Ram Mandir at village Kheda"),
+            _rec("W2", "Kheda village road near Ram Mandir"),
+        ]
+
+        (pair,) = _pairs(records)
+
+        assert pair["hits"] == ["character", "token"]
