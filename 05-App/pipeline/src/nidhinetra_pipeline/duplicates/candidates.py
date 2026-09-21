@@ -53,7 +53,10 @@ COMMON_TOKENS_V0 = frozenset(
 
 
 class DuplicateCandidateValidationError(Exception):
-    """Raised instead of returning an artifact that breaks duplicate_candidates.schema.json."""
+    """Raised instead of returning an artifact that is wrong: one that breaks
+    duplicate_candidates.schema.json, refers to a group that does not exist, holds a group
+    nothing refers to, or would give two different groups one id.
+    """
 
 
 def canonical_description_v1(text: str) -> str:
@@ -95,6 +98,14 @@ def validate_duplicate_candidates(artifact: dict[str, Any]) -> None:
         raise DuplicateCandidateValidationError(
             f"{len(errors)} violation(s) of duplicate_candidates.schema.json, first 10:\n"
             + "\n".join(errors[:10])
+        )
+    groups = set(artifact["groups"])
+    referenced = {batch["group"] for batch in artifact["batches"]}
+    referenced |= {pair[side] for pair in artifact["pairs"] for side in ("a", "b")}
+    if referenced != groups:
+        raise DuplicateCandidateValidationError(
+            f"{len(referenced - groups)} reference(s) resolve to no group and "
+            f"{len(groups - referenced)} group(s) are referenced by nothing"
         )
 
 
@@ -309,8 +320,11 @@ def _similar_pairs(
 ) -> Iterator[tuple[int, int, float, list[str]]]:
     """(i, j, cosine, hits) for every pair of the texts at matrix rows `idx` that clears the
     character threshold or, when `use_tokens`, the token-overlap threshold. i < j are positions
-    within `idx`. The whole block is compared, one dense matrix at a time (largest block: 1,371).
+    within `idx`. The whole block is compared, one dense matrix at a time (largest blocks on the
+    2026-09-04 capture: 1,371 texts in a constituency, 1,787 in a district authority).
     """
+    # ponytail: dense n x n matrices, about 70 MB at 1,400 texts and growing with the square;
+    # compare the block in row chunks if one scope ever reaches several thousand texts.
     if len(idx) < 2:
         return
     cosine = np.round((tfidf[idx] @ tfidf[idx].T).toarray(), SCORE_DECIMALS)

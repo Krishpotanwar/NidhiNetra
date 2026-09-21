@@ -10,7 +10,15 @@ from typing import Any
 
 import pytest
 from nidhinetra_pipeline.duplicates.candidates import (
+    CHARACTER_SIMILARITY_MIN,
+    COMMON_TOKENS_V0,
+    DISTRICT_CHARACTER_SIMILARITY_MIN,
+    GROUP_TOTAL_FLOOR_INR,
+    PER_WORK_LIMIT_INR,
+    TOKEN_JACCARD_MIN,
+    TOKEN_SHARED_MIN,
     DuplicateCandidateValidationError,
+    _candidate_id,
     _similar_pairs,
     build_duplicate_candidates,
     canonical_description_v1,
@@ -52,6 +60,33 @@ class TestCanonicalDescription:
             "3",
             "ward",
             "9",
+        ]
+
+    def test_the_frozen_derivations_have_not_moved(self) -> None:
+        # These become keys in committed data (fingerprints and ids) and inputs to every judgment
+        # about a pair. Changing any of them is a new version, not an edit.
+        assert fingerprint("pcc road") == "510078ed9a39e322"
+        assert _candidate_id("group", "C1", "ab") == "0cb611682ba87185"
+        assert sorted(COMMON_TOKENS_V0) == [
+            "and",
+            "at",
+            "block",
+            "construction",
+            "from",
+            "gram",
+            "high",
+            "house",
+            "in",
+            "installation",
+            "ke",
+            "light",
+            "near",
+            "no",
+            "of",
+            "panchayat",
+            "road",
+            "to",
+            "village",
         ]
 
 
@@ -222,6 +257,32 @@ class TestIdenticalBatches:
 
         assert (artifact["groups"], artifact["batches"], artifact["pairs"]) == ({}, [], [])
         validate_duplicate_candidates(artifact)
+
+    def test_the_most_common_wording_is_shown_and_a_tie_goes_to_the_smaller_string(self) -> None:
+        records = [
+            _rec("W1", "pcc road near ram house"),
+            _rec("W2", "PCC Road near Ram House"),
+        ]
+
+        for ordered in (records, records[::-1]):
+            (group,) = build_duplicate_candidates(ordered)["groups"].values()
+            assert group["text"] == "PCC Road near Ram House"  # capitals sort before lower case
+
+    def test_a_group_with_no_agency_activity_or_date_still_summarises(self) -> None:
+        missing = {"implementing_agency": None, "activity_name": None, "sanction_date": None}
+        records = [
+            _rec("W1", "Solar street lights", **missing),
+            _rec("W2", "Solar street lights", **missing),
+        ]
+
+        (group,) = build_duplicate_candidates(records)["groups"].values()
+
+        assert (
+            group["activity"],
+            group["agencies"],
+            group["sanction_date_first"],
+            group["sanction_date_last"],
+        ) == (None, [], None, None)
 
 
 def _pairs(records: list[dict[str, Any]], finder: str = "near_copy") -> list[dict[str, Any]]:
@@ -502,6 +563,34 @@ class TestArtifact:
 
         assert referenced == set(artifact["groups"])
         assert artifact["meta"]["counts"]["groups"] == len(artifact["groups"])
+
+    def test_a_reference_to_a_missing_group_is_rejected(self) -> None:
+        artifact = build_duplicate_candidates(self._mixed_records())
+        artifact["batches"][0]["group"] = "0123456789abcdef"
+
+        with pytest.raises(DuplicateCandidateValidationError, match="resolve to no group"):
+            validate_duplicate_candidates(artifact)
+
+    def test_a_group_nothing_refers_to_is_rejected(self) -> None:
+        artifact = build_duplicate_candidates(self._mixed_records())
+        artifact["groups"]["0123456789abcdef"] = copy.deepcopy(
+            next(iter(artifact["groups"].values()))
+        )
+
+        with pytest.raises(DuplicateCandidateValidationError, match="referenced by nothing"):
+            validate_duplicate_candidates(artifact)
+
+    def test_meta_records_the_thresholds_the_code_used(self) -> None:
+        thresholds = build_duplicate_candidates(self._mixed_records())["meta"]["thresholds"]
+
+        assert thresholds == {
+            "character_similarity_min": CHARACTER_SIMILARITY_MIN,
+            "token_jaccard_min": TOKEN_JACCARD_MIN,
+            "token_shared_min": TOKEN_SHARED_MIN,
+            "district_character_similarity_min": DISTRICT_CHARACTER_SIMILARITY_MIN,
+            "per_work_limit_inr": PER_WORK_LIMIT_INR,
+            "group_total_floor_inr": GROUP_TOTAL_FLOOR_INR,
+        }
 
     def test_the_input_records_are_not_modified(self) -> None:
         records = self._mixed_records()

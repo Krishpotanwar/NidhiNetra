@@ -291,15 +291,7 @@ class TestBuildSnapshotAtomicity:
         self, tmp_path, monkeypatch
     ):
         bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
-        artifact_names = (
-            "works.parquet",
-            "scored.parquet",
-            "graph.json",
-            "alias_candidates.json",
-            "duplicate_candidates.json",
-            "manifest.json",
-        )
-        before = {name: (tmp_path / name).read_bytes() for name in artifact_names}
+        before = {name: (tmp_path / name).read_bytes() for name in self.ARTIFACTS}
 
         real_stage_json = bs._stage_json
 
@@ -313,7 +305,7 @@ class TestBuildSnapshotAtomicity:
         with pytest.raises(RuntimeError, match="alias candidate"):
             bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
 
-        assert {name: (tmp_path / name).read_bytes() for name in artifact_names} == before
+        assert {name: (tmp_path / name).read_bytes() for name in self.ARTIFACTS} == before
         assert list(tmp_path.glob(".*tmp")) == []
 
     ARTIFACTS = (
@@ -327,12 +319,13 @@ class TestBuildSnapshotAtomicity:
 
     @staticmethod
     def _use_a_shorter_fixture(tmp_path, monkeypatch):
-        """Point the next builds at a fixture with one work fewer, so a build that got through
-        would write different bytes into every artifact that carries works.
+        """Point the next builds at a fixture without its first work, so a build that got
+        through would write different bytes into every artifact that carries works and into the
+        duplicate candidates (the first work has a description; the last has none).
         """
         fixture = json.loads(bs.WORKS_FIXTURE_PATH.read_text(encoding="utf-8"))
         shorter = tmp_path / "shorter.fixture.json"
-        shorter.write_text(json.dumps(fixture[:-1]), encoding="utf-8")
+        shorter.write_text(json.dumps(fixture[1:]), encoding="utf-8")
         monkeypatch.setattr(bs, "WORKS_FIXTURE_PATH", shorter)
 
     def test_a_different_input_changes_every_artifact_that_carries_works(
@@ -348,7 +341,12 @@ class TestBuildSnapshotAtomicity:
             if (tmp_path / "full" / name).read_bytes() != (tmp_path / "short" / name).read_bytes()
         }
 
-        assert {"works.parquet", "scored.parquet", "graph.json"} <= changed
+        assert {
+            "works.parquet",
+            "scored.parquet",
+            "graph.json",
+            "duplicate_candidates.json",
+        } <= changed
 
     @pytest.mark.parametrize("failing", ARTIFACTS)
     def test_a_failed_stage_leaves_every_real_file_untouched(self, tmp_path, monkeypatch, failing):
@@ -383,8 +381,8 @@ class TestBuildSnapshotAtomicity:
         group-atomicity fix exists for: under the old one-file-at-a-time
         version, those two would already have been renamed into place by
         the time graph.json's failure was discovered, leaving a torn
-        snapshot. With staging batched before any commit, none of the four
-        real files may change at all."""
+        snapshot. With staging batched before any commit, none of the real
+        files may change at all."""
         bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
         good_works = (tmp_path / "works.parquet").read_bytes()
         good_scored = (tmp_path / "scored.parquet").read_bytes()
@@ -422,7 +420,7 @@ class TestBuildSnapshotAtomicity:
         self, tmp_path, monkeypatch
     ):
         """The honest limit of this fix, made explicit as a test rather than
-        left only as a comment: commits are still four separate renames, not
+        left only as a comment: commits are still separate renames, not
         one. If the SECOND commit raises, the first has already landed.
         This is the "residual window" the module docstring and
         build_snapshot()'s own comment both name directly -- true
@@ -644,7 +642,13 @@ class TestDuplicateCandidatesArtifact:
         artifact = json.loads(text)
 
         validate_duplicate_candidates(artifact)
-        assert "\n" not in text
+        assert text == json.dumps(artifact, ensure_ascii=False, separators=(",", ":"))
         fixture = json.loads(bs.WORKS_FIXTURE_PATH.read_text(encoding="utf-8"))
         readable = [w for w in fixture if canonical_description_v1(w["work_description"] or "")]
         assert artifact["meta"]["counts"]["works_considered"] == len(readable)
+
+    def test_the_compact_writer_refuses_numbers_that_are_not_json(self, tmp_path):
+        with pytest.raises(ValueError):
+            bs._stage_compact_json({"amount": float("inf")}, tmp_path / "x.json")
+
+        assert list(tmp_path.iterdir()) == []

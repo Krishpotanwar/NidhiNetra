@@ -31,8 +31,8 @@ alias_candidates.json, duplicate_candidates.json, manifest.json) follows the sam
 stage/validate/commit discipline as ingest/cache.py's
 write_snapshot(): serialize to a temp file in the target directory, read
 it back to confirm it landed intact, only then rename it into place. Since
-2026-09-02 this happens as one batch, not four independent ones: every
-artifact is staged and validated FIRST, and only if all four succeed does
+2026-09-02 this happens as one batch, not one file at a time: every
+artifact is staged and validated FIRST, and only if all of them succeed does
 build_snapshot() commit (rename) any of them. A failure partway through a
 single-file write always left that one file's OLD version in place; the
 earlier per-file-only version of this discipline still let an EARLIER
@@ -377,8 +377,12 @@ def _stage_json(obj: Any, final_path: Path) -> Path:
 
 
 def _stage_compact_json(obj: Any, final_path: Path) -> Path:
-    """`_stage_json` without indentation, for duplicate_candidates.json, which is large."""
-    payload = json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    """`_stage_json` without indentation, for duplicate_candidates.json, which is large. NaN and
+    Infinity are refused: they are not JSON, and a strict parser would reject the whole file.
+    """
+    payload = json.dumps(obj, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode(
+        "utf-8"
+    )
     return _stage_bytes(payload, final_path)
 
 
@@ -551,11 +555,11 @@ def build_snapshot(
     # build while graph.json and manifest.json stayed on the old one --
     # a torn, internally-inconsistent snapshot, exactly what CP1's "a
     # partial pull must never replace a good snapshot" is about. Staging
-    # all five first means a failure at any point still leaves every real
-    # file in snapshot_dir completely untouched; only the temp files (which
-    # nothing reads) are affected. The five commits at the end are still
-    # five separate os.rename() calls, not one, so a crash between commit 1
-    # and commit 5 remains a real (much smaller, metadata-only) residual
+    # every artifact first means a failure at any point still leaves every
+    # real file in snapshot_dir completely untouched; only the temp files
+    # (which nothing reads) are affected. The commits at the end are still
+    # separate os.rename() calls, not one, so a crash between the first
+    # commit and the last remains a real (much smaller, metadata-only) residual
     # window -- true directory-level atomicity would need a staging
     # directory swapped in with a single rename, which is a larger
     # restructure than this fix scopes to. Documented, not hidden.

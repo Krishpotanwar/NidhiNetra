@@ -23,6 +23,12 @@ input, but it must be run from an ordinary (non-datacenter) network by a
 human, a few minutes before a demo -- see 04 Prototype/Checkpoints.md CP6
 for why an automated/cloud environment (this kind of sandbox, CI) cannot run
 it at all.
+
+`duplicates` reads works.parquet from the served snapshot and prints how many
+identical and near-identical work descriptions Phase 1 Stage A's finder
+(`duplicates/candidates.py`) found. It writes nothing unless `--write` is given,
+and then it writes only data/snapshot/duplicate_candidates.json, so no score,
+rank or flag can move (a full `build` scores again as of the day it runs).
 """
 
 from __future__ import annotations
