@@ -4,6 +4,7 @@ Usage:
     python -m nidhinetra_pipeline.cli pull-live   # optional, see below
     python -m nidhinetra_pipeline.cli build
     python -m nidhinetra_pipeline.cli duplicates [--write]
+    python -m nidhinetra_pipeline.cli judge [--run --max-usd DOLLARS] [--limit N]
 
 `build` runs the acquisition ladder (`ingest/rungs.py`), normalizes whatever
 it returns (`normalize/normalize.py`), atomically caches the result
@@ -29,6 +30,12 @@ identical and near-identical work descriptions Phase 1 Stage A's finder
 (`duplicates/candidates.py`) found. It writes nothing unless `--write` is given,
 and then it writes only data/snapshot/duplicate_candidates.json, so no score,
 rank or flag can move (a full `build` scores again as of the day it runs).
+
+`judge` is Phase 1 Stage B (`judge/`). It asks the pinned model on Hugging Face Inference
+Providers what each near-copy pair in data/snapshot/duplicate_candidates.json has in common, and
+stores the evidence-checked answers in data/judgments/text_pair_judgments.parquet. It sends
+nothing unless `--run` is given, and then only with HF_TOKEN in the environment and a dollar cap
+in `--max-usd`. It is never part of `build`.
 """
 
 from __future__ import annotations
@@ -39,19 +46,26 @@ import logging
 import os
 import sys
 import tempfile
+from dataclasses import asdict
 from pathlib import Path
 
 from .build_snapshot import (
+    SNAPSHOT_DIR,
     SnapshotDowngradeError,
     SnapshotWriteError,
     build_snapshot,
     duplicate_candidates_from_snapshot,
     write_duplicate_candidates,
 )
-from .duplicates.candidates import DuplicateCandidateValidationError
+from .duplicates.candidates import (
+    DuplicateCandidateValidationError,
+    validate_duplicate_candidates,
+)
 from .ingest import cache, mplads_adapter
 from .ingest.mplads_api import MpladsClient, MpladsClientError
 from .ingest.rungs import AllRungsFailedError, run_ladder
+from .judge import runner, store
+from .judge.inputs import items_from_artifact
 from .normalize.normalize import NormalizeValidationError, normalize_records
 
 logger = logging.getLogger("nidhinetra_pipeline.cli")
@@ -281,6 +295,59 @@ def duplicates(*, snapshot_dir: Path | None = None, write: bool = False) -> int:
     return 0
 
 
+def judge(
+    *,
+    snapshot_dir: Path | None = None,
+    out_dir: Path | None = None,
+    model: str = runner.DEFAULT_MODEL,
+    provider: str = runner.DEFAULT_PROVIDER,
+    limit: int | None = None,
+    max_usd: float | None = None,
+    run: bool = False,
+    workers: int = 1,
+    transport: runner.Transport = runner.http_transport,
+) -> int:
+    """Phase 1 Stage B: ask the pinned model about the near-copy pairs that have no answer yet.
+
+    Sends nothing unless `run` is set, and then only with HF_TOKEN in the environment and a
+    dollar cap in `max_usd`.
+    """
+    if limit is not None and limit < 1:
+        logger.error("--limit must be at least 1")
+        return 1
+    token = os.environ.get("HF_TOKEN", "")
+    if run and not (token and max_usd and max_usd > 0):
+        logger.error("--run needs HF_TOKEN in the environment and --max-usd above zero")
+        return 1
+    store_path = (out_dir or _APP_ROOT / "data" / "judgments") / store.FILENAME
+    try:
+        candidates = (snapshot_dir or SNAPSHOT_DIR) / "duplicate_candidates.json"
+        artifact = json.loads(candidates.read_text(encoding="utf-8"))
+        validate_duplicate_candidates(artifact)
+        items = items_from_artifact(artifact)
+        if not run:
+            todo = runner.pending(items, store_path, model, provider, limit)
+            print(f"{len(items)} near-copy pairs; {len(todo)} to judge with {model} on {provider}.")
+            print("Dry run: nothing was sent. Add --run and --max-usd DOLLARS to send them.")
+            return 0
+        report = runner.run_judge(
+            items,
+            store_path=store_path,
+            model_id=model,
+            provider_id=provider,
+            token=token,
+            max_usd=max_usd,
+            limit=limit,
+            transport=transport,
+            workers=workers,
+        )
+    except (OSError, ValueError, DuplicateCandidateValidationError, runner.JudgeError) as exc:
+        logger.error("The judge did not finish: %s", exc)
+        return 1
+    print(json.dumps({**asdict(report), "cost_usd": round(report.cost_usd, 4)}, indent=2))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="nidhinetra_pipeline")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -303,6 +370,22 @@ def main(argv: list[str] | None = None) -> int:
     duplicates_parser.add_argument(
         "--write", action="store_true", help="Write data/snapshot/duplicate_candidates.json."
     )
+    judge_parser = subparsers.add_parser(
+        "judge",
+        help="Ask the pinned model about the near-copy pairs in duplicate_candidates.json.",
+    )
+    judge_parser.add_argument(
+        "--run",
+        action="store_true",
+        help="Send the requests. Needs HF_TOKEN in the environment and --max-usd.",
+    )
+    judge_parser.add_argument("--max-usd", type=float, help="Stop once this much has been spent.")
+    judge_parser.add_argument(
+        "--limit", type=int, help="Judge only this many pairs, spread evenly through the pending."
+    )
+    judge_parser.add_argument("--model", default=runner.DEFAULT_MODEL)
+    judge_parser.add_argument("--provider", default=runner.DEFAULT_PROVIDER)
+    judge_parser.add_argument("--workers", type=int, default=1, help="Requests sent at once.")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -313,6 +396,15 @@ def main(argv: list[str] | None = None) -> int:
         return pull_live()
     if args.command == "duplicates":
         return duplicates(write=args.write)
+    if args.command == "judge":
+        return judge(
+            model=args.model,
+            provider=args.provider,
+            limit=args.limit,
+            max_usd=args.max_usd,
+            run=args.run,
+            workers=args.workers,
+        )
 
     parser.error(f"unknown command {args.command!r}")
     return 2  # pragma: no cover - argparse.error() exits before this

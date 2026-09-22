@@ -31,6 +31,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 from nidhinetra_pipeline import cli
+from nidhinetra_pipeline.duplicates.candidates import build_duplicate_candidates
 from nidhinetra_pipeline.ingest import cache
 from nidhinetra_pipeline.ingest.mplads_api import MpladsClientError
 from nidhinetra_pipeline.ingest.rungs import AllRungsFailedError
@@ -493,3 +494,220 @@ def test_the_duplicates_command_passes_its_flag_through(monkeypatch, argv, write
     assert cli.main(argv) == 0
 
     assert calls == [{"write": write}]
+
+
+def _write_candidates(snapshot_dir: Path) -> None:
+    """A duplicate_candidates.json with two near-copy pairs, one in each of two constituencies:
+    a description reworded by one letter."""
+    base = {
+        "implementing_district_authority": "D1",
+        "implementing_agency": "Agency 1",
+        "activity_name": "Lighting of public spaces",
+        "sanctioned_amount_inr": 500000.0,
+        "sanction_date": "2024-07-09",
+        "completion_status": "Sanctioned",
+    }
+    records = [
+        {**base, "work_id": f"W{n}{side}", "constituency": f"C{n}", "work_description": text}
+        for n in (1, 2)
+        for side, text in (
+            ("a", "Installation of high mask light at Kheda"),
+            ("b", "Installation of high mast light at Kheda"),
+        )
+    ]
+    artifact = build_duplicate_candidates(records)
+    (snapshot_dir / "duplicate_candidates.json").write_text(json.dumps(artifact), encoding="utf-8")
+
+
+def _provider(url, headers, payload):
+    """Answers every pair in the request 'unrelated', with no quotes to check."""
+    pairs = json.loads(payload["messages"][1]["content"])["pairs"]
+    empty = {"asset_a": None, "place_a": None, "asset_b": None, "place_b": None}
+    answers = [{"id": pair["id"], "relation": "unrelated", **empty} for pair in pairs]
+    content = json.dumps({"answers": answers})
+    usage = {"prompt_tokens": 100_000, "completion_tokens": 20_000}
+    return 200, {"choices": [{"message": {"content": content}}], "usage": usage}
+
+
+def _no_network(url, headers, payload):
+    raise AssertionError("the judge sent a request")
+
+
+def test_judge_dry_run_sends_nothing_and_writes_nothing(snapshot_dir, tmp_path, capsys):
+    _write_candidates(snapshot_dir)
+    out_dir = tmp_path / "judgments"
+
+    assert cli.judge(snapshot_dir=snapshot_dir, out_dir=out_dir, transport=_no_network) == 0
+
+    out = capsys.readouterr().out
+    assert "2 near-copy pairs; 2 to judge with openai/gpt-oss-120b on deepinfra." in out
+    assert "Dry run: nothing was sent." in out
+    assert not out_dir.exists()
+
+
+def test_judge_dry_run_counts_only_the_pairs_a_limit_leaves(snapshot_dir, tmp_path, capsys):
+    _write_candidates(snapshot_dir)
+
+    assert cli.judge(snapshot_dir=snapshot_dir, out_dir=tmp_path / "j", limit=1) == 0
+
+    assert "2 near-copy pairs; 1 to judge" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("limit", [0, -3])
+def test_judge_refuses_a_limit_below_one(snapshot_dir, tmp_path, limit):
+    _write_candidates(snapshot_dir)
+
+    assert cli.judge(snapshot_dir=snapshot_dir, out_dir=tmp_path / "j", limit=limit) == 1
+
+
+@pytest.mark.parametrize(
+    ("token", "max_usd"),
+    [(None, 1.0), ("hf_x", None), ("hf_x", 0.0), ("hf_x", -1.0)],
+    ids=["no token", "no cap", "zero cap", "negative cap"],
+)
+def test_judge_run_needs_a_token_and_a_dollar_cap(
+    monkeypatch, snapshot_dir, tmp_path, token, max_usd
+):
+    _write_candidates(snapshot_dir)
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    if token:
+        monkeypatch.setenv("HF_TOKEN", token)
+    out_dir = tmp_path / "judgments"
+
+    code = cli.judge(
+        snapshot_dir=snapshot_dir,
+        out_dir=out_dir,
+        run=True,
+        max_usd=max_usd,
+        transport=_no_network,
+    )
+
+    assert code == 1
+    assert not out_dir.exists()
+
+
+def test_judge_run_stores_the_answers_and_prints_the_report(
+    monkeypatch, snapshot_dir, tmp_path, capsys
+):
+    _write_candidates(snapshot_dir)
+    monkeypatch.setenv("HF_TOKEN", "hf_x")
+    out_dir = tmp_path / "judgments"
+
+    code = cli.judge(
+        snapshot_dir=snapshot_dir, out_dir=out_dir, run=True, max_usd=1.0, transport=_provider
+    )
+
+    assert code == 0
+    stored = pd.read_parquet(out_dir / "text_pair_judgments.parquet")
+    assert stored["relation"].tolist() == ["unrelated", "unrelated"]
+    report = json.loads(capsys.readouterr().out)
+    assert (report["requests"], report["pairs"], report["judged"]) == (1, 2, 2)
+    assert report["cost_usd"] == pytest.approx((100_000 * 0.04 + 20_000 * 0.17) / 1e6, abs=1e-4)
+
+
+def test_judge_run_passes_its_settings_to_the_runner(monkeypatch, snapshot_dir, tmp_path):
+    _write_candidates(snapshot_dir)
+    monkeypatch.setenv("HF_TOKEN", "hf_x")
+    calls = []
+
+    def fake_run_judge(items, **kwargs):
+        calls.append((len(items), kwargs))
+        return cli.runner.Report()
+
+    monkeypatch.setattr(cli.runner, "run_judge", fake_run_judge)
+
+    code = cli.judge(
+        snapshot_dir=snapshot_dir,
+        out_dir=tmp_path / "judgments",
+        model="openai/gpt-oss-120b",
+        provider="deepinfra",
+        limit=1,
+        max_usd=2.5,
+        run=True,
+        workers=3,
+        transport=_provider,
+    )
+
+    assert code == 0
+    assert calls == [
+        (
+            2,
+            {
+                "store_path": tmp_path / "judgments" / "text_pair_judgments.parquet",
+                "model_id": "openai/gpt-oss-120b",
+                "provider_id": "deepinfra",
+                "token": "hf_x",
+                "max_usd": 2.5,
+                "limit": 1,
+                "transport": _provider,
+                "workers": 3,
+            },
+        )
+    ]
+
+
+def test_judge_reports_a_refusal_and_stores_nothing(monkeypatch, snapshot_dir, tmp_path):
+    _write_candidates(snapshot_dir)
+    monkeypatch.setenv("HF_TOKEN", "hf_x")
+    out_dir = tmp_path / "judgments"
+
+    code = cli.judge(
+        snapshot_dir=snapshot_dir,
+        out_dir=out_dir,
+        run=True,
+        max_usd=1.0,
+        transport=lambda url, headers, payload: (402, {"error": "no credit"}),
+    )
+
+    assert code == 1
+    assert not out_dir.exists()
+
+
+@pytest.mark.parametrize("text", [None, "not json", "{}"], ids=["missing", "not json", "empty"])
+def test_judge_reports_a_missing_or_broken_candidates_file(snapshot_dir, tmp_path, text):
+    if text is not None:
+        (snapshot_dir / "duplicate_candidates.json").write_text(text, encoding="utf-8")
+
+    assert cli.judge(snapshot_dir=snapshot_dir, out_dir=tmp_path / "judgments") == 1
+
+
+@pytest.mark.parametrize(
+    ("argv", "expected"),
+    [
+        (
+            ["judge"],
+            {
+                "model": "openai/gpt-oss-120b",
+                "provider": "deepinfra",
+                "limit": None,
+                "max_usd": None,
+                "run": False,
+                "workers": 1,
+            },
+        ),
+        (
+            [
+                "judge",
+                "--run",
+                "--max-usd",
+                "2.5",
+                "--limit",
+                "20",
+                "--workers",
+                "4",
+                "--model",
+                "m",
+                "--provider",
+                "p",
+            ],
+            {"model": "m", "provider": "p", "limit": 20, "max_usd": 2.5, "run": True, "workers": 4},
+        ),
+    ],
+)
+def test_the_judge_command_passes_its_flags_through(monkeypatch, argv, expected):
+    calls = []
+    monkeypatch.setattr(cli, "judge", lambda **kwargs: calls.append(kwargs) or 0)
+
+    assert cli.main(argv) == 0
+
+    assert calls == [expected]
