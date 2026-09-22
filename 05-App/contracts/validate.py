@@ -242,6 +242,49 @@ def run_self_test() -> int:
         return 1
     print("  PASS: real fixtures are clean")
 
+    print("\nSelf-test 6: the two Stage C review-store contracts ...")
+    good_candidate = {
+        "finder": "identical_batch",
+        "scope": "C1",
+        "fingerprint_a": "1111111111111111",
+        "fingerprint_b": "1111111111111111",
+        "finder_version": "candidate_generation_v0",
+        "threshold_crossing_batch": True,
+        "text": "PCC Road, near Ram House",
+        "work_ids": ["W1", "W2"],
+    }
+    good_review = {
+        "review_id": 1,
+        "candidate_id": 1,
+        "status": "confirmed_same",
+        "reviewed_by": "RK",
+        "reviewed_at": "2026-09-22T08:30:00Z",
+        "reviewer_note": "",
+        "supersedes": None,
+    }
+    candidate_schema = json.loads((HERE / "duplicate_candidate.schema.json").read_text())
+    review_schema = json.loads((HERE / "duplicate_review.schema.json").read_text())
+    good_errors = list(jsonschema.Draft7Validator(candidate_schema).iter_errors(good_candidate))
+    good_errors += list(jsonschema.Draft7Validator(review_schema).iter_errors(good_review))
+    if good_errors:
+        print(f"  FAIL: a well-formed candidate/review was rejected: {good_errors[0].message}")
+        return 1
+    broken_candidate = {**good_candidate, "work_ids": ["only-one"]}
+    broken_review = {**good_review, "status": "duplicate"}
+    candidate_errors = list(
+        jsonschema.Draft7Validator(candidate_schema).iter_errors(broken_candidate)
+    )
+    review_errors = list(jsonschema.Draft7Validator(review_schema).iter_errors(broken_review))
+    if not candidate_errors:
+        print("  FAIL: validator did not catch a one-work-id duplicate candidate")
+        return 1
+    if not review_errors:
+        print("  FAIL: validator did not catch an unknown duplicate-review status")
+        return 1
+    print(
+        f"  PASS: caught {len(candidate_errors)} candidate and {len(review_errors)} review error(s)"
+    )
+
     print("\nAll self-tests passed. The validator has real teeth.")
     return 0
 
