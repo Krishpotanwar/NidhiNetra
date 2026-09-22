@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nidhinetra.local/contracts/duplicate_candidate.schema.json",
+  "title": "DuplicateCandidate",
+  "description": "Phase 1 Stage C review candidate, synced from an identical batch in duplicate_candidates.json. Review decisions do not change Stage A's artifact.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "finder",
+    "scope",
+    "fingerprint_a",
+    "fingerprint_b",
+    "finder_version",
+    "threshold_crossing_batch",
+    "text",
+    "work_ids"
+  ],
+  "properties": {
+    "finder": {
+      "type": "string",
+      "enum": ["identical_batch", "district_identical_batch"]
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fingerprint_a": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16}$"
+    },
+    "fingerprint_b": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16}$"
+    },
+    "finder_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "threshold_crossing_batch": {
+      "type": "boolean",
+      "description": "True when every work in the batch is below Rs 15 lakh and the group total is Rs 25 lakh or more (MPLADS Guidelines 2023, clause 4.4.2)."
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The shared description, as published, spacing tidied."
+    },
+    "work_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 2,
+      "uniqueItems": true
+    }
+  }
+}
