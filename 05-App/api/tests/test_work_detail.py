@@ -4,6 +4,8 @@ with a frontend-renderable message for a fake one.
 
 from __future__ import annotations
 
+from nidhinetra_pipeline.outcomes import duplicate_store
+
 
 def test_get_work_200_for_real_id_returns_merged_record(client, works_fixture):
     work_id = works_fixture[0]["work_id"]
@@ -45,3 +47,43 @@ def test_a_work_carries_the_portal_description_activity_and_recommendation_date(
     )
     assert body["activity_name"] == "Drinking water facilities"
     assert body["recommendation_date"] == "2024-06-28"
+
+
+def test_work_detail_carries_duplicate_context(client):
+    work_id = "MPLADS-FX-0001"
+    duplicate_store.upsert_candidates(
+        [
+            {
+                "finder": "identical_batch",
+                "scope": "C1",
+                "fingerprint_a": "1111111111111111",
+                "fingerprint_b": "1111111111111111",
+                "finder_version": "candidate_generation_v0",
+                "threshold_crossing_batch": True,
+                "text": "PCC Road, near Ram House",
+                "work_ids": [work_id, "MPLADS-FX-0099"],
+            }
+        ]
+    )
+
+    response = client.get(f"/api/works/{work_id}")
+
+    assert response.status_code == 200
+    context = response.json()["data"]["duplicate_context"]
+    assert context == [
+        {
+            "candidate_id": context[0]["candidate_id"],
+            "finder": "identical_batch",
+            "threshold_crossing_batch": True,
+            "text": "PCC Road, near Ram House",
+            "work_count": 2,
+            "other_work_ids": ["MPLADS-FX-0099"],
+            "status": "pending",
+        }
+    ]
+
+
+def test_work_detail_duplicate_context_is_empty_list_when_there_is_none(client):
+    response = client.get("/api/works/MPLADS-FX-0001")
+
+    assert response.json()["data"]["duplicate_context"] == []

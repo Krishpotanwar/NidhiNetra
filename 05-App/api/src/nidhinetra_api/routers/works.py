@@ -34,6 +34,7 @@ from typing import Annotated, Any
 
 import duckdb
 from fastapi import APIRouter, Depends, HTTPException, Path
+from nidhinetra_pipeline.outcomes import duplicate_store
 from nidhinetra_pipeline.risk import rank
 from nidhinetra_pipeline.risk.peer_groups import financial_year_of
 
@@ -253,6 +254,7 @@ def get_work(work_id: Annotated[str, Path(min_length=1, max_length=64)]) -> Enve
             detail=f"No work found with id '{work_id}' in the current snapshot.",
         )
     record = db.decode_scored_json(rows)[0]
+    record["duplicate_context"] = duplicate_store.duplicate_context(work_id)
     return Envelope(success=True, data=record)
 
 
