@@ -27,7 +27,16 @@ from nidhinetra_pipeline.build_snapshot import SnapshotDowngradeError, StaleCach
 
 from . import snapshot
 from .db import SnapshotNotReadyError
-from .routers import entity_aliases, graph, inspections, provenance, refresh, stats, works
+from .routers import (
+    duplicates,
+    entity_aliases,
+    graph,
+    inspections,
+    provenance,
+    refresh,
+    stats,
+    works,
+)
 
 logger = logging.getLogger("nidhinetra_api")
 
@@ -47,6 +56,7 @@ async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
         manifest["generated_at"],
     )
     entity_aliases.sync_alias_candidates_from_snapshot()
+    duplicates.sync_duplicate_candidates_from_snapshot()
     yield
 
 
@@ -165,6 +175,7 @@ app.include_router(stats.router)
 app.include_router(refresh.router)
 app.include_router(inspections.router)
 app.include_router(entity_aliases.router)
+app.include_router(duplicates.router)
 app.include_router(provenance.router)
 
 

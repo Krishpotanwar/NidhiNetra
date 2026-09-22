@@ -148,14 +148,36 @@ def alias_query(
     return AliasQuery(status=status, page=page, page_size=page_size)
 
 
+DuplicateStatus = Literal["pending", "confirmed_same", "rejected_different"]
+
+
+class DuplicateQuery(BaseModel):
+    """Pagination and current-status filter for the Phase 1 Stage C review queue."""
+
+    status: DuplicateStatus = "pending"
+    page: int = Field(default=1, ge=1)
+    page_size: int = Field(default=50, ge=1, le=200)
+
+
+def duplicate_query(
+    status: Annotated[DuplicateStatus, Query()] = "pending",
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+) -> DuplicateQuery:
+    return DuplicateQuery(status=status, page=page, page_size=page_size)
+
+
 __all__ = [
     "AliasQuery",
     "AliasStatus",
+    "DuplicateQuery",
+    "DuplicateStatus",
     "Envelope",
     "GraphQuery",
     "WorksQuery",
     "WorksScope",
     "alias_query",
+    "duplicate_query",
     "graph_query",
     "works_query",
 ]
