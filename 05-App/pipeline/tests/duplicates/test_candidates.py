@@ -577,19 +577,30 @@ class TestArtifact:
         assert artifact["meta"]["counts"]["groups"] == len(artifact["groups"])
 
     def test_a_reference_to_a_missing_group_is_rejected(self) -> None:
+        # Every group stays referenced (nothing is orphaned): a batch is added pointing at a
+        # missing id, rather than redirecting an existing batch, which would also orphan the
+        # group it used to point at and let a check narrowed to "groups - referenced" pass.
         artifact = build_duplicate_candidates(self._mixed_records())
-        artifact["batches"][0]["group"] = "0123456789abcdef"
+        artifact["batches"].append({**artifact["batches"][0], "group": "0123456789abcdef"})
 
-        with pytest.raises(DuplicateCandidateValidationError, match="resolve to no group"):
+        with pytest.raises(
+            DuplicateCandidateValidationError,
+            match=r"^1 reference\(s\) resolve to no group and 0 group",
+        ):
             validate_duplicate_candidates(artifact)
 
     def test_a_group_nothing_refers_to_is_rejected(self) -> None:
+        # Every reference still resolves: only a group is added, nothing is redirected away from
+        # one, so this cannot be satisfied by a check that only looks for a dangling reference.
         artifact = build_duplicate_candidates(self._mixed_records())
         artifact["groups"]["0123456789abcdef"] = copy.deepcopy(
             next(iter(artifact["groups"].values()))
         )
 
-        with pytest.raises(DuplicateCandidateValidationError, match="referenced by nothing"):
+        with pytest.raises(
+            DuplicateCandidateValidationError,
+            match=r"^0 reference\(s\) resolve to no group and 1 group",
+        ):
             validate_duplicate_candidates(artifact)
 
     def test_meta_records_the_thresholds_the_code_used(self) -> None:
