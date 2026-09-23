@@ -184,7 +184,7 @@ def build(*, raw_dir: Path | None = None, snapshot_dir: Path | None = None) -> i
 def _write_tiles_atomically(payloads: dict[str, dict], raw_dir: Path) -> None:
     """Stages every tile to a temp file in raw_dir first and renames them
     into place only once every one of them has round-tripped cleanly -- the
-    same group-atomicity discipline build_snapshot.py uses for its own four
+    same group-atomicity discipline build_snapshot.py uses for its own six
     artifacts. Without it, a failure partway through (e.g. disk full on the
     third file) could leave two tiles from a fresh pull sitting next to one
     stale tile from the last pull, and the adapter has no way to know its
