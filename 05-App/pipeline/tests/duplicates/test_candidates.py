@@ -259,7 +259,7 @@ class TestIdenticalBatches:
         assert (artifact["groups"], artifact["batches"], artifact["pairs"]) == ({}, [], [])
         validate_duplicate_candidates(artifact)
 
-    def test_the_most_common_wording_is_shown_and_a_tie_goes_to_the_smaller_string(self) -> None:
+    def test_a_tie_goes_to_the_smaller_string(self) -> None:
         records = [
             _rec("W1", "pcc road near ram house"),
             _rec("W2", "PCC Road near Ram House"),
@@ -268,6 +268,20 @@ class TestIdenticalBatches:
         for ordered in (records, records[::-1]):
             (group,) = build_duplicate_candidates(ordered)["groups"].values()
             assert group["text"] == "PCC Road near Ram House"  # capitals sort before lower case
+
+    def test_the_most_common_wording_wins_even_when_it_sorts_after_the_minority(self) -> None:
+        # "PCC Road..." (capitalized) sorts before "pcc road..." (lower case) in a plain string
+        # comparison, so a version of _mode that picked the alphabetically smallest wording
+        # regardless of frequency would show the 1-of-3 minority here, not the 2-of-3 majority.
+        records = [
+            _rec("W1", "pcc road near ram house"),
+            _rec("W2", "pcc road near ram house"),
+            _rec("W3", "PCC Road near Ram House"),
+        ]
+
+        for ordered in (records, records[::-1], [records[2], records[0], records[1]]):
+            (group,) = build_duplicate_candidates(ordered)["groups"].values()
+            assert group["text"] == "pcc road near ram house"
 
     def test_a_group_with_no_agency_activity_or_date_still_summarises(self) -> None:
         missing = {"implementing_agency": None, "activity_name": None, "sanction_date": None}
