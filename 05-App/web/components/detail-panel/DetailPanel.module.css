@@ -206,6 +206,30 @@
   margin: 0;
 }
 
+.evidenceList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.evidenceList a {
+  display: inline-flex;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-control);
+  background: var(--sunken);
+  font-family: var(--font-mono);
+  font-size: var(--font-2xs);
+  color: var(--accent-deep);
+  text-decoration: none;
+}
+
+.evidenceList a:hover {
+  text-decoration: underline;
+}
+
 .fieldName {
   font-size: var(--font-note);
   color: var(--ink-faint);

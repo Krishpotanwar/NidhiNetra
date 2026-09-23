@@ -18,6 +18,7 @@ import type { InspectionRow } from "@/lib/types";
 import { FilterPanel, type PreviewState } from "@/components/filters/FilterPanel";
 import { DetailPanel } from "@/components/detail-panel/DetailPanel";
 import type { RefreshState } from "@/components/data-provenance/RefreshControl";
+import { DuplicateReviewQueue } from "./DuplicateReviewQueue";
 import { InspectionTable, type TableDataState } from "./InspectionTable";
 import { Pagination } from "./Pagination";
 import { SummaryLine } from "./SummaryLine";
@@ -142,6 +143,8 @@ export function InspectionListClient() {
             onPage={(next) => navigate(filters, q, next)}
           />
         )}
+
+        <DuplicateReviewQueue />
 
         <p className={styles.standing}>{STRINGS.framing.standing_note}</p>
       </div>

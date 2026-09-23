@@ -1,10 +1,12 @@
 "use client";
 
-import { Fragment, useEffect, useRef } from "react";
+import { Fragment, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowRight, X } from "@phosphor-icons/react";
 import { renderTemplate, STRINGS } from "@/lib/strings";
+import { fetchWorkDuplicateContext } from "@/lib/duplicates";
+import { useApiResource } from "@/lib/use-api-resource";
 import {
   FLAG_LABELS,
   displayName,
@@ -224,6 +226,8 @@ function PanelBody({ row, onClose, quotaN }: { row: InspectionRow; onClose: () =
           </dl>
         </section>
 
+        <DuplicateContextSection workId={row.work_id} />
+
         <section className={styles.actions}>
           {row.implementing_agency && (
             <Link
@@ -238,6 +242,49 @@ function PanelBody({ row, onClose, quotaN }: { row: InspectionRow; onClose: () =
         </section>
       </div>
     </>
+  );
+}
+
+const duplicateStrings = STRINGS.duplicate_review;
+
+/**
+ * Phase 1 Stage C. Fetched separately from the row the panel already has --
+ * the list endpoint that populates `row` was never given this field (Stage C
+ * Decision: only GET /api/works/{work_id} carries duplicate_context, and
+ * only for the works synced from Stage A's identical batches). Renders
+ * nothing while loading or when the work is in no synced batch, so an
+ * unflagged work's panel looks exactly as it did before this section
+ * existed.
+ */
+function DuplicateContextSection({ workId }: { workId: string }) {
+  const load = useCallback((signal: AbortSignal) => fetchWorkDuplicateContext(workId, signal), [workId]);
+  const context = useApiResource(load);
+  const entries = context.data;
+
+  if (!entries || entries.length === 0) return null;
+
+  return (
+    <section className={styles.section}>
+      <h3 className={`t-label ${styles.sectionTitle}`}>{duplicateStrings.context_title}</h3>
+      {entries.map((entry) => (
+        <div key={entry.candidate_id} className={styles.contribution}>
+          <p className={styles.contributionHead}>{displayName(entry.text)}</p>
+          <p className={styles.reason}>
+            {renderTemplate(duplicateStrings.context_count, { count: entry.work_count - 1 })}
+          </p>
+          {entry.threshold_crossing_batch && (
+            <p className={styles.note}>{duplicateStrings.context_threshold}</p>
+          )}
+          <ul className={styles.evidenceList}>
+            {entry.other_work_ids.map((otherId) => (
+              <li key={otherId}>
+                <Link href={`/inspections?q=${encodeURIComponent(otherId)}`}>{otherId}</Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </section>
   );
 }
 

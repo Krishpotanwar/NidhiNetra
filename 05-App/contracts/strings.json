@@ -26,7 +26,8 @@
       "2026-09-17: Phase 0. Added detail_panel.record_fields.work_description, .activity and .recommendation_date, and missing_fields.description. The portal publishes a description, an activity string and a recommendation date on every work; the pipeline dropped all three. They are shown as published, with only transport spacing tidied, and nothing about them is derived or interpreted.",
       "2026-09-17: Phase 0 follow-up. detail_panel.record_fields.work_description is now 'Portal description', matching 'Portal activity', so the text under the title says where it comes from. missing_fields.description is now 'Description not recorded', in the same form as the other missing values: until the snapshot is rebuilt it holds no description column, and the earlier sentence would have told the officer the portal published nothing for works where it did.",
       "2026-09-18: F-09. Removed inspection_capture.control_sample_label: an officer can no longer mark an outcome as a random spot-check after seeing the work, which made the comparison group meaningless; the server now assigns the group. Rewrote the end of reports.method to say so, and that no random sample has been assigned yet.",
-      "2026-09-19: Fund Flow Sankey rebuild. Changed fund_flow.subtitle to 'Trace concentrated MP, agency and vendor relationships in the MPLADS record.', and fund_flow.search_label and .search_placeholder to 'Search vendors': the search matches vendor names only, so 'or agency' claimed something it never did. Added fund_flow.toolbar_count, .members_pill, .view_all, .show_fewer, .works_count, .flow_table_caption, .flow_table_from, .flow_table_to, .flow_table_amount, .flow_table_works and .flow_table_flagged for the redesigned toolbar, cluster header, vendor list, vendor boxes and the chart's text table. fund_flow.concentration_filter_description, .cluster_median_note and .clusters_note are no longer shown; they stay in the contract because nothing checks for unused keys."
+      "2026-09-19: Fund Flow Sankey rebuild. Changed fund_flow.subtitle to 'Trace concentrated MP, agency and vendor relationships in the MPLADS record.', and fund_flow.search_label and .search_placeholder to 'Search vendors': the search matches vendor names only, so 'or agency' claimed something it never did. Added fund_flow.toolbar_count, .members_pill, .view_all, .show_fewer, .works_count, .flow_table_caption, .flow_table_from, .flow_table_to, .flow_table_amount, .flow_table_works and .flow_table_flagged for the redesigned toolbar, cluster header, vendor list, vendor boxes and the chart's text table. fund_flow.concentration_filter_description, .cluster_median_note and .clusters_note are no longer shown; they stay in the contract because nothing checks for unused keys.",
+      "2026-09-23: added duplicate_review for Phase 1 Stage C's review queue and the detail panel's shared-description section. Modelled on entity_alias_review, reusing its exact actions 'These are the same' / 'These are different'. This queue is scoped to Finder 1/3's identical batches only (works sharing one portal description word for word within a constituency); no near-copy pair is shown here yet, so nothing about a shared word or a partial match is claimed. 'Duplicate' does not appear anywhere in the block, per the same house rule entity_alias_review follows. threshold_note names MPLADS Guidelines 2023 clause 4.4.2 for the batches that cross it, mirroring the wording already used in the pipeline's own duplicate_candidates.schema.json."
     ]
   },
   "_measure": {
@@ -440,6 +441,33 @@
     "previous_page": "Previous page",
     "next_page": "Next page",
     "page_summary": "Page {page} of {total_pages}"
+  },
+  "duplicate_review": {
+    "pending_badge": "{count} pending",
+    "title": "Works to review for a shared description",
+    "body": "These works share the exact same portal description within one constituency. Check the works before recording a decision.",
+    "table_caption": "Works waiting for review",
+    "column_record": "Shared description",
+    "column_works": "Works",
+    "column_actions": "Review",
+    "threshold_note": "Every work is under Rs 15 lakh and the group totals Rs 25 lakh or more (MPLADS Guidelines 2023, clause 4.4.2).",
+    "work_count": "{count} works",
+    "same": "These are the same",
+    "different": "These are different",
+    "reviewer_note": "Review decisions use the self-reported initials kept on this device.",
+    "saved": "Review decision saved.",
+    "empty_title": "No works are waiting for review.",
+    "empty_body": "New candidates appear when a data snapshot contains works sharing an identical description.",
+    "error_title": "Could not load works for review.",
+    "error_body": "The inspection list is still available. Retry the review queue.",
+    "save_error": "Could not save this review decision. Try again.",
+    "loading_screen_reader": "Loading works for review.",
+    "previous_page": "Previous page",
+    "next_page": "Next page",
+    "page_summary": "Page {page} of {total_pages}",
+    "context_title": "Works with the same description",
+    "context_count": "Shares this description with {count} other work(s).",
+    "context_threshold": "This group is due third-party inspection (MPLADS Guidelines 2023, clause 4.4.2)."
   },
   "filters": {
     "state": "State",
