@@ -652,3 +652,11 @@ class TestDuplicateCandidatesArtifact:
             bs._stage_compact_json({"amount": float("inf")}, tmp_path / "x.json")
 
         assert list(tmp_path.iterdir()) == []
+
+    def test_the_indented_writer_also_refuses_numbers_that_are_not_json(self, tmp_path):
+        """The same refusal as the compact writer above, for _stage_json's own three targets
+        (graph.json, alias_candidates.json, manifest.json)."""
+        with pytest.raises(ValueError):
+            bs._stage_json({"amount": float("nan")}, tmp_path / "x.json")
+
+        assert list(tmp_path.iterdir()) == []

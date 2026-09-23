@@ -372,7 +372,10 @@ def _stage_bytes(payload: bytes, final_path: Path) -> Path:
 
 
 def _stage_json(obj: Any, final_path: Path) -> Path:
-    payload = json.dumps(obj, indent=2, ensure_ascii=False).encode("utf-8")
+    """NaN and Infinity are refused: they are not JSON, and a strict parser would reject the
+    whole file. The same reasoning as _stage_compact_json's docstring, applied to this writer's
+    three targets (graph.json, alias_candidates.json, manifest.json) too."""
+    payload = json.dumps(obj, indent=2, ensure_ascii=False, allow_nan=False).encode("utf-8")
     return _stage_bytes(payload, final_path)
 
 
