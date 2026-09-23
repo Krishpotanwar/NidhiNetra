@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import random
 import unicodedata
@@ -554,6 +555,17 @@ class TestArtifact:
         assert json.dumps(build_duplicate_candidates(records)) == json.dumps(
             build_duplicate_candidates(shuffled)
         )
+
+    def test_the_whole_artifact_has_not_moved(self) -> None:
+        # The two golden values in TestCanonicalDescription pin fingerprint() and _candidate_id()
+        # in isolation, not their call sites. This pins the artifact those call sites actually
+        # produce: swapping _batch's id arguments, swapping _pair's fingerprints, renaming the
+        # "group" id prefix, or hashing text_fingerprint on canonical + " " all change this hash.
+        # Changing any of them is a new version, not an edit.
+        artifact = build_duplicate_candidates(self._mixed_records())
+        text = json.dumps(artifact, sort_keys=True, separators=(",", ":"))
+
+        assert hashlib.sha256(text.encode()).hexdigest()[:16] == "81fc8c67c89e5074"
 
     def test_every_reference_resolves_and_no_group_is_orphaned(self) -> None:
         artifact = build_duplicate_candidates(self._mixed_records())
