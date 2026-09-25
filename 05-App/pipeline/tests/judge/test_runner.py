@@ -215,9 +215,9 @@ class TestRun:
         _run(tmp_path, _items(2), provider, token="hf_abc")
 
         ((url, headers, payload),) = provider.requests
-        assert url == "https://router.huggingface.co/deepinfra/v1/chat/completions"
+        assert url == "https://router.huggingface.co/v1/chat/completions"
         assert headers == {"Authorization": "Bearer hf_abc"}
-        assert payload["model"] == "openai/gpt-oss-120b"
+        assert payload["model"] == "openai/gpt-oss-120b:deepinfra"
         assert payload["temperature"] == 0
         assert payload["max_tokens"] == runner.MAX_OUTPUT_TOKENS
         assert payload["response_format"]["json_schema"]["strict"] is True

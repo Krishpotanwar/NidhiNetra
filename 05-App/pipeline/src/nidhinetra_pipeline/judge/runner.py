@@ -1,8 +1,11 @@
 """Runs the pair judge over the pairs that have no answer yet.
 
 A model and its provider are pinned together: only the pairs listed in PRICES_USD_PER_MILLION can
-run, so a routing policy such as `:fastest` or `:cheapest` cannot reach a production run. The
-network sits behind `transport`, so everything here is tested without one.
+run, so a routing policy such as `:fastest` or `:cheapest` cannot reach a production run. Every
+request goes to Hugging Face's unified router endpoint (ROUTER_URL, no provider in the path); the
+pinned provider is instead appended to the model id as `model:provider`, an explicit pin rather
+than a routing policy. The network sits behind `transport`, so everything here is tested without
+one.
 """
 
 from __future__ import annotations
@@ -29,8 +32,8 @@ from .verify import check_answer
 
 logger = logging.getLogger("nidhinetra_pipeline.judge.runner")
 
-JUDGE_CODE_VERSION = "pair_judge_code_v1"
-ROUTER_URL = "https://router.huggingface.co/{provider}/v1/chat/completions"
+JUDGE_CODE_VERSION = "pair_judge_code_v2"
+ROUTER_URL = "https://router.huggingface.co/v1/chat/completions"
 DEFAULT_MODEL = "openai/gpt-oss-120b"
 DEFAULT_PROVIDER = "deepinfra"
 # USD per million tokens, (input, output). A model and provider with no price here cannot run:
@@ -188,7 +191,7 @@ def run_judge(
     price_in, price_out = PRICES_USD_PER_MILLION[(model_id, provider_id)]
     todo = pending(items, store_path, model_id, provider_id, limit)
     batches = [todo[n : n + batch_size] for n in range(0, len(todo), batch_size)]
-    url = ROUTER_URL.format(provider=provider_id)
+    url = ROUTER_URL
     headers = {"Authorization": f"Bearer {token}"}
     stamp["run_timestamp"] = now().isoformat(timespec="seconds")
     frame = store.read_judgments(store_path)
@@ -197,7 +200,7 @@ def run_judge(
 
     def ask(batch: list[Item]) -> tuple[list[dict[str, Any] | None], int, int]:
         payload = {
-            "model": model_id,
+            "model": f"{model_id}:{provider_id}",
             "messages": render_messages(batch),
             "temperature": 0,
             "max_tokens": MAX_OUTPUT_TOKENS,
