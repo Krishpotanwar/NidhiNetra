@@ -2665,3 +2665,79 @@ Add the trial's report and what Steps 3 to 5 showed to the end of this plan unde
 - A way to ask again for pairs that were rejected, or to force a new answer under the same version. A new prompt or schema version does it.
 - Judging the district audit's pairs, or identical batches.
 - Training or fine-tuning anything. The roadmap's only training step is Phase 4.
+
+## Trial run, 2026-09-26
+
+Ran from the Linux VM (task T12A), not the Mac, per that task's brief.
+
+**Bug found and fixed first.** The pinned `ROUTER_URL` put the provider in the path
+(`router.huggingface.co/{provider}/v1/chat/completions`), which Hugging Face's router refuses for
+chat completions (`400 Not allowed to POST /v1/chat/completions for provider deepinfra`). Hugging
+Face's documented unified endpoint is `router.huggingface.co/v1/chat/completions` with the provider
+pinned by a `model:provider` suffix instead (confirmed against the real endpoint: 200, with
+`usage.estimated_cost` in the reply). Fixed in `runner.py` (RED/GREEN in `test_runner.py`,
+`JUDGE_CODE_VERSION` bumped to `pair_judge_code_v2`); full evidence is in
+`.superpowers/sdd/2026-09-26-finish-and-win/task-12a-report.md`.
+
+**Step 1, dry run:**
+```
+39123 near-copy pairs; 30 to judge with openai/gpt-oss-120b on deepinfra.
+Dry run: nothing was sent. Add --run and --max-usd DOLLARS to send them.
+```
+
+**Step 2, the trial (`--run --limit 30 --max-usd 0.25`):**
+```json
+{
+  "requests": 2,
+  "pairs": 30,
+  "judged": 30,
+  "abstained": 1,
+  "rejected": {},
+  "no_answer": 0,
+  "prompt_tokens": 4458,
+  "completion_tokens": 7169,
+  "cost_usd": 0.0014,
+  "stopped": null
+}
+```
+Tokens per request: 2229 prompt, 3584.5 completion (average of the 2 requests).
+
+**Step 3, the decision table:** none of the failure rows applied to this run itself (no
+401/403/402, `no_answer` is 0, `rejected` is empty). The 400 that fired before the fix, how it was
+diagnosed (not a payload parameter; the URL shape), and how it was resolved is recorded above and
+in the task report.
+
+**Step 4, the answers:** by status, 30 judged, 0 rejected. By relation: `same_asset_different_place`
+26, `same_asset_same_place` 2, `same_place_different_asset` 1, `not_enough_detail` 1 (the
+abstention: both sides of that pair are just `"SR NO. 13/18 OF ATTACHED PDF"`, correctly too vague
+to name a place). All 3 "same place" answers were checked against their source texts:
+- SAGAR and SHRAWASTI: both sides independently name the same place in full (`Gram Panchayat
+  Sironja`; `near Shankar Ji temple`) - solid.
+- GURDASPUR (`same_place_different_asset`): flagged. Side A is `"...Shed at Shamshan Ghat in
+  Village Charak..."`, side B is `"Shed and Bathroom construction at Shamshan Ghat..."` with no
+  village named. The model matched on the shared generic term "Shamshan Ghat" alone; side A's more
+  specific "Village Charak" is never confirmed on side B. Not a fabrication (both quotes are real,
+  verified substrings), but the "same place" call is more confident than side B's text alone
+  establishes - worth a look in Stage D's reference set.
+
+No answer invented a place absent from its text (the evidence check that runs on every reply,
+`verify.check_answer`, would have rejected that, and 0 rows were rejected here).
+
+**Full-run projection** (39,093 pairs still pending after this trial; `BATCH_SIZE = 15` ->
+ceil(39093 / 15) = 2,607 requests):
+- Cost: ~$1.82 at the trial's per-request token average and the pinned prices ($0.04 in / $0.17
+  out per million) - inside the spec's own $1-2 estimate.
+- Wall-clock: a directly measured, real 15-pair batch (production size) took 70.04s. Serial
+  (`--workers 1`, the CLI default): 2,607 x 70.04s ~ 50.7 hours. At `--workers 8`: 326 windows x
+  70.04s ~ 6.3 hours.
+- Recommendation: `--workers 8` - a large, safe win over serial without guessing at an unknown
+  per-account concurrency ceiling; `_post`'s retry/backoff (4 attempts) absorbs occasional 429s at
+  this level without raising `JudgeError`. Go higher only after this level runs clean.
+
+Recommended full-run command (controller's call; not run by this task):
+```
+HF_TOKEN="$(cat <token file>)" uv run --package nidhinetra-pipeline python -m nidhinetra_pipeline.cli judge --run --max-usd 3 --workers 8
+```
+
+**Step 5 (Hugging Face billing page):** human-only, not done here. Confirm the billed requests show
+DeepInfra as the serving provider.
