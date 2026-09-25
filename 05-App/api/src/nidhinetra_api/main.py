@@ -32,6 +32,7 @@ from .routers import (
     entity_aliases,
     graph,
     inspections,
+    pendency,
     provenance,
     refresh,
     stats,
@@ -177,6 +178,7 @@ app.include_router(inspections.router)
 app.include_router(entity_aliases.router)
 app.include_router(duplicates.router)
 app.include_router(provenance.router)
+app.include_router(pendency.router)
 
 
 def _envelope_error(status_code: int, message: str) -> JSONResponse:

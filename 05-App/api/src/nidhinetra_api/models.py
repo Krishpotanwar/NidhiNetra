@@ -34,6 +34,12 @@ class Envelope(BaseModel):
 
 WorksScope = Literal["all", "under_implementation"]
 
+# Kept in sync with policy.PENDENCY_KINDS by hand (like WorksScope above,
+# which is its own Literal rather than built from policy.UNDER_IMPLEMENTATION):
+# a Literal's values must be static, and pendency_clause() is what actually
+# enforces the set at runtime (ValueError on anything else, R6).
+PendencyKind = Literal["late_sanction", "open_past_one_year", "no_payment_90_days"]
+
 
 class WorksQuery(BaseModel):
     """Query params for GET /api/works. Filters narrow the result set;
@@ -53,6 +59,9 @@ class WorksQuery(BaseModel):
     vendor_id: str | None = None
     q: str | None = None
     scope: WorksScope = "all"
+    pendency: PendencyKind | None = None
+    district_authority: str | None = None
+    constituency: str | None = None
     page: int = Field(default=1, ge=1)
     page_size: int = Field(default=50, ge=1, le=200)
 
@@ -65,6 +74,9 @@ def works_query(
     vendor_id: Annotated[str | None, Query(max_length=64)] = None,
     q: Annotated[str | None, Query(max_length=120)] = None,
     scope: Annotated[WorksScope, Query()] = "all",
+    pendency: Annotated[PendencyKind | None, Query()] = None,
+    district_authority: Annotated[str | None, Query(max_length=200)] = None,
+    constituency: Annotated[str | None, Query(max_length=120)] = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
 ) -> WorksQuery:
@@ -86,6 +98,9 @@ def works_query(
         vendor_id=vendor_id or None,
         q=search,
         scope=scope,
+        pendency=pendency,
+        district_authority=district_authority or None,
+        constituency=constituency or None,
         page=page,
         page_size=page_size,
     )
@@ -174,6 +189,7 @@ __all__ = [
     "DuplicateStatus",
     "Envelope",
     "GraphQuery",
+    "PendencyKind",
     "WorksQuery",
     "WorksScope",
     "alias_query",

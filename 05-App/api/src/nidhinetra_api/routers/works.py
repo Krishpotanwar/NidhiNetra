@@ -30,6 +30,7 @@ from __future__ import annotations
 import contextlib
 from collections import Counter
 from collections.abc import Sequence
+from datetime import date
 from typing import Annotated, Any
 
 import duckdb
@@ -38,9 +39,15 @@ from nidhinetra_pipeline.outcomes import duplicate_store
 from nidhinetra_pipeline.risk import rank
 from nidhinetra_pipeline.risk.peer_groups import financial_year_of
 
-from .. import db
+from .. import db, snapshot
 from ..models import Envelope, WorksQuery, works_query
-from ..policy import UNDER_IMPLEMENTATION, quota_for
+from ..policy import UNDER_IMPLEMENTATION, pendency_clause, quota_for
+
+# R3/T4: shown when a pendency filter is requested but the snapshot has no
+# as_of yet (D2: as_of comes only from the manifest, never a guessed date).
+_AS_OF_MISSING_DETAIL = (
+    "The pendency figures need a known as-of date, and the current snapshot does not have one yet."
+)
 
 router = APIRouter(prefix="/api/works", tags=["works"])
 
@@ -121,6 +128,19 @@ def _where(query: WorksQuery) -> tuple[str, list[Any]]:
     if query.vendor_id:
         clauses.append("works.vendor_id = ?")
         params.append(query.vendor_id)
+    if query.district_authority:
+        clauses.append("works.implementing_district_authority = ?")
+        params.append(query.district_authority)
+    if query.constituency:
+        clauses.append("works.constituency = ?")
+        params.append(query.constituency)
+    if query.pendency:
+        as_of = snapshot.data_as_of_date()
+        if as_of is None:
+            raise HTTPException(status_code=503, detail=_AS_OF_MISSING_DETAIL)
+        clause, clause_params = pendency_clause(query.pendency, as_of)
+        clauses.append(f"({clause})")
+        params.extend(clause_params)
     if query.q:
         # strpos rather than LIKE: an officer who types "%" or "_" means those
         # characters, not "match anything".
@@ -151,6 +171,32 @@ def _ordered_population(con: duckdb.DuckDBPyConnection, query: WorksQuery) -> li
     return rows
 
 
+def _decorate(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Adds days_to_sanction and days_since_sanction to each row, in Python
+    from the ISO date strings already selected -- no SQL change (T4). Both
+    are None wherever a date is missing; days_since_sanction is also None
+    whenever the snapshot has no as_of yet (D2), which is a softer failure
+    than the pendency filter and endpoint's 503: a work's own detail is
+    still worth showing even without that one derived figure.
+    """
+    as_of = snapshot.data_as_of_date()
+    as_of_date = date.fromisoformat(as_of) if as_of else None
+    for row in rows:
+        recommendation = row.get("recommendation_date")
+        sanction = row.get("sanction_date")
+        row["days_to_sanction"] = (
+            (date.fromisoformat(sanction) - date.fromisoformat(recommendation)).days
+            if recommendation and sanction
+            else None
+        )
+        row["days_since_sanction"] = (
+            (as_of_date - date.fromisoformat(sanction)).days
+            if sanction and as_of_date is not None
+            else None
+        )
+    return rows
+
+
 def _fetch_merged_by_ids(
     con: duckdb.DuckDBPyConnection, work_ids: list[str]
 ) -> list[dict[str, Any]]:
@@ -162,7 +208,7 @@ def _fetch_merged_by_ids(
         "ORDER BY scored.inspection_rank ASC",
         list(work_ids),
     )
-    return db.decode_scored_json(rows)
+    return _decorate(db.decode_scored_json(rows))
 
 
 @router.get("")
@@ -219,6 +265,23 @@ def work_facets() -> Envelope:
             "GROUP BY work_category ORDER BY work_category",
             params,
         )
+        # T4: District Authority and constituency scope, for the "View as"
+        # role lenses (D6). Non-null only for the authority -- a null one
+        # cannot be anyone's filter target (matches the DA-count/quota-sum
+        # rule in routers/pendency.py, which excludes the same rows).
+        district_authorities = db.rows_as_dicts(
+            con,
+            "SELECT implementing_district_authority AS value, COUNT(*) AS count FROM works "
+            f"WHERE {population} AND implementing_district_authority IS NOT NULL "
+            "GROUP BY implementing_district_authority ORDER BY implementing_district_authority",
+            params,
+        )
+        constituencies = db.rows_as_dicts(
+            con,
+            "SELECT constituency AS value, COUNT(*) AS count, mp_name FROM works "
+            f"WHERE {population} GROUP BY constituency, mp_name ORDER BY constituency",
+            params,
+        )
         dated = db.rows_as_dicts(
             con, f"SELECT sanction_date, last_updated FROM works WHERE {population}", params
         )
@@ -239,6 +302,8 @@ def work_facets() -> Envelope:
             "states": states,
             "years": [{"value": y, "count": n} for y, n in sorted(years.items(), reverse=True)],
             "categories": categories,
+            "district_authorities": district_authorities,
+            "constituencies": constituencies,
             "flags": [{"value": f, "count": flag_counts.get(f, 0)} for f in rank.FLAG_WEIGHTS],
         },
     )
@@ -253,7 +318,7 @@ def get_work(work_id: Annotated[str, Path(min_length=1, max_length=64)]) -> Enve
             status_code=404,
             detail=f"No work found with id '{work_id}' in the current snapshot.",
         )
-    record = db.decode_scored_json(rows)[0]
+    record = _decorate(db.decode_scored_json(rows))[0]
     record["duplicate_context"] = duplicate_store.duplicate_context(work_id)
     return Envelope(success=True, data=record)
 

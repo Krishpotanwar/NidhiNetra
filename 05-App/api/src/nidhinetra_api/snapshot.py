@@ -82,6 +82,20 @@ def read_manifest(snapshot_dir: Path | None = None) -> dict[str, Any] | None:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def data_as_of_date(snapshot_dir: Path | None = None) -> str | None:
+    """The "YYYY-MM-DD" date part of the manifest's data_as_of (D2: never
+    today, never max(last_updated)), or None if there is no manifest yet.
+    Callers that need this to answer a request (the pendency filter and
+    /api/pendency) turn None into a 503 themselves rather than guessing a
+    date; _decorate() in routers/works.py instead degrades a single field
+    to None, since a work's own detail is still worth showing.
+    """
+    manifest = read_manifest(snapshot_dir)
+    if manifest is None:
+        return None
+    return manifest["data_as_of"][:10]
+
+
 def bootstrap_if_needed(snapshot_dir: Path | None = None) -> dict[str, Any]:
     """Called once from main.py's startup hook. Builds the snapshot only if
     manifest.json doesn't exist yet, so `make api` works standalone without
@@ -127,6 +141,7 @@ __all__ = [
     "RefreshInProgressError",
     "SNAPSHOT_DIR",
     "bootstrap_if_needed",
+    "data_as_of_date",
     "read_manifest",
     "rebuild",
     "refresh_guard",
