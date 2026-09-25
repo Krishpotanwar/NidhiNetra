@@ -21,10 +21,13 @@ Checks, in order:
      failure mode this check exists to catch)
  10. Every alias candidate matches entity_alias_candidate.schema.json
  11. Cross-file: every alias evidence_work_id is a real works.fixture.json work_id
+ 12. Every copy string in strings.json passes strings.json's own lint block
+     (banned words, banned characters) -- see lint_strings()
 """
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -48,6 +51,78 @@ def validate_schema(records, schema, label: str, errors: list[str]) -> None:
             wid = record.get("work_id", f"index {i}")
             location = ".".join(str(part) for part in err.path) or "<root>"
             errors.append(f"[{label}] {wid}: {err.message} (at {location})")
+
+
+LINT_SKIP_TOP_LEVEL = {"lint", "_meta", "_measure", "number_format"}
+LINT_SKIP_KEYS = {"never", "authority"}
+
+
+def _iter_lint_leaves(node, path: str):
+    """Yield (dotted.path, value) for every string leaf under `node`.
+
+    Applies strings.json's own skip rules: any key starting with `_`; the
+    top-level lint/_meta/_measure/number_format blocks; and any key named
+    never/authority (authoring rules, not copy) at any depth.
+    """
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key.startswith("_") or key in LINT_SKIP_KEYS:
+                continue
+            if not path and key in LINT_SKIP_TOP_LEVEL:
+                continue
+            yield from _iter_lint_leaves(value, f"{path}.{key}" if path else key)
+    elif isinstance(node, list):
+        for i, value in enumerate(node):
+            yield from _iter_lint_leaves(value, f"{path}[{i}]")
+    elif isinstance(node, str):
+        yield path, node
+
+
+def lint_strings(
+    strings: dict,
+    banned_terms: list[str],
+    banned_chars: dict,
+    exemptions: set[str],
+) -> list[str]:
+    """Lint every copy string in `strings` against strings.json's own lint block.
+
+    This is what makes lint._note's claim -- "validate.py reads this block
+    so the rules and the strings have one source of truth" -- true. Returns
+    one message per hit: "<dotted.key.path>: <term or char name> in
+    "<first 60 chars>"". warn_chars is out of scope; only banned_chars and
+    banned_terms (banned_literal + banned_derived) are enforced here.
+    """
+    term_patterns = [
+        (term, re.compile(rf"(?<![a-z]){re.escape(term.lower())}(?![a-z])"))
+        for term in banned_terms
+    ]
+    char_names = {
+        value: name
+        for name, value in banned_chars.items()
+        if not name.startswith("_") and isinstance(value, str)
+    }
+    emoji_ranges = []
+    for entry in banned_chars.get("emoji_ranges", []):
+        lo_hex, _, hi_hex = entry.partition("-")
+        lo = int(lo_hex, 16)
+        emoji_ranges.append((lo, int(hi_hex, 16) if hi_hex else lo))
+
+    hits: list[str] = []
+    for path, text in _iter_lint_leaves(strings, ""):
+        if text in exemptions:
+            continue
+        snippet = text[:60]
+        lowered = text.lower()
+        for term, pattern in term_patterns:
+            if pattern.search(lowered):
+                hits.append(f'{path}: {term} in "{snippet}"')
+        for ch in text:
+            if ch in char_names:
+                hits.append(f'{path}: {char_names[ch]} in "{snippet}"')
+            elif any(lo <= ord(ch) <= hi for lo, hi in emoji_ranges):
+                hits.append(f'{path}: emoji U+{ord(ch):04X} in "{snippet}"')
+
+    return hits
 
 
 def validate_all(
@@ -285,6 +360,44 @@ def run_self_test() -> int:
         f"  PASS: caught {len(candidate_errors)} candidate and {len(review_errors)} review error(s)"
     )
 
+    print("\nSelf-test 7: lint_strings enforces strings.json's own banned-word/char rules ...")
+    strings_data = load(HERE / "strings.json")
+    lint_block = strings_data["lint"]
+    banned_terms = lint_block["banned_literal"] + lint_block["banned_derived"]
+    banned_chars = lint_block["banned_chars"]
+    exemptions = set(lint_block["negation_exemptions"])
+
+    cases = [
+        ({"x": "Fraud found"}, True, "a banned word ('fraud')"),
+        ({"x": "text — dash"}, True, "a banned em dash"),
+        ({"x": "\U0001f642"}, True, "a banned emoji"),
+        (
+            {"never": "fraud is not shown to officers"},
+            False,
+            "a 'never' key (authoring rule, not copy)",
+        ),
+        (
+            {"x": "Flags are recommendations to inspect, not findings."},
+            False,
+            "an exact negation_exemptions entry",
+        ),
+        ({"x": "safely"}, False, "'safely', which is not 'safe' on a letter boundary"),
+    ]
+    for fixture, want_hit, description in cases:
+        hits = lint_strings(fixture, banned_terms, banned_chars, exemptions)
+        if bool(hits) != want_hit:
+            verdict = "missed" if want_hit else "wrongly flagged"
+            print(f"  FAIL: {verdict} {description}: {hits}")
+            return 1
+    print(f"  PASS: all {len(cases)} lint_strings cases behave as specified")
+
+    print("\nSelf-test 8: the real strings.json lints clean under its own rules ...")
+    real_hits = lint_strings(strings_data, banned_terms, banned_chars, exemptions)
+    if real_hits:
+        print(f"  FAIL: {len(real_hits)} lint hit(s) in strings.json: {real_hits[:5]}")
+        return 1
+    print("  PASS: strings.json has zero lint hits")
+
     print("\nAll self-tests passed. The validator has real teeth.")
     return 0
 
@@ -306,6 +419,16 @@ def main() -> int:
         return run_self_test()
 
     errors = validate_all(args.works, args.scored, args.graph, args.aliases)
+
+    strings_data = load(HERE / "strings.json")
+    lint_block = strings_data["lint"]
+    errors += lint_strings(
+        strings_data,
+        lint_block["banned_literal"] + lint_block["banned_derived"],
+        lint_block["banned_chars"],
+        set(lint_block["negation_exemptions"]),
+    )
+
     if errors:
         print(f"FAILED: {len(errors)} error(s)\n")
         for e in errors:
@@ -319,7 +442,7 @@ def main() -> int:
     print(
         f"OK: {works_n} works, {scored_n} scored records, "
         f"{len(graph_data['nodes'])} graph nodes, {len(graph_data['edges'])} graph edges, "
-        f"{aliases_n} alias candidates. All checks passed."
+        f"{aliases_n} alias candidates. strings.json lint clean. All checks passed."
     )
     return 0
 
