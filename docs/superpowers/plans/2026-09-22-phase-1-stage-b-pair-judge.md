@@ -2741,3 +2741,54 @@ HF_TOKEN="$(cat <token file>)" uv run --package nidhinetra-pipeline python -m ni
 
 **Step 5 (Hugging Face billing page):** human-only, not done here. Confirm the billed requests show
 DeepInfra as the serving provider.
+
+## Full run, 2026-09-26
+
+Launched by the controller as a background job once the trial above confirmed the runner against
+a real token. Ran as a retry loop (8 attempts, 180 seconds apart, `--workers 6`; the first launch,
+at `--workers 8`, stopped after 401 requests on sustained HTTP 503s), each attempt capped at
+`max(0.05, 3.0 - rows_already_answered / 15 * 0.0008)` so cumulative spend across attempts stays
+under this plan's $3 cap.
+
+Final state, `05-App/data/judgments/text_pair_judgments.parquet`, 39,093 rows. The last attempt's
+own report (unchanged from the attempt before it):
+
+```json
+{
+  "requests": 2,
+  "pairs": 30,
+  "judged": 0,
+  "abstained": 0,
+  "rejected": {},
+  "no_answer": 30,
+  "prompt_tokens": 6883,
+  "completion_tokens": 12000,
+  "cost_usd": 0.0023,
+  "stopped": null
+}
+```
+
+These 30 pairs' replies are cut off by `MAX_OUTPUT_TOKENS = 6000` every attempt -- a
+`JSONDecodeError` the runner logs as `unreadable reply` and counts as `no_answer` rather than
+guessing. Retrying does not fix a token-cap failure, so these 30 stay unanswered under this
+prompt/schema version; the spec's own "Not in this plan" list for the judge already reserves "a
+way to ask again... under the same version" as future work.
+
+By status: judged 36,625; rejected 2,468 (6.3% of 39,093 -- quote verification: an answer quoted
+words not literally in the text, or two "same place" quotes that do not canonically match).
+By relation (judged only): same_asset_different_place 31,887; not_enough_detail 2,278 (5.8% of
+39,093, abstained); same_asset_same_place 1,277; unrelated 790; same_place_different_asset 393.
+
+Total spend across every attempt: about $1.50, under this plan's $3 cap.
+
+A code bug surfaced late in this run: `cli judge`'s final `print(json.dumps(...))` crashed with
+`TypeError: keys must be str, int, float, bool or None, not tuple` while printing attempt 4's
+report. Root cause: `dataclasses.asdict()` rebuilds a `Counter` field by calling
+`Counter(generator_of_(key, value)_pairs)`, which `Counter`'s own constructor reads as elements to
+tally, not a mapping to copy -- so every `(rejection_code, count)` pair became a tuple *key* with
+count 1. The answers themselves were already saved (`flush()` runs in a `finally` block before the
+crashing print; only the report crashed). Fixed under T12B.2, with a regression test.
+
+This run is what Stage D-lite (`docs/superpowers/plans/2026-09-26-stage-d-lite.md`) reads: only the
+`same_asset_same_place` rows above -- quote-verified by construction, since a rejected row never
+reaches `judged` -- pass through its discriminating-fact filter and `work_candidate_derivation_v1`.
