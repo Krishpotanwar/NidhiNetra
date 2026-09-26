@@ -58,8 +58,15 @@ async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
         manifest["generated_at"],
     )
     entity_aliases.sync_alias_candidates_from_snapshot()
-    duplicates.sync_duplicate_candidates_from_snapshot()
-    duplicates.sync_judged_candidates_from_judgments()
+    # T12B.5 perf fix (controller ruling R28): duplicate_candidates.json (~23 MB) is parsed once
+    # here and handed to both syncs below, instead of each parsing it independently -- the second
+    # independent parse measured ~100 MB of avoidable peak RSS on Render's 512 MB free tier. `del`
+    # drops it before `yield`: this generator stays suspended there for the server's entire
+    # lifetime, so anything still referenced at this point would otherwise never be freed.
+    candidates_artifact = duplicates.load_duplicate_candidates_artifact()
+    duplicates.sync_duplicate_candidates_from_snapshot(artifact=candidates_artifact)
+    duplicates.sync_judged_candidates_from_judgments(artifact=candidates_artifact)
+    del candidates_artifact
     yield
 
 

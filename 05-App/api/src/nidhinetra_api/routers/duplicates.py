@@ -12,6 +12,8 @@ import logging
 from pathlib import Path
 from typing import Annotated, Any
 
+import duckdb
+import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException
 from nidhinetra_pipeline.duplicates.judged_candidates import build_judged_candidates
 from nidhinetra_pipeline.duplicates.judged_candidates import judge_rates as compute_judge_rates
@@ -54,23 +56,42 @@ _EVIDENCE_SELECT = """
 """
 
 
-def sync_duplicate_candidates_from_snapshot(snapshot_dir: Path | None = None) -> int:
+def load_duplicate_candidates_artifact(snapshot_dir: Path | None = None) -> dict[str, Any] | None:
+    """Parses duplicate_candidates.json once, or returns None if it does not exist yet (an older
+    snapshot, or a fresh clone before the pipeline has run).
+
+    T12B.5 perf fix (controller ruling R28): the file is ~23 MB and unmarshals to a large nested
+    object graph. Both sync functions below accept an already-parsed artifact through their
+    `artifact` keyword so a caller that needs both -- main.py's lifespan -- parses it exactly once
+    per startup; an independent second parse measured ~100 MB of avoidable peak RSS on Render's
+    512 MB free tier.
+    """
+    path = (snapshot_dir or db.SNAPSHOT_DIR) / "duplicate_candidates.json"
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+
+def sync_duplicate_candidates_from_snapshot(
+    snapshot_dir: Path | None = None,
+    *,
+    artifact: dict[str, Any] | None = None,
+) -> int:
     """Upsert the artifact's identical batches into persistent review state.
 
     Reads the whole file once, at sync time, never per request; on a memory-constrained host
     this is the one place duplicate_candidates.json is fully parsed (see the Stage C plan's
     Decision 5). Older snapshots predate Stage A and have no artifact; they remain bootable with
-    an empty queue, and the next successful rebuild syncs it.
+    an empty queue, and the next successful rebuild syncs it. Pass an already-parsed `artifact`
+    (main.py's lifespan does, via load_duplicate_candidates_artifact) to skip loading it again.
     """
     duplicate_store.init_db()
-    path = (snapshot_dir or db.SNAPSHOT_DIR) / "duplicate_candidates.json"
-    if not path.exists():
+    if artifact is None:
+        artifact = load_duplicate_candidates_artifact(snapshot_dir)
+    if artifact is None:
         logger.warning(
-            "Snapshot has no %s; duplicate review queue is empty until a rebuild.",
-            path.name,
+            "Snapshot has no duplicate_candidates.json; duplicate review queue is empty until a "
+            "rebuild."
         )
         return 0
-    artifact = json.loads(path.read_text(encoding="utf-8"))
     groups = artifact["groups"]
     finder_version = artifact["meta"]["finder_version"]
     candidates = [
@@ -90,9 +111,53 @@ def sync_duplicate_candidates_from_snapshot(snapshot_dir: Path | None = None) ->
     return duplicate_store.upsert_candidates(candidates)
 
 
+# The only judgments columns build_judged_candidates reads (see that function): the place-quote
+# filter needs status/relation/place_a, the fingerprint join needs scope/fingerprint_a/
+# fingerprint_b, and place_b is carried through as quote_b. judge_store.read_judgments's full
+# 16-column schema (model_id, run_timestamp, ...) is provenance for the judge run itself, not
+# needed to derive a candidate, so the sync reads only these seven (T12B.5 perf fix).
+_CANDIDATE_JUDGMENT_COLUMNS = (
+    "scope",
+    "fingerprint_a",
+    "fingerprint_b",
+    "status",
+    "relation",
+    "place_a",
+    "place_b",
+)
+
+
+def _read_judgments_for_candidates(path: Path) -> pd.DataFrame:
+    """The judgments, pre-filtered to build_judged_candidates's own first line (its
+    same_asset_same_place & judged mask) and pre-narrowed to _CANDIDATE_JUDGMENT_COLUMNS.
+
+    Reads via DuckDB rather than judge_store.read_judgments's pandas+pyarrow reader (T12B.5 perf
+    fix, controller ruling R28). Measured cause: pandas' parquet engine (pyarrow) pays a large
+    one-time initialization cost the first time a process calls pd.read_parquet at all --
+    ~100+ MB, independent of how few columns/rows are actually selected (confirmed empirically: a
+    second, identical, already-filtered read cost only ~18 MB more). DuckDB is already a warm,
+    mandatory dependency of this API (see db.py's module docstring: Parquet is the committed
+    artifact, DuckDB is a disposable in-memory engine rebuilt from it) with its own, much lighter
+    native parquet reader, so this reuses that engine instead of paying pyarrow's tax for one
+    ~1.6 MB file. Builds a plain pandas DataFrame from the query results (pandas' own DataFrame
+    constructor, not read_parquet, so this never touches pyarrow) with the exact shape
+    build_judged_candidates expects.
+    """
+    columns_sql = ", ".join(_CANDIDATE_JUDGMENT_COLUMNS)
+    sql = (
+        f"SELECT {columns_sql} FROM read_parquet('{path.as_posix()}') "  # noqa: S608
+        "WHERE status = 'judged' AND relation = 'same_asset_same_place'"
+    )
+    with contextlib.closing(duckdb.connect(":memory:")) as connection:
+        rows = db.rows_as_dicts(connection, sql)
+    return pd.DataFrame(rows, columns=_CANDIDATE_JUDGMENT_COLUMNS)
+
+
 def sync_judged_candidates_from_judgments(
     snapshot_dir: Path | None = None,
     judgments_dir: Path | None = None,
+    *,
+    artifact: dict[str, Any] | None = None,
 ) -> int:
     """Stage D-lite: upsert judged, discriminating-fact same_asset_same_place pairs as work-level
     review candidates (nidhinetra_pipeline.duplicates.judged_candidates).
@@ -103,19 +168,22 @@ def sync_judged_candidates_from_judgments(
     is missing (a snapshot or a judgments run that predates this pass). Does not re-validate the
     artifact against duplicate_candidates.schema.json, matching sync_duplicate_candidates_from_
     snapshot's own precedent: the artifact was already validated when Stage A's builder wrote it.
+    Pass an already-parsed `artifact` (main.py's lifespan does) to skip loading it again. Reads
+    the judgments through _read_judgments_for_candidates rather than judge_store's full-schema
+    pandas+pyarrow reader (T12B.5 perf fix; see that function's docstring for why).
     """
     duplicate_store.init_db()
-    candidates_path = (snapshot_dir or db.SNAPSHOT_DIR) / "duplicate_candidates.json"
     judgments_path = (judgments_dir or db.JUDGMENTS_DIR) / judge_store.FILENAME
-    if not candidates_path.exists() or not judgments_path.exists():
+    if artifact is None:
+        artifact = load_duplicate_candidates_artifact(snapshot_dir)
+    if artifact is None or not judgments_path.exists():
         logger.warning(
-            "Snapshot has no %s or no %s; the judged near-copy queue is empty until both exist.",
-            candidates_path.name,
+            "Snapshot has no duplicate_candidates.json or no %s; the judged near-copy queue is "
+            "empty until both exist.",
             judgments_path.name,
         )
         return 0
-    artifact = json.loads(candidates_path.read_text(encoding="utf-8"))
-    judgments = judge_store.read_judgments(judgments_path)
+    judgments = _read_judgments_for_candidates(judgments_path)
     candidates = build_judged_candidates(artifact, judgments)
     return duplicate_store.upsert_candidates(candidates)
 
@@ -203,6 +271,7 @@ def review_duplicate(candidate_id: int, payload: DuplicateReviewRequest) -> Enve
 
 __all__ = [
     "DuplicateReviewRequest",
+    "load_duplicate_candidates_artifact",
     "router",
     "sync_duplicate_candidates_from_snapshot",
     "sync_judged_candidates_from_judgments",

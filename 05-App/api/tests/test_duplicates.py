@@ -11,6 +11,7 @@ import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 from nidhinetra_api import db
+from nidhinetra_api.main import app
 from nidhinetra_api.routers import duplicates
 from nidhinetra_pipeline.outcomes import duplicate_store
 
@@ -348,3 +349,26 @@ def test_list_duplicates_rates_are_null_without_a_judgments_file(
     assert body["meta"]["judge_abstention_rate"] is None
     assert body["meta"]["judge_quote_rejection_rate"] is None
     assert body["meta"]["judge_pairs_total"] is None
+
+
+def test_lifespan_parses_duplicate_candidates_json_once_for_both_syncs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """T12B.5 perf fix (controller ruling R28): duplicate_candidates.json is ~23 MB on the real
+    snapshot. main.py's lifespan must parse it once and hand the same artifact to both
+    sync_duplicate_candidates_from_snapshot and sync_judged_candidates_from_judgments, not once
+    each -- a second independent parse measured ~100 MB of avoidable peak RSS on Render's 512 MB
+    free tier."""
+    calls: list[Path | None] = []
+    real_loader = duplicates.load_duplicate_candidates_artifact
+
+    def counting_loader(snapshot_dir: Path | None = None) -> dict[str, object] | None:
+        calls.append(snapshot_dir)
+        return real_loader(snapshot_dir)
+
+    monkeypatch.setattr(duplicates, "load_duplicate_candidates_artifact", counting_loader)
+
+    with TestClient(app):
+        pass
+
+    assert len(calls) == 1
