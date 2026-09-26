@@ -12,7 +12,7 @@ import {
   isDemoDataset,
   triggerRefresh,
 } from "@/lib/data";
-import { EMPTY_FILTERS, listSearchParams, readListParams, type FilterState } from "@/lib/filters";
+import { EMPTY_FILTERS, isLensScoped, listSearchParams, readListParams, type FilterState } from "@/lib/filters";
 import { useApiResource } from "@/lib/use-api-resource";
 import { useRowTreatment } from "@/lib/preferences";
 import type { InspectionRow } from "@/lib/types";
@@ -120,7 +120,7 @@ export function InspectionListClient() {
           refreshState={refreshState}
           onRefresh={handleRefresh}
         />
-        <DutyLine view={filters.view} pendency={pendency.data} />
+        <DutyLine view={filters.view} pendency={isLensScoped(filters) ? pendency.data : null} />
 
         <InspectionTable
           caption={STRINGS.nav.inspection_list}

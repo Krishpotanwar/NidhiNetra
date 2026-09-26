@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ALL, EMPTY_FILTERS, filtersToQuery, listSearchParams, readListParams, withView } from "./filters";
+import { ALL, EMPTY_FILTERS, filtersToQuery, isLensScoped, listSearchParams, readListParams, withView } from "./filters";
 
 describe("vendor_id (Fund Flow's \"View linked works\" deep link)", () => {
   it("is included on the API query only when given", () => {
@@ -97,5 +97,28 @@ describe("view (T6: the 'View as' role lens)", () => {
     };
     const next = withView(filters, "district");
     expect(next).toEqual({ ...EMPTY_FILTERS, view: "district" });
+  });
+});
+
+describe("isLensScoped (T6 fix, review round 1 Critical: no duty sentence until a District Authority or constituency is chosen)", () => {
+  it("is false for the district lens before a District Authority is chosen", () => {
+    expect(isLensScoped({ ...EMPTY_FILTERS, view: "district" })).toBe(false);
+  });
+
+  it("is true for the district lens once a District Authority is chosen", () => {
+    expect(isLensScoped({ ...EMPTY_FILTERS, view: "district", districtAuthority: "Some DA" })).toBe(true);
+  });
+
+  it("is false for the mp lens before a constituency is chosen", () => {
+    expect(isLensScoped({ ...EMPTY_FILTERS, view: "mp" })).toBe(false);
+  });
+
+  it("is true for the mp lens once a constituency is chosen", () => {
+    expect(isLensScoped({ ...EMPTY_FILTERS, view: "mp", constituency: "DHARWAD" })).toBe(true);
+  });
+
+  it("is always true for the ministry and state lenses, which never name a single authority", () => {
+    expect(isLensScoped({ ...EMPTY_FILTERS, view: "ministry" })).toBe(true);
+    expect(isLensScoped({ ...EMPTY_FILTERS, view: "state" })).toBe(true);
   });
 });

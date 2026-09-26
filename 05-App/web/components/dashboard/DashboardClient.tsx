@@ -14,7 +14,7 @@ import {
   triggerRefresh,
   ApiUnreachableError,
 } from "@/lib/data";
-import { EMPTY_FILTERS, inspectionListHref, type FilterState } from "@/lib/filters";
+import { EMPTY_FILTERS, inspectionListHref, isLensScoped, type FilterState } from "@/lib/filters";
 import { useApiResource } from "@/lib/use-api-resource";
 import { useRowTreatment } from "@/lib/preferences";
 import type { InspectionRow } from "@/lib/types";
@@ -103,7 +103,7 @@ export function DashboardClient() {
           ) : (
             !page && works.status !== "error" && <QuotaCardSkeleton />
           )}
-          <DutyLine view={filters.view} pendency={pendency.data} />
+          <DutyLine view={filters.view} pendency={isLensScoped(filters) ? pendency.data : null} />
 
           <FilterPanel
             value={filters}

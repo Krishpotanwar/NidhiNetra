@@ -70,6 +70,24 @@ export function withView(f: FilterState, next: View): FilterState {
   return { ...f, view: next, states: [], districtAuthority: ALL, constituency: ALL };
 }
 
+/**
+ * T6 fix (review round 1, Critical): whether the current lens has a
+ * concrete scope to state a duty about. The district and mp duty sentences
+ * each name a single authority or constituency ("this District Authority
+ * inspects...", "this constituency's..."); before the officer has actually
+ * picked one, `districtAuthority`/`constituency` are still ALL and
+ * fetchPendency(filters) returns the *national* summary, so rendering the
+ * sentence would state a false, singular claim using national numbers.
+ * Ministry and State never name a single authority, so they are always
+ * scoped. One helper, used at both DutyLine call sites (DashboardClient,
+ * InspectionListClient), so the gate cannot drift between the two.
+ */
+export function isLensScoped(f: Pick<FilterState, "view" | "districtAuthority" | "constituency">): boolean {
+  if (f.view === "district") return f.districtAuthority !== ALL;
+  if (f.view === "mp") return f.constituency !== ALL;
+  return true;
+}
+
 export function isFilterActive(f: FilterState): boolean {
   return (
     f.states.length > 0 ||
