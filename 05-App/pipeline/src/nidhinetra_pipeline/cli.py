@@ -4,6 +4,7 @@ Usage:
     python -m nidhinetra_pipeline.cli pull-live   # optional, see below
     python -m nidhinetra_pipeline.cli build
     python -m nidhinetra_pipeline.cli duplicates [--write]
+    python -m nidhinetra_pipeline.cli early-warning [--write]
     python -m nidhinetra_pipeline.cli judge [--run --max-usd DOLLARS] [--limit N]
 
 `build` runs the acquisition ladder (`ingest/rungs.py`), normalizes whatever
@@ -31,6 +32,12 @@ identical and near-identical work descriptions Phase 1 Stage A's finder
 and then it writes only data/snapshot/duplicate_candidates.json, so no score,
 rank or flag can move (a full `build` scores again as of the day it runs).
 
+`early-warning` reads works.parquet and manifest.json's data_as_of from the served
+snapshot, and builds Task 8's early-warning artifact (`early_warning.build`): a logistic
+regression ranks recently sanctioned works by risk of staying open past one year. It
+prints the metrics (never the watch list itself) and writes nothing unless `--write` is
+given, and then only data/snapshot/early_warning.json.
+
 `judge` is Phase 1 Stage B (`judge/`). It asks the pinned model on Hugging Face Inference
 Providers what each near-copy pair in data/snapshot/duplicate_candidates.json has in common, and
 stores the evidence-checked answers in data/judgments/text_pair_judgments.parquet. It sends
@@ -51,6 +58,8 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pandas as pd
+
 from .build_snapshot import (
     SNAPSHOT_DIR,
     SnapshotDowngradeError,
@@ -63,6 +72,8 @@ from .duplicates.candidates import (
     DuplicateCandidateValidationError,
     validate_duplicate_candidates,
 )
+from .early_warning import build as build_early_warning
+from .early_warning import write as write_early_warning
 from .ingest import cache, mplads_adapter
 from .ingest.mplads_api import MpladsClient, MpladsClientError
 from .ingest.rungs import AllRungsFailedError, run_ladder
@@ -342,6 +353,30 @@ def duplicates(*, snapshot_dir: Path | None = None, write: bool = False) -> int:
     return 0
 
 
+def early_warning(*, snapshot_dir: Path | None = None, write: bool = False) -> int:
+    """Task 8: reads works.parquet and manifest.json's data_as_of from the served snapshot,
+    builds the early-warning artifact (early_warning.build) and prints its metrics (never the
+    watch list itself). Writes nothing unless `write` is set; with it, only early_warning.json
+    is written, so no score, rank or flag can move.
+    """
+    snapshot_dir = snapshot_dir or SNAPSHOT_DIR
+    try:
+        works = pd.read_parquet(snapshot_dir / "works.parquet")
+        manifest = json.loads((snapshot_dir / "manifest.json").read_text(encoding="utf-8"))
+        as_of = pd.Timestamp(manifest["data_as_of"]).date()
+        artifact = build_early_warning(works, as_of)
+        path = write_early_warning(artifact, snapshot_dir) if write else None
+    except (OSError, SnapshotWriteError, KeyError, ValueError) as exc:
+        logger.error("Early warning was not written: %s", exc)
+        return 1
+    print(json.dumps({k: v for k, v in artifact.items() if k != "watch"}, indent=2))
+    if path is None:
+        print("Dry run: nothing was written. Add --write to write early_warning.json.")
+    else:
+        print(f"Wrote {path}")
+    return 0
+
+
 def judge(
     *,
     snapshot_dir: Path | None = None,
@@ -417,6 +452,14 @@ def main(argv: list[str] | None = None) -> int:
     duplicates_parser.add_argument(
         "--write", action="store_true", help="Write data/snapshot/duplicate_candidates.json."
     )
+    early_warning_parser = subparsers.add_parser(
+        "early-warning",
+        help="Rank recently sanctioned works under implementation by risk of staying open "
+        "past one year.",
+    )
+    early_warning_parser.add_argument(
+        "--write", action="store_true", help="Write data/snapshot/early_warning.json."
+    )
     judge_parser = subparsers.add_parser(
         "judge",
         help="Ask the pinned model about the near-copy pairs in duplicate_candidates.json.",
@@ -443,6 +486,8 @@ def main(argv: list[str] | None = None) -> int:
         return pull_live()
     if args.command == "duplicates":
         return duplicates(write=args.write)
+    if args.command == "early-warning":
+        return early_warning(write=args.write)
     if args.command == "judge":
         return judge(
             model=args.model,

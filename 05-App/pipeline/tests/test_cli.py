@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -611,6 +611,94 @@ def test_duplicates_reports_a_missing_snapshot_and_writes_nothing(snapshot_dir):
 def test_the_duplicates_command_passes_its_flag_through(monkeypatch, argv, write):
     calls = []
     monkeypatch.setattr(cli, "duplicates", lambda **kwargs: calls.append(kwargs) or 0)
+
+    assert cli.main(argv) == 0
+
+    assert calls == [{"write": write}]
+
+
+def _write_early_warning_snapshot(snapshot_dir: Path) -> None:
+    """A small but valid works.parquet + manifest.json for early-warning CLI tests: enough rows,
+    spread deterministically across the cohort window with both outcomes in both halves, to fit
+    without crashing. These tests only check the write/dry-run plumbing, never the metrics.
+    """
+    rows = []
+    for i in range(40):
+        # Up to 2024-11-05, before the 2025-01-04 cutoff.
+        sd = date(2024, 7, 10) + timedelta(days=i * 3)
+        rows.append(
+            {
+                "work_id": f"EW-TRAIN-{i:04d}",
+                "state": "Bihar" if i % 2 == 0 else "Odisha",
+                "work_category": "Road" if i % 3 else "School",
+                "implementing_agency": f"Agency {i % 4}",
+                "sanctioned_amount_inr": 500000.0 + i * 1000,
+                "expenditure_amount_inr": 100000.0,
+                "sanction_date": sd.isoformat(),
+                "completion_status": "Completed" if i % 2 else "In Progress",
+            }
+        )
+    for i in range(40):
+        # Up to 2025-03-29, before the 2025-04-04 end.
+        sd = date(2025, 1, 10) + timedelta(days=i * 2)
+        rows.append(
+            {
+                "work_id": f"EW-TEST-{i:04d}",
+                "state": "Bihar" if i % 2 == 0 else "Odisha",
+                "work_category": "Road" if i % 3 else "School",
+                "implementing_agency": f"Agency {i % 4}",
+                "sanctioned_amount_inr": 500000.0 + i * 1000,
+                "expenditure_amount_inr": 100000.0,
+                "sanction_date": sd.isoformat(),
+                "completion_status": "Completed" if i % 2 else "In Progress",
+            }
+        )
+    frame = pd.DataFrame(rows)
+    frame["implementing_agency"] = frame["implementing_agency"].astype("string")
+    frame.to_parquet(snapshot_dir / "works.parquet", index=False)
+    (snapshot_dir / "manifest.json").write_text(
+        json.dumps({"data_as_of": "2026-09-04T11:37:18Z"}), encoding="utf-8"
+    )
+
+
+def test_early_warning_dry_run_prints_metrics_and_writes_nothing(snapshot_dir, capsys):
+    _write_early_warning_snapshot(snapshot_dir)
+
+    assert cli.early_warning(snapshot_dir=snapshot_dir) == 0
+
+    out = capsys.readouterr().out
+    assert '"model_version": "early_warning_v1"' in out
+    assert '"watch_n"' in out
+    assert '"watch":' not in out
+    assert not (snapshot_dir / "early_warning.json").exists()
+    assert "Dry run: nothing was written. Add --write to write early_warning.json." in out
+
+
+def test_early_warning_write_adds_only_the_early_warning_file(snapshot_dir):
+    _write_early_warning_snapshot(snapshot_dir)
+    (snapshot_dir / "scored.parquet").write_bytes(b"scored")
+    before = {p.name: p.read_bytes() for p in snapshot_dir.iterdir()}
+
+    assert cli.early_warning(snapshot_dir=snapshot_dir, write=True) == 0
+
+    after = {p.name: p.read_bytes() for p in snapshot_dir.iterdir()}
+    written = json.loads(after.pop("early_warning.json"))
+    assert after == before
+    assert written["model_version"] == "early_warning_v1"
+    assert "watch" in written  # the full artifact is written, unlike the printed summary
+
+
+def test_early_warning_reports_a_missing_snapshot_and_writes_nothing(snapshot_dir):
+    assert cli.early_warning(snapshot_dir=snapshot_dir, write=True) == 1
+    assert list(snapshot_dir.iterdir()) == []
+
+
+@pytest.mark.parametrize(
+    ("argv", "write"), [(["early-warning"], False), (["early-warning", "--write"], True)]
+)
+def test_the_early_warning_command_passes_its_flag_through(monkeypatch, argv, write):
+    calls = []
+    monkeypatch.setattr(cli, "early_warning", lambda **kwargs: calls.append(kwargs) or 0)
 
     assert cli.main(argv) == 0
 
