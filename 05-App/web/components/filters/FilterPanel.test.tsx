@@ -24,11 +24,24 @@ const FACETS: Facets = {
   constituencies: [{ value: "DHARWAD", count: 12, mp_name: "Pralhad Venkatesh Joshi" }],
 };
 
-function Harness({ initial = EMPTY_FILTERS }: { initial?: FilterState }) {
+function Harness({
+  initial = EMPTY_FILTERS,
+  earlyWarningAvailable,
+}: {
+  initial?: FilterState;
+  earlyWarningAvailable?: boolean;
+}) {
   const [value, setValue] = useState<FilterState>(initial);
   const [preview, setPreview] = useState<PreviewState>("loaded");
   return (
-    <FilterPanel value={value} onChange={setValue} facets={FACETS} previewState={preview} onPreviewStateChange={setPreview} />
+    <FilterPanel
+      value={value}
+      onChange={setValue}
+      facets={FACETS}
+      previewState={preview}
+      onPreviewStateChange={setPreview}
+      earlyWarningAvailable={earlyWarningAvailable}
+    />
   );
 }
 
@@ -106,5 +119,29 @@ describe("FilterPanel: the 'View as' role lens (T6)", () => {
     // popover's option list is gone, proving the choice closed it.
     expect(screen.getAllByText("DHARWAD(DEPUTY COMMISSIONER DHARWAR_IDA)")).toHaveLength(1);
     expect(screen.getByRole("button", { name: /DHARWAD\(DEPUTY COMMISSIONER DHARWAR_IDA\)/ })).toBeInTheDocument();
+  });
+});
+
+describe("FilterPanel: the early-warning Timeline option (T8B)", () => {
+  const pendencyCopy = STRINGS.pendency;
+  const earlyWarningCopy = STRINGS.early_warning;
+
+  // Seeded with pendency already set to "early_warning" rather than opened
+  // through the popover (same technique as the MP-lens test above): the
+  // closed trigger's own summary already runs the selected value through
+  // SelectControl's own option lookup, so this exercises the real
+  // shown-or-hidden logic without needing to drive Radix Select's portal.
+  it("falls back to 'All timelines' when the model has not shipped", () => {
+    render(<Harness initial={{ ...EMPTY_FILTERS, pendency: "early_warning" }} />);
+    expect(screen.getByRole("combobox", { name: pendencyCopy.filter_label })).toHaveTextContent(
+      pendencyCopy.filter_all,
+    );
+  });
+
+  it("shows 'At risk of running late' once the caller says the model has shipped", () => {
+    render(<Harness initial={{ ...EMPTY_FILTERS, pendency: "early_warning" }} earlyWarningAvailable />);
+    expect(screen.getByRole("combobox", { name: pendencyCopy.filter_label })).toHaveTextContent(
+      earlyWarningCopy.filter,
+    );
   });
 });

@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { renderTemplate, STRINGS } from "@/lib/strings";
 import {
   ApiUnreachableError,
+  fetchEarlyWarning,
   fetchFacets,
   fetchPendency,
   fetchSummary,
@@ -63,6 +64,7 @@ export function InspectionListClient() {
   const loadSummary = useCallback((signal: AbortSignal) => fetchSummary(signal), []);
   const loadFacets = useCallback((signal: AbortSignal) => fetchFacets(signal), []);
   const loadPendency = useCallback((signal: AbortSignal) => fetchPendency(filters, signal), [filters]);
+  const loadEarlyWarning = useCallback((signal: AbortSignal) => fetchEarlyWarning(signal), []);
   const pageSize = filters.districtAuthority === EMPTY_FILTERS.districtAuthority ? PAGE_SIZE : DISTRICT_AUTHORITY_PAGE_SIZE;
   const request = useMemo(
     () => ({ filters, q, page, pageSize, vendorId }),
@@ -73,6 +75,7 @@ export function InspectionListClient() {
   const summary = useApiResource(loadSummary);
   const facets = useApiResource(loadFacets);
   const pendency = useApiResource(loadPendency);
+  const earlyWarning = useApiResource(loadEarlyWarning);
   const works = useApiResource(loadWorks);
   const result = works.data;
 
@@ -138,6 +141,7 @@ export function InspectionListClient() {
             facets={facets.data}
             previewState={preview}
             onPreviewStateChange={setPreview}
+            earlyWarningAvailable={earlyWarning.data !== null}
           />
         </div>
 

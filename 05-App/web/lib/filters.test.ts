@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { ALL, EMPTY_FILTERS, filtersToQuery, isLensScoped, listSearchParams, readListParams, withView } from "./filters";
+import {
+  ALL,
+  EMPTY_FILTERS,
+  filtersToQuery,
+  isLensScoped,
+  listSearchParams,
+  pendencyOptions,
+  readListParams,
+  withView,
+} from "./filters";
+import { STRINGS } from "./strings";
 
 describe("vendor_id (Fund Flow's \"View linked works\" deep link)", () => {
   it("is included on the API query only when given", () => {
@@ -57,6 +67,31 @@ describe("pendency scope (T5: FilterState.pendency/districtAuthority/constituenc
     expect(qs.has("pendency")).toBe(false);
     expect(qs.has("district_authority")).toBe(false);
     expect(qs.has("constituency")).toBe(false);
+  });
+});
+
+describe("pendency=early_warning (T8B, R6: extends the readListParams whitelist)", () => {
+  it("accepts early_warning from the address bar, unlike an unknown kind", () => {
+    const params = new URLSearchParams({ pendency: "early_warning" });
+    expect(readListParams(params).filters.pendency).toBe("early_warning");
+  });
+
+  it("round-trips early_warning back out to the API query", () => {
+    const filters = { ...EMPTY_FILTERS, pendency: "early_warning" };
+    expect(filtersToQuery(filters).get("pendency")).toBe("early_warning");
+  });
+});
+
+describe("pendencyOptions (T8B: the Timeline select's early-warning option)", () => {
+  it("omits 'At risk of running late' by default", () => {
+    const values = pendencyOptions().map((o) => o.value);
+    expect(values).not.toContain("early_warning");
+  });
+
+  it("appends it, once, with the contract's label, only when told the model has shipped", () => {
+    const options = pendencyOptions(true);
+    const matches = options.filter((o) => o.value === "early_warning");
+    expect(matches).toEqual([{ value: "early_warning", label: STRINGS.early_warning.filter }]);
   });
 });
 

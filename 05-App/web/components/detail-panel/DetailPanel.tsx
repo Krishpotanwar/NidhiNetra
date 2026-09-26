@@ -40,6 +40,12 @@ const pendencyStrings = STRINGS.pendency;
 function pendencyLines(row: InspectionRow): string[] {
   const lines: string[] = [];
 
+  // T8B: membership only, never a per-work number (honesty rule) -- the row
+  // already carries this flag (routers/works.py _decorate), so no fetch here.
+  if (row.early_warning) {
+    lines.push(STRINGS.early_warning.detail);
+  }
+
   lines.push(
     row.days_to_sanction !== null
       ? renderTemplate(pendencyStrings.detail_days_to_sanction, { days: row.days_to_sanction })

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react";
 import { STRINGS } from "@/lib/strings";
 import {
+  fetchEarlyWarning,
   fetchFacets,
   fetchPendency,
   fetchSummary,
@@ -43,6 +44,7 @@ export function DashboardClient() {
   const loadSummary = useCallback((signal: AbortSignal) => fetchSummary(signal), []);
   const loadFacets = useCallback((signal: AbortSignal) => fetchFacets(signal), []);
   const loadPendency = useCallback((signal: AbortSignal) => fetchPendency(filters, signal), [filters]);
+  const loadEarlyWarning = useCallback((signal: AbortSignal) => fetchEarlyWarning(signal), []);
   const request = useMemo(
     () => ({ filters, q: null, page: 1, pageSize: DASHBOARD_ROWS }),
     [filters],
@@ -52,6 +54,7 @@ export function DashboardClient() {
   const summary = useApiResource(loadSummary);
   const facets = useApiResource(loadFacets);
   const pendency = useApiResource(loadPendency);
+  const earlyWarning = useApiResource(loadEarlyWarning);
   const works = useApiResource(loadWorks);
 
   const figures = summary.data ? getSummaryFigures(summary.data) : null;
@@ -111,6 +114,7 @@ export function DashboardClient() {
             facets={facets.data}
             previewState={preview}
             onPreviewStateChange={setPreview}
+            earlyWarningAvailable={earlyWarning.data !== null}
           />
 
           <SummaryLine

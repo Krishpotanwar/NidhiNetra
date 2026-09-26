@@ -246,3 +246,19 @@ test("never claims payments for a zero-spend work within 90 days of sanction (R4
     screen.queryByText(renderTemplate(pendency.detail_no_payment, { days: 30 })),
   ).not.toBeInTheDocument();
 });
+
+// T8B: the early-warning line in the same "Timelines against the
+// guidelines" section, keyed off the row's own flag -- no separate fetch.
+const earlyWarning = STRINGS.early_warning;
+
+test("shows the early-warning line when the row is in the watch tenth", () => {
+  render(<DetailPanel row={row({ early_warning: true })} onClose={() => {}} quotaN={10} />);
+
+  expect(screen.getByText(earlyWarning.detail)).toBeInTheDocument();
+});
+
+test("shows no early-warning line when the row is not in the watch tenth", () => {
+  render(<DetailPanel row={row({ early_warning: false })} onClose={() => {}} quotaN={10} />);
+
+  expect(screen.queryByText(earlyWarning.detail)).not.toBeInTheDocument();
+});

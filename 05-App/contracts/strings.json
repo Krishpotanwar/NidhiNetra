@@ -32,7 +32,8 @@
       "2026-09-26 (T5): added pendency for the Dashboard's three MoSPI pendency cards, the Inspection List's Timeline filter and the detail panel's timelines-against-the-guidelines section, citing PIB release 2153066 and MPLADS Guidelines 2023 paras 3.2.4/3.2.12. Two of the task brief's exact sentences read 'the captured expenditure record' / 'was captured on {date}'; lint.banned_derived bans 'captured' (added earlier for agency-concentration language, 'controls, dominates, captured, cornered, monopolises'), and the word-boundary lint has no way to tell that sense apart from this one. Reworded both to 'the expenditure record' (no_payment_context, the modifier was removable without changing the meaning) and 'is dated {date}' (caveat, which needed a replacement verb) rather than relax the banned-word list for a collision with unrelated copy.",
       "2026-09-26 (T6): added lens for the 'View as' role lenses (Ministry/State Nodal Authority/District Authority/Member of Parliament, D6) -- view_label, the four role labels, all_district_authorities, choose_constituency and one duty_* sentence per lens, each citing its MPLADS Guidelines 2023 clause. All four task-brief sentences passed lint unchanged; none needed rewording.",
       "2026-09-26 (T5 fix): added pendency.late_sanction_context_no_median. Review found late_sanction_context's {days} placeholder was being filled with a fallback 0 whenever median_days_to_sanction is null (a real state once a District Authority/constituency scope narrow enough to have no work with both dates recorded is reachable, which T6's pickers now make possible) -- an invented day-count, against the house rule against fabricated data. This variant states the same 45-day rule with no day-count at all rather than a false one; PendencyCards now selects it exactly when the median is null.",
-      "2026-09-26 (T7): added print.button and print.as_of for the Inspection List's printable inspection plan (native window.print, no PDF library). Both strings passed lint unchanged; neither needed rewording."
+      "2026-09-26 (T7): added print.button and print.as_of for the Inspection List's printable inspection plan (native window.print, no PDF library). Both strings passed lint unchanged; neither needed rewording.",
+      "2026-09-26 (T8 Part B): added early_warning.filter/.detail/.method_title/.method, surfacing Part A's offline model (data/snapshot/early_warning.json) as a Timeline filter option, a detail-panel line and a Reports method paragraph. All four task-brief sentences passed lint unchanged; none needed rewording."
     ]
   },
   "_measure": {
@@ -496,6 +497,13 @@
     "detail_payment_seen": "Payments recorded.",
     "detail_dates_missing": "Recommendation or sanction date not published for this work.",
     "caveat": "The expenditure record is dated {date} and may be incomplete. A missing payment is a prompt to check."
+  },
+  "early_warning": {
+    "_note": "Task 8: an offline logistic regression (pipeline/src/nidhinetra_pipeline/early_warning.py) ranks young works under implementation by risk of staying open past one year (D8), and the API exposes only ordering (the watch-tenth Timeline filter and this row flag) plus its own cohort/metrics (GET /api/early-warning) -- never a per-work number (honesty rule, global-context.md).",
+    "filter": "At risk of running late",
+    "detail": "Early warning: among the tenth of recent works that a model trained on earlier sanctions ranks most at risk of staying open past one year.",
+    "method_title": "How the early warning works",
+    "method": "Logistic regression on sanctioned amount, the implementing agency's record, category, state and sanction month. Trained on works sanctioned {start} to {cutoff} and checked on {cutoff} to {end}: its top tenth held {lift} times the average share of works still open (ROC-AUC {auc}). It orders works. It says nothing certain about any one of them."
   },
   "filters": {
     "state": "State",

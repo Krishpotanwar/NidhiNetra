@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react";
 import { renderTemplate, STRINGS } from "@/lib/strings";
-import { fetchInspectionsReport } from "@/lib/data";
+import { fetchEarlyWarning, fetchInspectionsReport } from "@/lib/data";
 import { useApiResource } from "@/lib/use-api-resource";
 import { displayName, formatDate, formatIndianInt, formatPercent } from "@/lib/format";
 import type { GroupSummary, InspectionOutcome } from "@/lib/types";
@@ -12,6 +12,7 @@ import { DotCanvas } from "@/components/shared/DotCanvas";
 import styles from "./ReportsClient.module.css";
 
 const copy = STRINGS.reports;
+const earlyWarningCopy = STRINGS.early_warning;
 const outcomes = STRINGS.inspection_capture.outcome_options as Record<string, string>;
 
 /**
@@ -23,6 +24,8 @@ const outcomes = STRINGS.inspection_capture.outcome_options as Record<string, st
 export function ReportsClient() {
   const load = useCallback((signal: AbortSignal) => fetchInspectionsReport(signal), []);
   const report = useApiResource(load);
+  const loadEarlyWarning = useCallback((signal: AbortSignal) => fetchEarlyWarning(signal), []);
+  const earlyWarning = useApiResource(loadEarlyWarning);
 
   if (report.status === "error" && !report.data) {
     const error = STRINGS.data_states.api_unreachable;
@@ -76,6 +79,21 @@ export function ReportsClient() {
         )}
         <p className={styles.method}>{copy.method}</p>
       </section>
+
+      {earlyWarning.data && (
+        <section className={styles.card}>
+          <h2 className={styles.cardTitle}>{earlyWarningCopy.method_title}</h2>
+          <p className={styles.method}>
+            {renderTemplate(earlyWarningCopy.method, {
+              start: formatDate(earlyWarning.data.cohort.start),
+              cutoff: formatDate(earlyWarning.data.cohort.train_cutoff),
+              end: formatDate(earlyWarning.data.cohort.end),
+              lift: earlyWarning.data.metrics.lift_at_10.toFixed(1),
+              auc: earlyWarning.data.metrics.roc_auc.toFixed(2),
+            })}
+          </p>
+        </section>
+      )}
 
       <section className={styles.card}>
         <h2 className={styles.cardTitle}>{copy.table_title}</h2>

@@ -70,6 +70,40 @@ export interface InspectionRow extends NormalizedRecord, RiskScoredRecord {
   /** T4: sanction_date to the snapshot's as_of, in days. Null when
    *  sanction_date or as_of is missing. */
   days_since_sanction: number | null;
+  /** T8B: true when this work is in the early-warning model's watch tenth
+   *  (routers/works.py _decorate). Always a real boolean from the API; the
+   *  `?` only covers a plain object literal built by hand (a test fixture)
+   *  that has not bothered to set it. */
+  early_warning?: boolean;
+}
+
+/** GET /api/early-warning (T8B): the shipped early-warning model's own
+ *  cohort and metrics -- the artifact minus its watch list, which never
+ *  leaves the server (honesty rule: no per-work number, only membership in
+ *  the watch tenth via InspectionRow.early_warning above). */
+export interface EarlyWarningMeta {
+  model_version: string;
+  data_as_of: string;
+  status: "shipped";
+  cohort: {
+    start: string;
+    train_cutoff: string;
+    end: string;
+    train_n: number;
+    test_n: number;
+  };
+  features: {
+    numeric: string[];
+    categorical: string[];
+  };
+  metrics: {
+    roc_auc: number;
+    average_precision: number;
+    base_rate: number;
+    lift_at_10: number;
+  };
+  scored_n: number;
+  watch_n: number;
 }
 
 /** Risk band, 0 (unflagged) to 4 (highest priority). Keys into strings.json risk_labels. */

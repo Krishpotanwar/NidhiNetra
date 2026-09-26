@@ -43,6 +43,10 @@ interface FilterPanelProps {
   facets: Facets | null;
   previewState: PreviewState;
   onPreviewStateChange: (next: PreviewState) => void;
+  /** T8B: true once GET /api/early-warning has real data. Shows the extra
+   *  Timeline option "At risk of running late"; defaults to false so every
+   *  existing caller keeps its old behaviour until it wires the fetch up. */
+  earlyWarningAvailable?: boolean;
 }
 
 /**
@@ -54,7 +58,14 @@ interface FilterPanelProps {
  * Row treatment is a real preference an officer keeps. Data state is a
  * presenter device and appears only in presenter mode.
  */
-export function FilterPanel({ value, onChange, facets, previewState, onPreviewStateChange }: FilterPanelProps) {
+export function FilterPanel({
+  value,
+  onChange,
+  facets,
+  previewState,
+  onPreviewStateChange,
+  earlyWarningAvailable = false,
+}: FilterPanelProps) {
   const presenter = usePresenterMode();
   const treatment = useRowTreatment();
   const lensId = useId();
@@ -143,7 +154,7 @@ export function FilterPanel({ value, onChange, facets, previewState, onPreviewSt
           <SelectControl
             labelId={pendencyId}
             value={value.pendency}
-            options={pendencyOptions()}
+            options={pendencyOptions(earlyWarningAvailable)}
             onValueChange={(pendency) => onChange({ ...value, pendency })}
           />
         </Field>

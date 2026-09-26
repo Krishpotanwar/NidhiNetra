@@ -35,7 +35,8 @@ export interface FilterState {
   year: string;
   category: string;
   flag: string;
-  /** ALL or one of PENDENCY_KINDS below (T4's three MoSPI pendency kinds). */
+  /** ALL, one of PENDENCY_KINDS below (T4's three MoSPI pendency kinds), or
+   *  "early_warning" (T8B's model-ranked watch tenth). */
   pendency: string;
   /** ALL or a district_authority value from /api/works/facets. Set by T6's
    *  "District Authority" lens picker; round-trips through the address bar
@@ -124,6 +125,19 @@ export function isPendencyKind(value: string): value is (typeof PENDENCY_KINDS)[
   return (PENDENCY_KINDS as readonly string[]).includes(value);
 }
 
+/**
+ * T8B/R6: FilterState.pendency's full whitelist -- the three MoSPI kinds
+ * above plus "early_warning" (the model-ranked watch tenth, kept out of
+ * PENDENCY_KINDS itself so PendencyCards, which iterates that list to build
+ * exactly three Dashboard cards, never grows a fourth). readListParams below
+ * is the only caller: a shared link keeps working even when the Timeline
+ * select is currently hiding the option because /api/early-warning has no
+ * data.
+ */
+export function isPendencyFilterValue(value: string): value is (typeof PENDENCY_KINDS)[number] | "early_warning" {
+  return value === "early_warning" || isPendencyKind(value);
+}
+
 export function pendencyKindLabel(kind: string): string {
   const copy = STRINGS.pendency;
   switch (kind) {
@@ -140,11 +154,16 @@ export function pendencyKindLabel(kind: string): string {
 
 /** ALL plus the three kinds, for the Timeline SelectControl. No per-option
  *  count: unlike state/year/category/flag, pendency is not a
- *  /api/works/facets facet, and a fabricated count would be worse than none. */
-export function pendencyOptions(): SelectOption[] {
+ *  /api/works/facets facet, and a fabricated count would be worse than none.
+ *  T8B: `includeEarlyWarning` appends "At risk of running late" -- the
+ *  caller passes this only once GET /api/early-warning has answered with
+ *  real data, so the option never offers a filter that would just return
+ *  everything (D8: no shipped model, no watch list). */
+export function pendencyOptions(includeEarlyWarning = false): SelectOption[] {
   return [
     { value: ALL, label: STRINGS.pendency.filter_all },
     ...PENDENCY_KINDS.map((value) => ({ value, label: pendencyKindLabel(value) })),
+    ...(includeEarlyWarning ? [{ value: "early_warning", label: STRINGS.early_warning.filter }] : []),
   ];
 }
 
@@ -244,7 +263,7 @@ export function readListParams(
   const rawFlag = params.get("flag")?.trim() ?? "";
   const flag = isFlagType(rawFlag) ? rawFlag : ALL;
   const rawPendency = params.get("pendency")?.trim() ?? "";
-  const pendency = isPendencyKind(rawPendency) ? rawPendency : ALL;
+  const pendency = isPendencyFilterValue(rawPendency) ? rawPendency : ALL;
   const districtAuthority = params.get("district_authority")?.trim() || ALL;
   const constituency = params.get("constituency")?.trim() || ALL;
   const rawView = params.get("view")?.trim() ?? "";

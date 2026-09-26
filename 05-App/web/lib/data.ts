@@ -7,7 +7,14 @@
  * a real 44,810 (Logbook, 2026-09-04). API_BASE is overridable via
  * NEXT_PUBLIC_API_BASE_URL; see lib/api-client.ts.
  */
-import type { Facets, InspectionRow, InspectionsReport, NormalizedRecord, PendencySummary } from "./types";
+import type {
+  EarlyWarningMeta,
+  Facets,
+  InspectionRow,
+  InspectionsReport,
+  NormalizedRecord,
+  PendencySummary,
+} from "./types";
 import { ApiUnreachableError, fetchEnvelope, fetchEnvelopeWithMeta } from "./api-client";
 import { filtersToQuery, scopeQuery, type FilterState } from "./filters";
 import { displayName } from "./format";
@@ -105,6 +112,16 @@ export function fetchPendency(filters: FilterState, signal?: AbortSignal): Promi
 
 export function fetchSummary(signal?: AbortSignal): Promise<ApiSummary> {
   return fetchEnvelope<ApiSummary>("/api/stats/summary", { signal });
+}
+
+/**
+ * GET /api/early-warning (T8B). Null whenever the model has not shipped or
+ * its data_as_of has gone stale (D8) -- the caller's only job is to hide the
+ * Timeline filter option, the DetailPanel line already keys off the row's
+ * own early_warning flag instead, not this call.
+ */
+export function fetchEarlyWarning(signal?: AbortSignal): Promise<EarlyWarningMeta | null> {
+  return fetchEnvelope<EarlyWarningMeta | null>("/api/early-warning", { signal });
 }
 
 export function fetchInspectionsReport(signal?: AbortSignal): Promise<InspectionsReport> {
