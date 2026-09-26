@@ -125,6 +125,46 @@ def lint_strings(
     return hits
 
 
+_PLACEHOLDER = re.compile(r"\{(\w+)\}")
+_MISSING = object()
+
+
+def _lookup_path(node: object, path: str) -> object:
+    """Walks a dotted path as _iter_lint_leaves yields it (e.g. "nav.dashboard")
+    into a nested dict. Returns _MISSING if any segment is absent.
+    """
+    for part in path.split("."):
+        if not isinstance(node, dict) or part not in node:
+            return _MISSING
+        node = node[part]
+    return node
+
+
+def check_hi_against_en(hi_strings: dict, en_strings: dict) -> list[str]:
+    """Cross-checks strings.hi.json (the Hindi overlay, D9) against
+    strings.json: every hi key path must resolve to a real English string
+    leaf -- a stray or renamed key would otherwise silently fall back to
+    English (lib/strings.ts setLocale) instead of failing loudly here --
+    and every translated leaf's {placeholder} set must match its English
+    counterpart exactly, or a dropped/renamed param renders literally
+    (e.g. "{date}") while the other silently drops a value.
+    """
+    errors: list[str] = []
+    for path, hi_text in _iter_lint_leaves(hi_strings, ""):
+        en_value = _lookup_path(en_strings, path)
+        if en_value is _MISSING or not isinstance(en_value, str):
+            errors.append(f"strings.hi.json key '{path}' has no matching string in strings.json")
+            continue
+        hi_params = set(_PLACEHOLDER.findall(hi_text))
+        en_params = set(_PLACEHOLDER.findall(en_value))
+        if hi_params != en_params:
+            errors.append(
+                f"strings.hi.json key '{path}': placeholders {sorted(hi_params)} "
+                f"do not match strings.json's {sorted(en_params)}"
+            )
+    return errors
+
+
 def validate_all(
     works_path: Path,
     scored_path: Path,
@@ -398,6 +438,43 @@ def run_self_test() -> int:
         return 1
     print("  PASS: strings.json has zero lint hits")
 
+    print("\nSelf-test 9: the real strings.hi.json lints clean and matches strings.json ...")
+    hi_data = load(HERE / "strings.hi.json")
+    banned_hi = lint_block["banned_hi"]
+    real_hi_hits = lint_strings(hi_data, banned_hi, banned_chars, set())
+    if real_hi_hits:
+        print(f"  FAIL: {len(real_hi_hits)} lint hit(s) in strings.hi.json: {real_hi_hits[:5]}")
+        return 1
+    real_cross_errors = check_hi_against_en(hi_data, strings_data)
+    if real_cross_errors:
+        print(f"  FAIL: {len(real_cross_errors)} cross-check error(s): {real_cross_errors[:5]}")
+        return 1
+    print("  PASS: strings.hi.json is clean and every key matches strings.json")
+
+    print(
+        "\nSelf-test 10: lint_strings catches a banned Hindi word (Devanagari has no case, "
+        "so banned_hi matches as a plain substring) ..."
+    )
+    hi_hits = lint_strings({"x": "यह घोटाला है"}, banned_hi, banned_chars, set())
+    if not hi_hits:
+        print("  FAIL: a banned Hindi word ('घोटाला') was not caught")
+        return 1
+    print(f"  PASS: caught {len(hi_hits)} hit(s), e.g. {hi_hits[0]}")
+
+    print("\nSelf-test 11: check_hi_against_en catches an unknown hi key path ...")
+    unknown_key_errors = check_hi_against_en({"nav": {"not_a_real_key": "x"}}, strings_data)
+    if not unknown_key_errors:
+        print("  FAIL: an unknown strings.hi.json key path was not caught")
+        return 1
+    print(f"  PASS: caught {len(unknown_key_errors)} error(s), e.g. {unknown_key_errors[0]}")
+
+    print("\nSelf-test 12: check_hi_against_en catches a {placeholder} mismatch ...")
+    placeholder_errors = check_hi_against_en({"nav": {"dashboard": "{oops} डैशबोर्ड"}}, strings_data)
+    if not placeholder_errors:
+        print("  FAIL: a placeholder mismatch against strings.json was not caught")
+        return 1
+    print(f"  PASS: caught {len(placeholder_errors)} error(s), e.g. {placeholder_errors[0]}")
+
     print("\nAll self-tests passed. The validator has real teeth.")
     return 0
 
@@ -428,6 +505,10 @@ def main() -> int:
         lint_block["banned_chars"],
         set(lint_block["negation_exemptions"]),
     )
+
+    hi_strings = load(HERE / "strings.hi.json")
+    errors += lint_strings(hi_strings, lint_block["banned_hi"], lint_block["banned_chars"], set())
+    errors += check_hi_against_en(hi_strings, strings_data)
 
     if errors:
         print(f"FAILED: {len(errors)} error(s)\n")

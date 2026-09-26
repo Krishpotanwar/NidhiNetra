@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -5,6 +7,7 @@ import eye from "@/assets/brand/nidhinetra-eye.png";
 import { STRINGS } from "@/lib/strings";
 import { NavTabs } from "./NavTabs";
 import { HeaderSearch } from "./HeaderSearch";
+import { LanguageToggle } from "./LanguageToggle";
 import { OfficerMenu } from "./OfficerMenu";
 import { PresenterBadge } from "./PresenterControls";
 import styles from "./AppHeader.module.css";
@@ -16,9 +19,12 @@ const brand = STRINGS.brand;
  * Government of India text mark, the tricolour eye with the wordmark, five
  * tabs, search, the Viksit Bharat mark and the officer's initials.
  *
- * A Server Component; only the parts that read the route or storage are
- * client islands. The State Emblem is left out on purpose: its use is
- * restricted by law (contracts/strings.json brand._note).
+ * A Client Component (T11A): it reads STRINGS.brand.* directly at render
+ * time, so it re-reads the Hindi overlay on LocaleRoot's remount instead of
+ * freezing at whatever STRINGS held on the server. Most of its children
+ * were already client islands for other reasons (route/storage reads); none
+ * of this file uses a server-only API. The State Emblem is left out on
+ * purpose: its use is restricted by law (contracts/strings.json brand._note).
  */
 export function AppHeader() {
   return (
@@ -52,6 +58,7 @@ export function AppHeader() {
             </span>
           </div>
           <PresenterBadge />
+          <LanguageToggle />
           <OfficerMenu />
         </div>
       </div>

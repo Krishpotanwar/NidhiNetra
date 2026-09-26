@@ -4,6 +4,7 @@ import { Geist, Geist_Mono, Noto_Sans_Devanagari, Source_Serif_4 } from "next/fo
 import "./globals.css";
 import { AppHeader } from "@/components/shell/AppHeader";
 import { AppFooter } from "@/components/shell/AppFooter";
+import { LocaleRoot } from "@/components/shell/LocaleRoot";
 import { PresenterUrlSync } from "@/components/shell/PresenterControls";
 import { STRINGS } from "@/lib/strings";
 
@@ -47,11 +48,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={null}>
           <PresenterUrlSync />
         </Suspense>
-        <AppHeader />
-        <main id="main" tabIndex={-1}>
-          {children}
-        </main>
-        <AppFooter />
+        <LocaleRoot>
+          <AppHeader />
+          <main id="main" tabIndex={-1}>
+            {children}
+          </main>
+          <AppFooter />
+        </LocaleRoot>
       </body>
     </html>
   );

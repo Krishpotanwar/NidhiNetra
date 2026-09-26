@@ -33,7 +33,8 @@
       "2026-09-26 (T6): added lens for the 'View as' role lenses (Ministry/State Nodal Authority/District Authority/Member of Parliament, D6) -- view_label, the four role labels, all_district_authorities, choose_constituency and one duty_* sentence per lens, each citing its MPLADS Guidelines 2023 clause. All four task-brief sentences passed lint unchanged; none needed rewording.",
       "2026-09-26 (T5 fix): added pendency.late_sanction_context_no_median. Review found late_sanction_context's {days} placeholder was being filled with a fallback 0 whenever median_days_to_sanction is null (a real state once a District Authority/constituency scope narrow enough to have no work with both dates recorded is reachable, which T6's pickers now make possible) -- an invented day-count, against the house rule against fabricated data. This variant states the same 45-day rule with no day-count at all rather than a false one; PendencyCards now selects it exactly when the median is null.",
       "2026-09-26 (T7): added print.button and print.as_of for the Inspection List's printable inspection plan (native window.print, no PDF library). Both strings passed lint unchanged; neither needed rewording.",
-      "2026-09-26 (T8 Part B): added early_warning.filter/.detail/.method_title/.method, surfacing Part A's offline model (data/snapshot/early_warning.json) as a Timeline filter option, a detail-panel line and a Reports method paragraph. All four task-brief sentences passed lint unchanged; none needed rewording."
+      "2026-09-26 (T8 Part B): added early_warning.filter/.detail/.method_title/.method, surfacing Part A's offline model (data/snapshot/early_warning.json) as a Timeline filter option, a detail-panel line and a Reports method paragraph. All four task-brief sentences passed lint unchanged; none needed rewording.",
+      "2026-09-26 (T11 Part A): added language.hindi_label/.english_label/.toggle_aria for the Hindi/English toggle button (GIGW 3.0), and lint.banned_hi for contracts/strings.hi.json, the new Hindi overlay file (D9). strings.hi.json itself seeds only nav and brand (Part A's scope); Part B does the full translation. All three language.* strings and the strings.hi.json seed passed lint unchanged."
     ]
   },
   "_measure": {
@@ -819,6 +820,29 @@
       "probability",
       "likelihood"
     ],
+    "banned_hi": [
+      "धोखाधड़ी",
+      "धोखा",
+      "भ्रष्टाचार",
+      "भ्रष्ट",
+      "संदिग्ध",
+      "घोटाला",
+      "फर्जी",
+      "दुरुपयोग",
+      "अनियमितता",
+      "अनियमित",
+      "गबन",
+      "दोषी",
+      "सत्यापित",
+      "पुष्टि",
+      "संभावना",
+      "प्रायिकता",
+      "सटीकता",
+      "स्वच्छ",
+      "सुरक्षित",
+      "जांच",
+      "पता लगाया"
+    ],
     "banned_chars": {
       "em_dash": "—",
       "horizontal_bar": "―",
@@ -1042,5 +1066,11 @@
     "error_title": "This view could not load.",
     "error_body": "Reload the page. If it happens again, check that the data service is running.",
     "error_action": "Reload"
+  },
+  "language": {
+    "_note": "T11A: fixed, brand-neutral identifiers for the Hindi/English toggle (GIGW 3.0). hindi_label and english_label always name the OTHER language -- the one a click switches to -- so they are never themselves run through the Hindi overlay; there is no language block in strings.hi.json.",
+    "hindi_label": "हिन्दी",
+    "english_label": "English",
+    "toggle_aria": "Language / भाषा"
   }
 }

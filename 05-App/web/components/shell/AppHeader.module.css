@@ -160,4 +160,12 @@
   .searchFallback {
     display: none;
   }
+  /* T11A: LanguageToggle joined this row, and .tools does not shrink
+     (flex: none) -- at phone width the officer-menu circle and the
+     toggle need every spare pixel to both fit without a sideways
+     scrollbar. LanguageToggle.module.css tightens its own padding at the
+     same breakpoint. */
+  .tools {
+    gap: var(--space-2);
+  }
 }

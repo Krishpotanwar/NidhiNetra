@@ -1,3 +1,5 @@
+"use client";
+
 import { STRINGS } from "@/lib/strings";
 import styles from "./AppFooter.module.css";
 
@@ -7,6 +9,9 @@ const brand = STRINGS.brand;
  * The reference's footer, minus two things it showed: a Government of India
  * copyright line (this prototype is not a government publication) and a
  * version stamp (design brief section 12 bans them, and there is no release).
+ *
+ * A Client Component (T11A): reads STRINGS.brand.* at render time, so it
+ * re-reads the Hindi overlay on LocaleRoot's remount.
  */
 export function AppFooter() {
   return (

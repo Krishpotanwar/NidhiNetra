@@ -1,0 +1,36 @@
+{
+  "nav": {
+    "_note": "T11A seed (Part A): only nav and brand are translated here; every other block falls back to English until Part B's full translation. Glossary terms (task brief) used verbatim: MPLADS, inspection list, fund flow.",
+    "inspection_list": "निरीक्षण सूची",
+    "fund_flow": "निधि प्रवाह",
+    "org_label": "सांख्यिकी और कार्यक्रम कार्यान्वयन मंत्रालय",
+    "dashboard": "डैशबोर्ड",
+    "reports": "रिपोर्ट",
+    "primary_label": "मुख्य अनुभाग",
+    "menu_open": "मेनू खोलें",
+    "menu_close": "मेनू बंद करें",
+    "search_label": "निरीक्षण सूची खोजें",
+    "search_placeholder": "कार्य, निर्वाचन क्षेत्र, एजेंसियां खोजें…",
+    "search_submit": "खोजें",
+    "search_shortcut": "खोजने के लिए स्लैश दबाएं",
+    "officer_button": "अधिकारी के आद्याक्षर",
+    "officer_title": "अधिकारी के आद्याक्षर",
+    "officer_body": "स्वयं द्वारा दर्ज और इसी डिवाइस पर संग्रहीत। ये आपके दर्ज किए निरीक्षणों से जुड़े होते हैं। इस प्रोटोटाइप में साइन-इन शामिल नहीं है।",
+    "officer_field": "आद्याक्षर",
+    "officer_save": "सहेजें",
+    "officer_saved": "सहेजा गया।",
+    "officer_clear": "हटाएं",
+    "officer_none": "निर्धारित नहीं"
+  },
+  "brand": {
+    "_note": "T11A seed (Part A). Brand names (name, name_part_1, name_part_2 -- NidhiNetra/Nidhi/Netra) stay English: proper nouns are not translated. gov_hi, gov_en, viksit_line_1, viksit_line_2 and motto are left out: AppHeader/AppFooter already render them in both scripts side by side regardless of locale, so overlaying them would be a no-op at best. logo_alt is left out: unused in web/ (the eye mark's alt is hardcoded to \"\", decorative). skip_link is left out on purpose: layout.tsx renders it outside LocaleRoot's wrapped subtree (only AppHeader, main and AppFooter remount on a locale change, per the task brief), so a Hindi value here could never actually display -- Part B should either move it inside LocaleRoot or give it its own <Str>.",
+    "ministry": "सांख्यिकी और कार्यक्रम कार्यान्वयन मंत्रालय",
+    "tagline": "एक करीबी नज़र। एक सशक्त भारत।",
+    "hero_body": "पारदर्शी निगरानी। जवाबदेह कार्यान्वयन। हर कार्यान्वयनाधीन एमपीलैड्स कार्य, निरीक्षण के लिए क्रमबद्ध।",
+    "hero_caption_1": "आज का डेटा।",
+    "hero_caption_2": "कल का सशक्त भारत।",
+    "footer_credit": "सांख्यिकी और कार्यक्रम कार्यान्वयन मंत्रालय के लिए निर्मित",
+    "footer_event": "स्मार्ट इंडिया हैकथॉन 2026 प्रोटोटाइप",
+    "footer_tagline": "जनता के लिए डेटा। भारत के लिए प्रगति।"
+  }
+}

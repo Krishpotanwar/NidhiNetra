@@ -1,11 +1,15 @@
 import Image from "next/image";
+import type { ReactNode } from "react";
 import hero from "@/assets/brand/hero-tricolour.jpg";
 import styles from "./PageMasthead.module.css";
 
 interface PageMastheadProps {
-  eyebrow: string;
-  title: string;
-  lede?: string;
+  // ReactNode, not string (T11A): callers pass a <Str k="..."/> so this
+  // text re-reads the Hindi overlay on a locale change instead of freezing
+  // at the string this Server Component saw on the server.
+  eyebrow: ReactNode;
+  title: ReactNode;
+  lede?: ReactNode;
 }
 
 /**

@@ -12,12 +12,20 @@ import styles from "./NavTabs.module.css";
 
 const nav = STRINGS.nav;
 
-export const TABS = [
-  { href: "/", label: nav.dashboard, Icon: House },
-  { href: "/inspections", label: nav.inspection_list, Icon: ListNumbers },
-  { href: "/fund-flow", label: nav.fund_flow, Icon: FlowArrow },
-  { href: "/reports", label: nav.reports, Icon: ClipboardText },
-] as const;
+// A function, not a module-level constant: STRINGS.nav's values are
+// overwritten in place when the Hindi overlay runs (lib/strings.ts
+// setLocale, T11A), and a constant built once at module load would freeze
+// the English labels into this array forever, immune to that overlay.
+// Called at render time in both NavTabs and MobileMenu below, so a remount
+// after a locale change reads the live values.
+function getTabs() {
+  return [
+    { href: "/", label: nav.dashboard, Icon: House },
+    { href: "/inspections", label: nav.inspection_list, Icon: ListNumbers },
+    { href: "/fund-flow", label: nav.fund_flow, Icon: FlowArrow },
+    { href: "/reports", label: nav.reports, Icon: ClipboardText },
+  ] as const;
+}
 
 export function isActiveTab(pathname: string, href: string): boolean {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
@@ -41,7 +49,7 @@ export function NavTabs() {
     <>
       <nav aria-label={nav.primary_label} className={styles.nav}>
         <ul className={styles.tabs}>
-          {TABS.map(({ href, label, Icon }) => {
+          {getTabs().map(({ href, label, Icon }) => {
             const active = isActiveTab(pathname, href);
             return (
               <motion.li key={href} layout={reduce ? false : "position"} transition={PILL_SPRING}>
@@ -80,7 +88,7 @@ function MobileMenu({ pathname }: { pathname: string }) {
           </Suspense>
           <nav aria-label={nav.primary_label}>
             <ul className={styles.menuList}>
-              {TABS.map(({ href, label, Icon }) => {
+              {getTabs().map(({ href, label, Icon }) => {
                 const active = isActiveTab(pathname, href);
                 return (
                   <li key={href}>

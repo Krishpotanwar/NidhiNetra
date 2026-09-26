@@ -1,18 +1,18 @@
 import Link from "next/link";
-import { STRINGS } from "@/lib/strings";
 import { PageMasthead } from "@/components/page-shell/PageMasthead";
+import { Str } from "@/components/shell/Str";
 import styles from "@/components/page-shell/SystemPage.module.css";
-
-const copy = STRINGS.system_pages;
 
 export default function NotFound() {
   return (
     <>
-      <PageMasthead eyebrow={STRINGS.brand.ministry} title={copy.not_found_title} />
+      <PageMasthead eyebrow={<Str k="brand.ministry" />} title={<Str k="system_pages.not_found_title" />} />
       <div className={`page ${styles.body}`}>
-        <p className={styles.text}>{copy.not_found_body}</p>
+        <p className={styles.text}>
+          <Str k="system_pages.not_found_body" />
+        </p>
         <Link href="/" className={styles.action}>
-          {copy.not_found_action}
+          <Str k="system_pages.not_found_action" />
         </Link>
       </div>
     </>

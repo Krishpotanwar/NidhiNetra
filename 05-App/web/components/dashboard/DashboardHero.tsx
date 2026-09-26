@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import hero from "@/assets/brand/hero-tricolour.jpg";
 import { STRINGS } from "@/lib/strings";
@@ -8,8 +10,13 @@ const brand = STRINGS.brand;
 /**
  * The masthead from the pinned reference: the tricolour wave with the Ashoka
  * Chakra and India Gate, the wordmark set in two tones, and the premise in
- * three short sentences. A Server Component, so the one large image on the
- * page is in the initial HTML and carries the LCP.
+ * three short sentences.
+ *
+ * A Client Component (T11A): reads STRINGS.brand.* at render time, so it
+ * re-reads the Hindi overlay on LocaleRoot's remount instead of freezing at
+ * whatever STRINGS held on the server. The hero image is a static import
+ * either way, so this still ships in the initial HTML and carries the LCP;
+ * Client Components render fine on the server for the first paint.
  *
  * The image is decorative (alt=""): every fact it carries is in the text
  * beside it. A veil holds the text above 4.5:1 wherever the ribbon runs.

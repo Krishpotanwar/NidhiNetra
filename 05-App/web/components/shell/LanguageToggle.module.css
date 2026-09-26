@@ -1,0 +1,36 @@
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  height: 2.5rem;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  background: #eef2f7;
+  color: var(--ink-2);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+}
+
+.toggle:hover {
+  border-color: var(--control-border-hover);
+  background: var(--surface);
+}
+
+/* Only the Hindi-script label sets the Devanagari font -- the English
+   label (shown when Hindi is active) stays in the header's own sans, same
+   as AppHeader.module.css's .govHi/.govEn split. */
+.toggle span[lang="hi"] {
+  font-family: var(--font-deva);
+}
+
+/* Matches AppHeader.module.css's own 61.25rem tier: at phone width, the
+   toggle sits next to the officer-menu circle in a row that does not
+   shrink (.tools is flex: none), so both need every spare pixel. */
+@media (max-width: 61.25rem) {
+  .toggle {
+    padding: 0 var(--space-2);
+  }
+}
