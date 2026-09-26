@@ -57,6 +57,10 @@ WITH unsuperseded_reviews AS (
         candidate.finder_version,
         candidate.threshold_crossing_batch,
         candidate.text,
+        candidate.text_b,
+        candidate.quote_a,
+        candidate.quote_b,
+        candidate.work_relation,
         candidate.work_ids,
         COALESCE(review.status, 'pending') AS current_status,
         review.review_id,
@@ -74,8 +78,8 @@ WITH unsuperseded_reviews AS (
 
 _RESOLVED_COLUMNS = """
 candidate_id, finder, scope, fingerprint_a, fingerprint_b, finder_version,
-threshold_crossing_batch, text, work_ids, current_status, review_id, review_status,
-reviewed_by, reviewed_at, reviewer_note, supersedes
+threshold_crossing_batch, text, text_b, quote_a, quote_b, work_relation, work_ids,
+current_status, review_id, review_status, reviewed_by, reviewed_at, reviewer_note, supersedes
 """
 
 
@@ -143,6 +147,10 @@ def init_db(db_path: Path | None = None) -> None:
                 finder_version TEXT NOT NULL,
                 threshold_crossing_batch INTEGER NOT NULL,
                 text TEXT NOT NULL,
+                text_b TEXT,
+                quote_a TEXT,
+                quote_b TEXT,
+                work_relation TEXT,
                 work_ids TEXT NOT NULL,
                 UNIQUE(scope, fingerprint_a, fingerprint_b, finder_version)
             );
@@ -169,7 +177,20 @@ def init_db(db_path: Path | None = None) -> None:
                 WHERE supersedes IS NOT NULL;
             """
         )
+        _migrate_judged_columns(connection)
         connection.commit()
+
+
+def _migrate_judged_columns(connection: sqlite3.Connection) -> None:
+    """Adds Stage D-lite's near-copy columns to a table created before them. Idempotent, mirrors
+    outcomes/store.py's own _migrate_f01_columns. text_b, quote_a, quote_b and work_relation are
+    only ever set on a judged_same_asset_same_place candidate; identical_batch and
+    district_identical_batch rows keep them NULL, exactly as before this migration ran.
+    """
+    columns = {row[1] for row in connection.execute("PRAGMA table_info(duplicate_candidates)")}
+    for column in ("text_b", "quote_a", "quote_b", "work_relation"):
+        if column not in columns:
+            connection.execute(f"ALTER TABLE duplicate_candidates ADD COLUMN {column} TEXT")
 
 
 def _normalized_candidate(candidate: Mapping[str, Any]) -> dict[str, Any]:
@@ -220,13 +241,17 @@ def upsert_candidates(
             """
             INSERT INTO duplicate_candidates (
                 finder, scope, fingerprint_a, fingerprint_b, finder_version,
-                threshold_crossing_batch, text, work_ids
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                threshold_crossing_batch, text, text_b, quote_a, quote_b, work_relation, work_ids
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(scope, fingerprint_a, fingerprint_b, finder_version)
             DO UPDATE SET
                 finder = excluded.finder,
                 threshold_crossing_batch = excluded.threshold_crossing_batch,
                 text = excluded.text,
+                text_b = excluded.text_b,
+                quote_a = excluded.quote_a,
+                quote_b = excluded.quote_b,
+                work_relation = excluded.work_relation,
                 work_ids = excluded.work_ids
             """,
             [
@@ -238,6 +263,10 @@ def upsert_candidates(
                     candidate["finder_version"],
                     int(candidate["threshold_crossing_batch"]),
                     candidate["text"],
+                    candidate.get("text_b"),
+                    candidate.get("quote_a"),
+                    candidate.get("quote_b"),
+                    candidate.get("work_relation"),
                     json.dumps(candidate["work_ids"], separators=(",", ":")),
                 )
                 for candidate in validated
@@ -268,6 +297,10 @@ def _resolved_candidate(row: sqlite3.Row) -> dict[str, Any]:
         "finder_version": row["finder_version"],
         "threshold_crossing_batch": bool(row["threshold_crossing_batch"]),
         "text": row["text"],
+        "text_b": row["text_b"],
+        "quote_a": row["quote_a"],
+        "quote_b": row["quote_b"],
+        "work_relation": row["work_relation"],
         "work_ids": json.loads(row["work_ids"]),
         "status": row["current_status"],
         "current_review": current_review,
@@ -460,8 +493,9 @@ def duplicate_context(
     Deliberately not the full resolved-candidate shape: a detail endpoint wants "you share this
     wording with 3 other works, and here they are", not the whole review-store row.
     """
-    return [
-        {
+    contexts = []
+    for candidate in candidates_for_work(work_id, db_path=db_path):
+        entry = {
             "candidate_id": candidate["candidate_id"],
             "finder": candidate["finder"],
             "threshold_crossing_batch": candidate["threshold_crossing_batch"],
@@ -470,8 +504,13 @@ def duplicate_context(
             "other_work_ids": sorted(wid for wid in candidate["work_ids"] if wid != work_id),
             "status": candidate["status"],
         }
-        for candidate in candidates_for_work(work_id, db_path=db_path)
-    ]
+        if candidate["text_b"] is not None:
+            entry["text_b"] = candidate["text_b"]
+            entry["quote_a"] = candidate["quote_a"]
+            entry["quote_b"] = candidate["quote_b"]
+            entry["work_relation"] = candidate["work_relation"]
+        contexts.append(entry)
+    return contexts
 
 
 __all__ = [

@@ -18,7 +18,7 @@
   "properties": {
     "finder": {
       "type": "string",
-      "enum": ["identical_batch", "district_identical_batch"]
+      "enum": ["identical_batch", "district_identical_batch", "judged_same_asset_same_place"]
     },
     "scope": {
       "type": "string",
@@ -44,6 +44,26 @@
       "type": "string",
       "minLength": 1,
       "description": "The shared description, as published, spacing tidied."
+    },
+    "text_b": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The second side's description, as published, spacing tidied. Present only for a judged_same_asset_same_place candidate; identical_batch and district_identical_batch candidates have one shared text and omit this."
+    },
+    "quote_a": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The place or institution words the judge quoted from text (side A), exactly as quoted. Present only for a judged_same_asset_same_place candidate."
+    },
+    "quote_b": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The place or institution words the judge quoted from text_b (side B), exactly as quoted. Present only for a judged_same_asset_same_place candidate."
+    },
+    "work_relation": {
+      "type": "string",
+      "enum": ["duplicate_candidate", "split_or_phase_candidate"],
+      "description": "work_candidate_derivation_v1's label for this pair. An internal classification, never shown to an officer as this literal string -- both values reach the same review queue and neither is a verdict. Present only for a judged_same_asset_same_place candidate."
     },
     "work_ids": {
       "type": "array",

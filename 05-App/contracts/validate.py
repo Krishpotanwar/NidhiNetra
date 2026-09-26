@@ -475,6 +475,34 @@ def run_self_test() -> int:
         return 1
     print(f"  PASS: caught {len(placeholder_errors)} error(s), e.g. {placeholder_errors[0]}")
 
+    print("\nSelf-test 13: duplicate_candidate.schema.json accepts a judged near-copy candidate...")
+    good_judged = {
+        "finder": "judged_same_asset_same_place",
+        "scope": "C1",
+        "fingerprint_a": "1111111111111111",
+        "fingerprint_b": "2222222222222222",
+        "finder_version": "work_candidate_derivation_v1",
+        "threshold_crossing_batch": False,
+        "text": "Shed at Kheda Chowk",
+        "text_b": "Shed near Kheda Chowk",
+        "quote_a": "Kheda Chowk",
+        "quote_b": "Kheda Chowk",
+        "work_relation": "duplicate_candidate",
+        "work_ids": ["W1", "W2"],
+    }
+    judged_errors = list(jsonschema.Draft7Validator(candidate_schema).iter_errors(good_judged))
+    if judged_errors:
+        print(f"  FAIL: a well-formed judged candidate was rejected: {judged_errors[0].message}")
+        return 1
+    broken_judged = {**good_judged, "work_relation": "maybe"}
+    broken_judged_errors = list(
+        jsonschema.Draft7Validator(candidate_schema).iter_errors(broken_judged)
+    )
+    if not broken_judged_errors:
+        print("  FAIL: validator did not catch an unknown work_relation")
+        return 1
+    print(f"  PASS: caught {len(broken_judged_errors)} error(s) on an unknown work_relation")
+
     print("\nAll self-tests passed. The validator has real teeth.")
     return 0
 

@@ -249,3 +249,35 @@ def test_duplicate_context_summarizes_without_the_work_itself(db_path: Path) -> 
         }
     ]
     assert duplicate_store.duplicate_context("W9", db_path=db_path) == []
+
+
+def test_duplicate_context_includes_the_near_copy_fields_only_when_present(db_path: Path) -> None:
+    identical, judged = (
+        _candidate("C1", "1111111111111111"),
+        {
+            "finder": "judged_same_asset_same_place",
+            "scope": "C2",
+            "fingerprint_a": "2222222222222222",
+            "fingerprint_b": "3333333333333333",
+            "finder_version": "work_candidate_derivation_v1",
+            "threshold_crossing_batch": False,
+            "text": "Shed at Kheda Chowk",
+            "text_b": "Shed near Kheda Chowk",
+            "quote_a": "Kheda Chowk",
+            "quote_b": "Kheda Chowk",
+            "work_relation": "duplicate_candidate",
+            "work_ids": ["W3", "W4"],
+        },
+    )
+    duplicate_store.upsert_candidates([identical, judged], db_path=db_path)
+
+    identical_context = duplicate_store.duplicate_context("W1", db_path=db_path)[0]
+    judged_context = duplicate_store.duplicate_context("W3", db_path=db_path)[0]
+
+    assert "text_b" not in identical_context
+    assert "work_relation" not in identical_context
+    assert judged_context["text_b"] == "Shed near Kheda Chowk"
+    assert judged_context["quote_a"] == "Kheda Chowk"
+    assert judged_context["quote_b"] == "Kheda Chowk"
+    assert judged_context["work_relation"] == "duplicate_candidate"
+    assert judged_context["other_work_ids"] == ["W4"]
