@@ -9,8 +9,9 @@ them:
                        state, constituency, MP, the Implementing District
                        Authority (IDA_NAME), sanctioned amount, sanction
                        date and work stage.
-  Works Completed   -> a subset of the same works, used only to decide
-                       completion_status. Do NOT infer completion from the
+  Works Completed   -> a subset of the same works, used to decide
+                       completion_status and to supply completion_date
+                       (ACTUAL_END_DATE). Do NOT infer completion from the
                        spine's WORK_STAGE alone: that column marks just
                        4,207 works "Work Completed" while this tile lists
                        34,258, so WORK_STAGE under-reports completion by
@@ -362,6 +363,19 @@ def _clean(value: Any) -> str | None:
     return text or None
 
 
+def _public_document_flag(row: Mapping[str, Any]) -> bool | None:
+    """True when the Sanctioned row's FILE_STATUS is truthy, False when the
+    key is present but falsy/None (the portal recorded no attached document
+    for this work), null only when the key itself is absent -- a row FILE_
+    STATUS was never asked about, not one confirmed to have nothing. Unlike
+    _clean()'s null-collapsing fields, an explicit False here is a real,
+    known fact and must not be blurred into "unknown".
+    """
+    if "FILE_STATUS" not in row:
+        return None
+    return bool(row["FILE_STATUS"])
+
+
 def _number(value: Any) -> float:
     """Amount fields, coerced to a non-negative float. The schema sets
     `minimum: 0` on both amount fields, and a negative disbursement (which
@@ -519,11 +533,16 @@ def adapt(
     as_of = as_of or datetime.now().date()
     last_updated = as_of.isoformat()
 
-    completed_ids = {
-        row.get("WORK_RECOMMENDATION_DTL_ID")
-        for row in completed_rows
-        if row.get("WORK_RECOMMENDATION_DTL_ID") is not None
-    }
+    # One pass over completed_rows builds both: the id set that decides
+    # completion_status and the id -> ACTUAL_END_DATE map that fills
+    # completion_date. A work absent from this tile gets a null
+    # completion_date, not a guess.
+    completed_end_dates: dict[Any, Any] = {}
+    for row in completed_rows:
+        work_id_key = row.get("WORK_RECOMMENDATION_DTL_ID")
+        if work_id_key is not None:
+            completed_end_dates[work_id_key] = row.get("ACTUAL_END_DATE")
+    completed_ids = set(completed_end_dates)
     rollups = rollup_expenditure(expenditure_rows)
 
     records: list[dict[str, Any]] = []
@@ -574,6 +593,12 @@ def adapt(
                 "work_description": _clean(row.get("WORK_DESCRIPTION")),
                 "activity_name": _clean(activity_of(row.get("ACTIVITY_NAME"))),
                 "recommendation_date": _parse_ddmmmyyyy(row.get("RECOMMENDATION_DATE")),
+                # T10: three more fields carried as published, none of them
+                # scored. `stage` is the same _clean(WORK_STAGE) already
+                # computed above for completion_status -- one read, two uses.
+                "work_stage": stage,
+                "completion_date": _parse_ddmmmyyyy(completed_end_dates.get(work_id)),
+                "has_public_document": _public_document_flag(row),
                 "sanctioned_amount_inr": _number(row.get("SANCTION_AMOUNT")),
                 "expenditure_amount_inr": rollup.total_inr if rollup else 0.0,
                 "sanction_date": _parse_ddmmmyyyy(row.get("SANCTION_DATE")),

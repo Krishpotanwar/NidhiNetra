@@ -19,6 +19,9 @@
     "work_description",
     "activity_name",
     "recommendation_date",
+    "work_stage",
+    "completion_date",
+    "has_public_document",
     "sanctioned_amount_inr",
     "expenditure_amount_inr",
     "sanction_date",
@@ -87,6 +90,19 @@
       "type": ["string", "null"],
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
       "description": "YYYY-MM-DD or null. The date the MP recommended the work, from RECOMMENDATION_DATE. Degradable: nothing scores on it yet."
+    },
+    "work_stage": {
+      "type": ["string", "null"],
+      "description": "The portal's own progress stage from the Sanctioned tile (WORK_STAGE), carried without interpretation. Six live values today: Sanction, Time Estimation, Vendor Identification, Physical Inspection, Work partially Completed, Work Completed. Degradable: completion_status stays the field every detector and filter uses; this is shown, never scored."
+    },
+    "completion_date": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "YYYY-MM-DD or null. ACTUAL_END_DATE from the Completed tile's row with the same WORK_RECOMMENDATION_DTL_ID. Null for a work the Completed tile has no row for. Degradable: nothing scores on it yet."
+    },
+    "has_public_document": {
+      "type": ["boolean", "null"],
+      "description": "Whether the Sanctioned row's FILE_STATUS marks an attached document on the public portal. True when truthy, false when the key is present but falsy/None, null only when the key itself is absent from the row. Degradable: nothing scores on it yet."
     },
     "sanctioned_amount_inr": {
       "type": "number",

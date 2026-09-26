@@ -18,7 +18,10 @@
     "source_rung": 5,
     "work_description": "Construction of bore well near Zilla Parishad school, Ward 4",
     "activity_name": "Drinking water facilities",
-    "recommendation_date": "2024-06-28"
+    "recommendation_date": "2024-06-28",
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0002",
@@ -39,7 +42,10 @@
     "source_rung": 5,
     "work_description": "PCC road from Kisan Bhawan to the bus stop",
     "activity_name": "Construction of roads",
-    "recommendation_date": "2024-07-02"
+    "recommendation_date": "2024-07-02",
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0003",
@@ -60,7 +66,10 @@
     "source_rung": 5,
     "work_description": "Installation of 5 solar street lights at the village chowk",
     "activity_name": "Street lighting",
-    "recommendation_date": "2024-07-11"
+    "recommendation_date": "2024-07-11",
+    "work_stage": "Work Completed",
+    "completion_date": "2024-09-05",
+    "has_public_document": true
   },
   {
     "work_id": "MPLADS-FX-0004",
@@ -81,7 +90,10 @@
     "source_rung": 5,
     "work_description": "Construction of community hall at Ward 9",
     "activity_name": "Construction of buildings for community activities",
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": "Physical Inspection",
+    "completion_date": null,
+    "has_public_document": false
   },
   {
     "work_id": "MPLADS-FX-0005",
@@ -102,7 +114,10 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0006",
@@ -123,7 +138,10 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0007",
@@ -144,7 +162,10 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0008",
@@ -165,7 +186,10 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0009",
@@ -186,7 +210,10 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0010",
@@ -207,7 +234,10 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0011",
@@ -228,7 +258,10 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0012",
@@ -249,7 +282,10 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0013",
@@ -270,7 +306,10 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0014",
@@ -291,7 +330,10 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0015",
@@ -312,7 +354,10 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0016",
@@ -333,7 +378,10 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0017",
@@ -354,7 +402,10 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0018",
@@ -375,7 +426,10 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0019",
@@ -396,7 +450,10 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   },
   {
     "work_id": "MPLADS-FX-0020",
@@ -417,6 +474,9 @@
     "source_rung": 5,
     "work_description": null,
     "activity_name": null,
-    "recommendation_date": null
+    "recommendation_date": null,
+    "work_stage": null,
+    "completion_date": null,
+    "has_public_document": null
   }
 ]

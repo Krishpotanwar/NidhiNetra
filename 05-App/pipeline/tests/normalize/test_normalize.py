@@ -231,3 +231,31 @@ def test_normalize_carries_the_three_source_fields_and_allows_them_to_be_null() 
     )[0]
     assert blanked["work_description"] is None
     assert blanked["recommendation_date"] is None
+
+
+def test_normalize_carries_work_stage_completion_date_and_document_presence() -> None:
+    raw = {
+        **VALID_RAW_RECORD,
+        "work_description": None,
+        "activity_name": None,
+        "recommendation_date": None,
+        "work_stage": "Work Completed",
+        "completion_date": "2024-09-05",
+        "has_public_document": True,
+    }
+
+    kept = normalize_records([raw], source_rung=1)[0]
+    assert kept["work_stage"] == "Work Completed"
+    assert kept["completion_date"] == "2024-09-05"
+    assert kept["has_public_document"] is True
+
+    falsy = normalize_records([{**raw, "has_public_document": False}], source_rung=1)[0]
+    assert falsy["has_public_document"] is False
+
+    blanked = normalize_records(
+        [{**raw, "work_stage": None, "completion_date": None, "has_public_document": None}],
+        source_rung=1,
+    )[0]
+    assert blanked["work_stage"] is None
+    assert blanked["completion_date"] is None
+    assert blanked["has_public_document"] is None

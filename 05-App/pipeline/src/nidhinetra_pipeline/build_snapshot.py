@@ -135,6 +135,31 @@ _SCORED_COLUMNS = _schema_columns("risk_scored_record.schema.json")
 # before the write is the standard fix for this exact quirk.
 _NULLABLE_STRING_COLUMNS = _nullable_string_columns("normalized_record.schema.json")
 
+
+def _nullable_boolean_columns(schema_filename: str) -> list[str]:
+    """Columns whose schema type is `["boolean", "null"]` -- the boolean
+    counterpart to _nullable_string_columns above, and derived from the
+    frozen schema for the same reason: a future nullable-boolean field must
+    not be able to silently fall through this cast the way the string
+    columns originally did.
+    """
+    schema = json.loads((CONTRACTS_DIR / schema_filename).read_text(encoding="utf-8"))
+    return [
+        name
+        for name, prop in schema["properties"].items()
+        if isinstance(prop.get("type"), list)
+        and "null" in prop["type"]
+        and "boolean" in prop["type"]
+    ]
+
+
+# has_public_document (T10). Same reasoning as _NULLABLE_STRING_COLUMNS: cast
+# to pandas' nullable "boolean" extension dtype before the write rather than
+# trust the default object dtype's parquet round trip, so the column's
+# on-disk type does not depend on which rows in a given build happen to be
+# True, False or null.
+_NULLABLE_BOOLEAN_COLUMNS = _nullable_boolean_columns("normalized_record.schema.json")
+
 # Matches pipeline/src/nidhinetra_pipeline/cli.py's FIXTURE_SOURCE_RUNG:
 # rung 5, the labelled hand-curated seed set (Execution Plan section 2).
 FIXTURE_SOURCE_RUNG = 5
@@ -521,6 +546,8 @@ def build_snapshot(
     # already guarantees.
     for column in _NULLABLE_STRING_COLUMNS:
         works_df[column] = works_df[column].astype("string")
+    for column in _NULLABLE_BOOLEAN_COLUMNS:
+        works_df[column] = works_df[column].astype("boolean")
     scored_df = pd.DataFrame(scored, columns=_SCORED_COLUMNS)
     for column in _JSON_ENCODED_SCORED_COLUMNS:
         scored_df[column] = scored_df[column].apply(json.dumps)

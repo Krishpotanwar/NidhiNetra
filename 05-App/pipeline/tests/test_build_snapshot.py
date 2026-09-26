@@ -270,6 +270,27 @@ class TestBuildSnapshotRefusesADowngrade:
                     "through the parquet round trip"
                 )
 
+    def test_has_public_document_round_trips_as_a_nullable_boolean(self, tmp_path):
+        """T10's one boolean column, cast the same way _NULLABLE_STRING_COLUMNS
+        casts its string columns: to a pandas nullable extension dtype before
+        the write, so the on-disk type does not depend on which rows in a
+        given build happen to be True, False or null. The real fixture has
+        one of each (MPLADS-FX-0003 true, MPLADS-FX-0004 false, the rest
+        null), so this exercises genuine mixed data, not a synthetic case.
+        """
+        bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw")
+        works_df = pd.read_parquet(tmp_path / "works.parquet")
+
+        assert works_df["has_public_document"].dtype == "boolean", (
+            f"has_public_document is {works_df['has_public_document'].dtype}, not pandas' "
+            "nullable boolean dtype -- cast it the way _NULLABLE_STRING_COLUMNS casts strings"
+        )
+        values = {record["has_public_document"] for record in works_df.to_dict(orient="records")}
+        assert values == {True, False, None}, (
+            f"expected True, False and None all present, got {values} -- the fixture "
+            "assumption above no longer holds"
+        )
+
     def test_explicit_now_pins_the_manifest_timestamp(self, tmp_path):
         fixed = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
         manifest = bs.build_snapshot(snapshot_dir=tmp_path, raw_dir=tmp_path / "raw", now=fixed)
@@ -478,6 +499,9 @@ class TestBuildSnapshotSourceSelection:
             "work_description": None,
             "activity_name": None,
             "recommendation_date": None,
+            "work_stage": None,
+            "completion_date": None,
+            "has_public_document": None,
             "sanctioned_amount_inr": 100000.0,
             "expenditure_amount_inr": 0.0,
             "sanction_date": "2024-07-09",
@@ -629,6 +653,46 @@ def test_the_three_source_fields_never_change_a_score_rank_flag_or_reason(tmp_pa
     monkeypatch.setattr(bs, "WORKS_FIXTURE_PATH", with_text)
     bs.build_snapshot(snapshot_dir=first, raw_dir=tmp_path / "raw", now=pinned)
     monkeypatch.setattr(bs, "WORKS_FIXTURE_PATH", without_text)
+    bs.build_snapshot(snapshot_dir=second, raw_dir=tmp_path / "raw", now=pinned)
+
+    assert _decisions(first) == _decisions(second)
+
+
+def test_the_three_new_portal_fields_never_change_a_score_rank_flag_or_reason(
+    tmp_path, monkeypatch
+):
+    """T10 carries three more portal fields (work_stage, completion_date,
+    has_public_document); it must not move a single decision either. Same
+    method as Phase 0's equivalence test above: the same works, built twice
+    with the same pinned reference time, once with the portal's own values
+    and once with all three fields blanked and altered.
+    """
+    rows = json.loads(REAL_FIXTURE.read_text(encoding="utf-8"))
+    with_fields = tmp_path / "with_fields.json"
+    without_fields = tmp_path / "without_fields.json"
+    with_fields.write_text(json.dumps(rows), encoding="utf-8")
+    without_fields.write_text(
+        json.dumps(
+            [
+                {
+                    **row,
+                    "work_stage": None if i % 2 else "Work partially Completed",
+                    "completion_date": None if i % 2 else "2020-01-01",
+                    "has_public_document": None
+                    if row["has_public_document"] is not False
+                    else True,
+                }
+                for i, row in enumerate(rows)
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    pinned = datetime(2026, 9, 13, 6, 27, 54, tzinfo=UTC)
+    first, second = tmp_path / "c", tmp_path / "d"
+    monkeypatch.setattr(bs, "WORKS_FIXTURE_PATH", with_fields)
+    bs.build_snapshot(snapshot_dir=first, raw_dir=tmp_path / "raw", now=pinned)
+    monkeypatch.setattr(bs, "WORKS_FIXTURE_PATH", without_fields)
     bs.build_snapshot(snapshot_dir=second, raw_dir=tmp_path / "raw", now=pinned)
 
     assert _decisions(first) == _decisions(second)

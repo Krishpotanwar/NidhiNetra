@@ -531,6 +531,46 @@ def test_adapt_leaves_the_three_new_fields_null_when_the_portal_has_nothing() ->
     assert record["recommendation_date"] is None
 
 
+def test_adapt_carries_work_stage_completion_date_and_document_presence() -> None:
+    sanctioned = [sanctioned_row(503, WORK_STAGE="Work Completed", FILE_STATUS=True)]
+    completed = [{"WORK_RECOMMENDATION_DTL_ID": 503, "ACTUAL_END_DATE": "05-Sep-2024"}]
+
+    record = adapt(sanctioned, completed, [], as_of=date(2026, 9, 4))[0]
+
+    assert record["work_stage"] == "Work Completed"
+    assert record["completion_date"] == "2024-09-05"
+    assert record["has_public_document"] is True
+
+
+def test_adapt_completion_date_is_null_when_the_work_id_is_not_in_the_completed_tile() -> None:
+    sanctioned = [sanctioned_row(504, WORK_STAGE="Physical Inspection")]
+
+    record = adapt(sanctioned, [], [], as_of=date(2026, 9, 4))[0]
+
+    assert record["work_stage"] == "Physical Inspection"
+    assert record["completion_date"] is None
+
+
+def test_adapt_has_public_document_is_false_when_file_status_is_present_but_falsy() -> None:
+    # FILE_STATUS is None on rows the portal has no attachment for (global-context.md:
+    # "FILE_STATUS (True on 24,955 rows, None on the rest)") -- present and falsy, not
+    # absent, so this is a known False rather than an unknown null.
+    sanctioned = [sanctioned_row(505, FILE_STATUS=None)]
+
+    record = adapt(sanctioned, [], [], as_of=date(2026, 9, 4))[0]
+
+    assert record["has_public_document"] is False
+
+
+def test_adapt_has_public_document_is_null_when_the_key_is_absent() -> None:
+    sanctioned = [sanctioned_row(506)]
+    assert "FILE_STATUS" not in sanctioned[0]
+
+    record = adapt(sanctioned, [], [], as_of=date(2026, 9, 4))[0]
+
+    assert record["has_public_document"] is None
+
+
 def test_counts_report_how_complete_the_three_source_fields_are(tmp_path) -> None:
     rows = [
         sanctioned_row(501, WORK_DESCRIPTION="Road work", RECOMMENDATION_DATE="08-Jul-2024"),
