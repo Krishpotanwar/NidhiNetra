@@ -106,6 +106,14 @@ def connect(snapshot_dir: Path | None = None) -> duckdb.DuckDBPyConnection:
     for column in ("work_description", "activity_name", "recommendation_date"):
         if column not in work_columns:
             optional_columns.append(f"CAST(NULL AS VARCHAR) AS {column}")
+    # T10 adds work_stage, completion_date and has_public_document; the real
+    # committed snapshot predates these too until the December T13 rebuild.
+    # Same compatibility rule: missing means null, not an absent column.
+    for column in ("work_stage", "completion_date"):
+        if column not in work_columns:
+            optional_columns.append(f"CAST(NULL AS VARCHAR) AS {column}")
+    if "has_public_document" not in work_columns:
+        optional_columns.append("CAST(NULL AS BOOLEAN) AS has_public_document")
     projection = ", ".join([star, *optional_columns])
     con.execute(f"CREATE VIEW works AS SELECT {projection} FROM works_snapshot")
     con.execute(f"CREATE VIEW scored AS SELECT * FROM '{scored_path.as_posix()}'")

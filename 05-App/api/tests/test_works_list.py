@@ -69,16 +69,49 @@ def test_legacy_snapshot_without_source_fields_stays_queryable(tmp_path, works_f
     assert rows[0]["recommendation_date"] is None
 
 
+def test_legacy_snapshot_without_t10_fields_stays_queryable(tmp_path, works_fixture):
+    """T10 adds work_stage, completion_date and has_public_document to newly
+    built snapshots, but the committed pre-T10 snapshot (which already has
+    Phase 0's three fields, per the T07 rebuild) has none of these three.
+    Until an operator performs the December T13 rebuild, the API
+    compatibility view must expose them as null -- and has_public_document
+    as SQL NULL, never a fabricated boolean -- rather than failing every
+    works query with a DuckDB binder error.
+    """
+    legacy_snapshot = tmp_path / "legacy-t10-fields-snapshot"
+    legacy_snapshot.mkdir()
+    works_path = legacy_snapshot / "works.parquet"
+    with duckdb.connect(":memory:") as connection:
+        connection.execute(
+            "CREATE TABLE legacy_works AS SELECT * "
+            "EXCLUDE (work_stage, completion_date, has_public_document) "
+            "FROM read_parquet(?)",
+            [str(db.SNAPSHOT_DIR / "works.parquet")],
+        )
+        connection.execute("COPY legacy_works TO ? (FORMAT PARQUET)", [str(works_path)])
+    shutil.copyfile(db.SNAPSHOT_DIR / "scored.parquet", legacy_snapshot / "scored.parquet")
+
+    work_id = works_fixture[0]["work_id"]
+    with db.connect(legacy_snapshot) as connection:
+        rows = db.rows_as_dicts(
+            connection, works_router._MERGED_SELECT + " WHERE works.work_id = ?", [work_id]
+        )
+
+    assert rows[0]["work_stage"] is None
+    assert rows[0]["completion_date"] is None
+    assert rows[0]["has_public_document"] is None
+
+
 def test_legacy_snapshot_answers_detail_and_search_through_the_real_endpoints(
     tmp_path, works_fixture, monkeypatch, client
 ):
     """The tests above query the compatibility view directly; this one goes
     through the real endpoints. The committed production Parquet is the
     14-column shape this builds: no vendor_id, no IDA/IA split and none of
-    Phase 0's three source fields. That is the shape the app actually serves
-    to an officer until someone performs the gated rebuild, so both the
-    detail endpoint and search have to answer on it correctly, not only the
-    SQL compatibility view underneath them.
+    Phase 0's or T10's source fields. That is the shape the app actually
+    served to an officer before the T07 rebuild, so both the detail endpoint
+    and search have to answer on it correctly, not only the SQL
+    compatibility view underneath them.
     """
     legacy_snapshot = tmp_path / "legacy-committed-shape-snapshot"
     legacy_snapshot.mkdir()
@@ -87,7 +120,8 @@ def test_legacy_snapshot_answers_detail_and_search_through_the_real_endpoints(
         connection.execute(
             "CREATE TABLE legacy_works AS SELECT * EXCLUDE "
             "(implementing_district_authority, implementing_agency, vendor_id, "
-            "work_description, activity_name, recommendation_date), "
+            "work_description, activity_name, recommendation_date, "
+            "work_stage, completion_date, has_public_document), "
             "implementing_district_authority AS implementing_agency "
             "FROM read_parquet(?)",
             [str(db.SNAPSHOT_DIR / "works.parquet")],
@@ -106,6 +140,9 @@ def test_legacy_snapshot_answers_detail_and_search_through_the_real_endpoints(
     assert record["work_description"] is None
     assert record["activity_name"] is None
     assert record["recommendation_date"] is None
+    assert record["work_stage"] is None
+    assert record["completion_date"] is None
+    assert record["has_public_document"] is None
     assert record["implementing_district_authority"] is not None
 
     listing = client.get("/api/works", params={"q": "District Authority", "page_size": 200})
@@ -116,6 +153,9 @@ def test_legacy_snapshot_answers_detail_and_search_through_the_real_endpoints(
         assert row["work_description"] is None
         assert row["activity_name"] is None
         assert row["recommendation_date"] is None
+        assert row["work_stage"] is None
+        assert row["completion_date"] is None
+        assert row["has_public_document"] is None
 
 
 def test_legacy_snapshot_ida_values_are_never_served_as_the_agency(tmp_path):

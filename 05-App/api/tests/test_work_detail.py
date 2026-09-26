@@ -49,6 +49,14 @@ def test_a_work_carries_the_portal_description_activity_and_recommendation_date(
     assert body["recommendation_date"] == "2024-06-28"
 
 
+def test_a_work_carries_work_stage_completion_date_and_document_presence(client):
+    body = client.get("/api/works/MPLADS-FX-0003").json()["data"]
+
+    assert body["work_stage"] == "Work Completed"
+    assert body["completion_date"] == "2024-09-05"
+    assert body["has_public_document"] is True
+
+
 def test_work_detail_carries_duplicate_context(client):
     work_id = "MPLADS-FX-0001"
     duplicate_store.upsert_candidates(
