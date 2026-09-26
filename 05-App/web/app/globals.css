@@ -2,3 +2,44 @@
 @import "../styles/tokens.css";
 @import "../styles/base.css";
 @import "../styles/typography.css";
+
+/* T7: the Inspection List's printable inspection plan (native window.print,
+   no PDF library). .print-only is a plain global class, not a CSS module
+   one -- it has to be a stable selector app/globals.css itself can target,
+   the same way .sr-only already is. Never wrap the .print-only element in a
+   <header>: the media print rule below hides that tag with !important,
+   which would silently win over .print-only's own display:block. */
+.print-only {
+  display: none;
+}
+
+@media print {
+  header,
+  footer,
+  nav,
+  [data-print="hide"] {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  table {
+    width: 100%;
+    font-size: 10pt;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}

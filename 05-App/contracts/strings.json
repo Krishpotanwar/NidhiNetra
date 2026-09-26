@@ -31,7 +31,8 @@
       "2026-09-26 (T2): duplicate_review.context_threshold restated as the clause's per-work rule plus the group's facts.",
       "2026-09-26 (T5): added pendency for the Dashboard's three MoSPI pendency cards, the Inspection List's Timeline filter and the detail panel's timelines-against-the-guidelines section, citing PIB release 2153066 and MPLADS Guidelines 2023 paras 3.2.4/3.2.12. Two of the task brief's exact sentences read 'the captured expenditure record' / 'was captured on {date}'; lint.banned_derived bans 'captured' (added earlier for agency-concentration language, 'controls, dominates, captured, cornered, monopolises'), and the word-boundary lint has no way to tell that sense apart from this one. Reworded both to 'the expenditure record' (no_payment_context, the modifier was removable without changing the meaning) and 'is dated {date}' (caveat, which needed a replacement verb) rather than relax the banned-word list for a collision with unrelated copy.",
       "2026-09-26 (T6): added lens for the 'View as' role lenses (Ministry/State Nodal Authority/District Authority/Member of Parliament, D6) -- view_label, the four role labels, all_district_authorities, choose_constituency and one duty_* sentence per lens, each citing its MPLADS Guidelines 2023 clause. All four task-brief sentences passed lint unchanged; none needed rewording.",
-      "2026-09-26 (T5 fix): added pendency.late_sanction_context_no_median. Review found late_sanction_context's {days} placeholder was being filled with a fallback 0 whenever median_days_to_sanction is null (a real state once a District Authority/constituency scope narrow enough to have no work with both dates recorded is reachable, which T6's pickers now make possible) -- an invented day-count, against the house rule against fabricated data. This variant states the same 45-day rule with no day-count at all rather than a false one; PendencyCards now selects it exactly when the median is null."
+      "2026-09-26 (T5 fix): added pendency.late_sanction_context_no_median. Review found late_sanction_context's {days} placeholder was being filled with a fallback 0 whenever median_days_to_sanction is null (a real state once a District Authority/constituency scope narrow enough to have no work with both dates recorded is reachable, which T6's pickers now make possible) -- an invented day-count, against the house rule against fabricated data. This variant states the same 45-day rule with no day-count at all rather than a false one; PendencyCards now selects it exactly when the median is null.",
+      "2026-09-26 (T7): added print.button and print.as_of for the Inspection List's printable inspection plan (native window.print, no PDF library). Both strings passed lint unchanged; neither needed rewording."
     ]
   },
   "_measure": {
@@ -1020,6 +1021,11 @@
     "empty_title": "No inspections recorded yet.",
     "empty_body": "Open any work from the inspection list and choose Record inspection. Each saved outcome appears here.",
     "empty_action": "Open the inspection list"
+  },
+  "print": {
+    "_note": "T7: the Inspection List's print-only header (native window.print, no PDF library). button is data-print=\"hide\" so it never appears on the printed page itself. as_of takes the same data_as_of formatDate already renders elsewhere -- never today's real-world date, so two officers printing the same snapshot on different days see the same line.",
+    "button": "Print this list",
+    "as_of": "Data as of {date}"
   },
   "system_pages": {
     "not_found_title": "There is no page at this address.",

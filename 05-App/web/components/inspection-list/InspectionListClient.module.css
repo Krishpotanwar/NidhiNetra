@@ -9,3 +9,27 @@
   font-size: var(--font-note);
   color: var(--ink-muted);
 }
+
+/* T7: "Print this list". Matches Pagination.module.css's .step/.jump
+ * buttons -- a plain secondary control, not a new visual language. Right
+ * aligned in the .stack column rather than stretched full width. */
+.printButton {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  height: 2.25rem;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.printButton:hover {
+  border-color: var(--accent);
+  color: var(--accent-deep);
+}
