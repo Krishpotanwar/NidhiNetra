@@ -462,6 +462,7 @@ name = "nidhinetra-pipeline"
 version = "0.1.0"
 source = { editable = "pipeline" }
 dependencies = [
+    { name = "duckdb" },
     { name = "httpx" },
     { name = "jsonschema" },
     { name = "networkx" },
@@ -479,6 +480,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "duckdb", specifier = ">=1.0" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "jsonschema", specifier = ">=4.0" },
     { name = "networkx", specifier = ">=3.3" },
