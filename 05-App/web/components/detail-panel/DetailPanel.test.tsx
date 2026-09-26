@@ -34,6 +34,9 @@ function row(overrides: Partial<InspectionRow> = {}): InspectionRow {
     work_description: "PCC Road from Ram house to Shyam house",
     activity_name: "Construction of roads",
     recommendation_date: "2024-07-02",
+    work_stage: "Work partially Completed",
+    completion_date: "2024-09-05",
+    has_public_document: true,
     sanctioned_amount_inr: 497185,
     expenditure_amount_inr: 250000,
     sanction_date: "2024-07-09",
@@ -147,6 +150,50 @@ test("shows a portal activity with capitals exactly as published", () => {
 
   expect(screen.getByText(fields.activity).nextElementSibling).toHaveTextContent(
     "Fitting of Sitting RCC Benches in Public Places",
+  );
+});
+
+test("lists the portal's work stage, completion date and document presence as published", () => {
+  render(<DetailPanel row={row()} onClose={() => {}} quotaN={10} />);
+
+  // Exactly as published, like activity_name -- no title-casing of the
+  // portal's own irregular capitalization ("partially" stays lowercase).
+  expect(screen.getByText(fields.work_stage).nextElementSibling).toHaveTextContent(
+    "Work partially Completed",
+  );
+  expect(screen.getByText(fields.completion_date).nextElementSibling).toHaveTextContent(
+    formatDate("2024-09-05"),
+  );
+  expect(screen.getByText(fields.has_public_document).nextElementSibling).toHaveTextContent(
+    STRINGS.detail_panel.document_yes,
+  );
+});
+
+test("shows document presence as published when the portal recorded no attachment", () => {
+  render(<DetailPanel row={row({ has_public_document: false })} onClose={() => {}} quotaN={10} />);
+
+  expect(screen.getByText(fields.has_public_document).nextElementSibling).toHaveTextContent(
+    STRINGS.detail_panel.document_no,
+  );
+});
+
+test("says so plainly when the portal has no stage, completion date or document flag", () => {
+  render(
+    <DetailPanel
+      row={row({ work_stage: null, completion_date: null, has_public_document: null })}
+      onClose={() => {}}
+      quotaN={10}
+    />,
+  );
+
+  expect(screen.getByText(fields.work_stage).nextElementSibling).toHaveTextContent(
+    STRINGS.missing_fields.generic,
+  );
+  expect(screen.getByText(fields.completion_date).nextElementSibling).toHaveTextContent(
+    STRINGS.missing_fields.date,
+  );
+  expect(screen.getByText(fields.has_public_document).nextElementSibling).toHaveTextContent(
+    STRINGS.missing_fields.generic,
   );
 });
 

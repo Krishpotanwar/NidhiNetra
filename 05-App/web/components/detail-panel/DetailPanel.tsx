@@ -151,6 +151,23 @@ function PanelBody({ row, onClose, quotaN }: { row: InspectionRow; onClose: () =
       value: row.recommendation_date ? formatDate(row.recommendation_date) : missing.date,
     },
     {
+      key: "work_stage",
+      value: row.work_stage || missing.generic,
+    },
+    {
+      key: "completion_date",
+      value: row.completion_date ? formatDate(row.completion_date) : missing.date,
+    },
+    {
+      key: "has_public_document",
+      value:
+        row.has_public_document === null
+          ? missing.generic
+          : row.has_public_document
+            ? strings.document_yes
+            : strings.document_no,
+    },
+    {
       key: "district_authority",
       value: row.implementing_district_authority
         ? displayName(row.implementing_district_authority)

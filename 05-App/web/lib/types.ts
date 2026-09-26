@@ -38,6 +38,9 @@ export interface NormalizedRecord {
   work_description: string | null;
   activity_name: string | null;
   recommendation_date: string | null;
+  work_stage: string | null;
+  completion_date: string | null;
+  has_public_document: boolean | null;
   sanctioned_amount_inr: number;
   expenditure_amount_inr: number;
   sanction_date: string | null;
