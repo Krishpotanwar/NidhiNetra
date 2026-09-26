@@ -18,6 +18,7 @@ import { EMPTY_FILTERS, inspectionListHref, type FilterState } from "@/lib/filte
 import { useApiResource } from "@/lib/use-api-resource";
 import { useRowTreatment } from "@/lib/preferences";
 import type { InspectionRow } from "@/lib/types";
+import { DutyLine } from "./DutyLine";
 import { KpiCards } from "./KpiCards";
 import { PendencyCards } from "./PendencyCards";
 import { QuotaCard, QuotaCardSkeleton } from "./QuotaCard";
@@ -102,6 +103,7 @@ export function DashboardClient() {
           ) : (
             !page && works.status !== "error" && <QuotaCardSkeleton />
           )}
+          <DutyLine view={filters.view} pendency={pendency.data} />
 
           <FilterPanel
             value={filters}

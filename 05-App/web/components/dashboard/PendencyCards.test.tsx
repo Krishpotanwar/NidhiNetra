@@ -84,6 +84,22 @@ describe("PendencyCards", () => {
     });
   });
 
+  it("carries the current role lens (view) into the link, per R3 (T6)", () => {
+    const filters = { ...EMPTY_FILTERS, districtAuthority: "Some DA", view: "district" as const };
+    render(<PendencyCards summary={summary()} status="ready" onRetry={() => {}} filters={filters} />);
+
+    const link = screen.getAllByRole("link", { name: copy.view_list })[0];
+    expect(link).toHaveAttribute(
+      "href",
+      inspectionListHref({
+        ...EMPTY_FILTERS,
+        districtAuthority: filters.districtAuthority,
+        view: "district",
+        pendency: "late_sanction",
+      }),
+    );
+  });
+
   it("shows the caveat under the row, with the snapshot's as-of date", () => {
     render(<PendencyCards summary={summary()} status="ready" onRetry={() => {}} filters={EMPTY_FILTERS} />);
 

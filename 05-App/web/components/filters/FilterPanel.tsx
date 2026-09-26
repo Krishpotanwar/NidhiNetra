@@ -2,10 +2,20 @@
 
 import { useId, type ReactNode } from "react";
 import type { Icon } from "@phosphor-icons/react";
-import { CalendarBlank, Clock, Database, Eye, Flag, MapPin, SquaresFour } from "@phosphor-icons/react";
+import { CalendarBlank, Clock, Database, Eye, Flag, MapPin, SquaresFour, Users } from "@phosphor-icons/react";
 import { STRINGS } from "@/lib/strings";
-import { EMPTY_FILTERS, flagLabel, isFilterActive, optionsFromFacet, pendencyOptions, type FilterState } from "@/lib/filters";
+import {
+  ALL,
+  EMPTY_FILTERS,
+  flagLabel,
+  isFilterActive,
+  optionsFromFacet,
+  pendencyOptions,
+  withView,
+  type FilterState,
+} from "@/lib/filters";
 import type { Facets } from "@/lib/types";
+import { displayName } from "@/lib/format";
 import { rowTreatment, usePresenterMode, useRowTreatment } from "@/lib/preferences";
 import { SelectControl } from "./SelectControl";
 import { StateSelect } from "./StateSelect";
@@ -17,6 +27,15 @@ export type PreviewState = "loaded" | "loading" | "empty";
 
 const filters = STRINGS.filters;
 const view = STRINGS.view_options;
+const lens = STRINGS.lens;
+
+/** T6: the "View as" role lens options, in the brief's own order. */
+const LENS_OPTIONS: { value: FilterState["view"]; label: string }[] = [
+  { value: "ministry", label: lens.ministry },
+  { value: "state", label: lens.state },
+  { value: "district", label: lens.district },
+  { value: "mp", label: lens.mp },
+];
 
 interface FilterPanelProps {
   value: FilterState;
@@ -38,7 +57,10 @@ interface FilterPanelProps {
 export function FilterPanel({ value, onChange, facets, previewState, onPreviewStateChange }: FilterPanelProps) {
   const presenter = usePresenterMode();
   const treatment = useRowTreatment();
+  const lensId = useId();
   const stateId = useId();
+  const daId = useId();
+  const mpId = useId();
   const yearId = useId();
   const categoryId = useId();
   const flagId = useId();
@@ -49,14 +71,49 @@ export function FilterPanel({ value, onChange, facets, previewState, onPreviewSt
   return (
     <section className={styles.panel} aria-label={filters.panel_label}>
       <div className={styles.group}>
-        <Field glyph={MapPin} label={filters.states} labelId={stateId}>
-          <StateSelect
-            labelId={stateId}
-            value={value.states}
-            options={facets?.states ?? []}
-            onChange={(states) => onChange({ ...value, states })}
+        <Field glyph={Users} label={lens.view_label} labelId={lensId}>
+          <Segmented
+            labelId={lensId}
+            value={value.view}
+            onChange={(next) => onChange(withView(value, next))}
+            options={LENS_OPTIONS}
           />
         </Field>
+        {value.view === "state" && (
+          <Field glyph={MapPin} label={filters.states} labelId={stateId}>
+            <StateSelect
+              labelId={stateId}
+              value={value.states}
+              options={facets?.states ?? []}
+              onChange={(states) => onChange({ ...value, states })}
+            />
+          </Field>
+        )}
+        {value.view === "district" && (
+          <Field glyph={MapPin} label={lens.district} labelId={daId}>
+            <StateSelect
+              single
+              labelId={daId}
+              value={value.districtAuthority === ALL ? [] : [value.districtAuthority]}
+              options={facets?.district_authorities ?? []}
+              allLabel={lens.all_district_authorities}
+              onChange={([next]) => onChange({ ...value, districtAuthority: next ?? ALL })}
+            />
+          </Field>
+        )}
+        {value.view === "mp" && (
+          <Field glyph={MapPin} label={lens.mp} labelId={mpId}>
+            <StateSelect
+              single
+              labelId={mpId}
+              value={value.constituency === ALL ? [] : [value.constituency]}
+              options={facets?.constituencies ?? []}
+              allLabel={lens.choose_constituency}
+              optionLabel={(option) => `${displayName(option.value)}, ${displayName(option.mp_name ?? "")}`}
+              onChange={([next]) => onChange({ ...value, constituency: next ?? ALL })}
+            />
+          </Field>
+        )}
         <Field glyph={CalendarBlank} label={filters.year} labelId={yearId}>
           <SelectControl
             labelId={yearId}

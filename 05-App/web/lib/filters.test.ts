@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ALL, EMPTY_FILTERS, filtersToQuery, listSearchParams, readListParams } from "./filters";
+import { ALL, EMPTY_FILTERS, filtersToQuery, listSearchParams, readListParams, withView } from "./filters";
 
 describe("vendor_id (Fund Flow's \"View linked works\" deep link)", () => {
   it("is included on the API query only when given", () => {
@@ -57,5 +57,45 @@ describe("pendency scope (T5: FilterState.pendency/districtAuthority/constituenc
     expect(qs.has("pendency")).toBe(false);
     expect(qs.has("district_authority")).toBe(false);
     expect(qs.has("constituency")).toBe(false);
+  });
+});
+
+describe("view (T6: the 'View as' role lens)", () => {
+  it("defaults to ministry", () => {
+    expect(EMPTY_FILTERS.view).toBe("ministry");
+  });
+
+  it("round-trips a non-default view through the address bar", () => {
+    const filters = { ...EMPTY_FILTERS, view: "district" as const };
+    const qs = listSearchParams(filters, null, 1);
+    expect(qs.get("view")).toBe("district");
+    expect(readListParams(qs).filters.view).toBe("district");
+  });
+
+  it("omits view from the address bar when it is the default ministry", () => {
+    const qs = listSearchParams(EMPTY_FILTERS, null, 1);
+    expect(qs.has("view")).toBe(false);
+  });
+
+  it("drops an unknown view back to ministry rather than reaching the API with it", () => {
+    const params = new URLSearchParams({ view: "not_a_real_view" });
+    expect(readListParams(params).filters.view).toBe("ministry");
+  });
+
+  it("is never sent to the API: filtersToQuery does not carry it", () => {
+    const filters = { ...EMPTY_FILTERS, view: "mp" as const };
+    expect(filtersToQuery(filters).has("view")).toBe(false);
+  });
+
+  it("withView clears states, districtAuthority and constituency", () => {
+    const filters = {
+      ...EMPTY_FILTERS,
+      view: "state" as const,
+      states: ["Bihar"],
+      districtAuthority: "Some DA",
+      constituency: "DHARWAD",
+    };
+    const next = withView(filters, "district");
+    expect(next).toEqual({ ...EMPTY_FILTERS, view: "district" });
   });
 });

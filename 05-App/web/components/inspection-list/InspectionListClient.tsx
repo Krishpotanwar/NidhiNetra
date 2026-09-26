@@ -6,6 +6,7 @@ import { STRINGS } from "@/lib/strings";
 import {
   ApiUnreachableError,
   fetchFacets,
+  fetchPendency,
   fetchSummary,
   fetchWorksPage,
   isDemoDataset,
@@ -15,6 +16,7 @@ import { EMPTY_FILTERS, listSearchParams, readListParams, type FilterState } fro
 import { useApiResource } from "@/lib/use-api-resource";
 import { useRowTreatment } from "@/lib/preferences";
 import type { InspectionRow } from "@/lib/types";
+import { DutyLine } from "@/components/dashboard/DutyLine";
 import { FilterPanel, type PreviewState } from "@/components/filters/FilterPanel";
 import { DetailPanel } from "@/components/detail-panel/DetailPanel";
 import type { RefreshState } from "@/components/data-provenance/RefreshControl";
@@ -55,6 +57,7 @@ export function InspectionListClient() {
 
   const loadSummary = useCallback((signal: AbortSignal) => fetchSummary(signal), []);
   const loadFacets = useCallback((signal: AbortSignal) => fetchFacets(signal), []);
+  const loadPendency = useCallback((signal: AbortSignal) => fetchPendency(filters, signal), [filters]);
   const request = useMemo(
     () => ({ filters, q, page, pageSize: PAGE_SIZE, vendorId }),
     [filters, q, page, vendorId],
@@ -63,6 +66,7 @@ export function InspectionListClient() {
 
   const summary = useApiResource(loadSummary);
   const facets = useApiResource(loadFacets);
+  const pendency = useApiResource(loadPendency);
   const works = useApiResource(loadWorks);
   const result = works.data;
 
@@ -73,6 +77,7 @@ export function InspectionListClient() {
       .then(() => {
         summary.reload();
         facets.reload();
+        pendency.reload();
         works.reload();
         setRefreshState("idle");
       })
@@ -80,7 +85,7 @@ export function InspectionListClient() {
         if (!(err instanceof ApiUnreachableError)) console.error("Unexpected error refreshing", err);
         setRefreshState("failed");
       });
-  }, [refreshState, summary, facets, works]);
+  }, [refreshState, summary, facets, pendency, works]);
 
   const dataState: TableDataState =
     preview === "loading" ? "loading" : preview === "empty" ? "empty" : !result
@@ -115,6 +120,7 @@ export function InspectionListClient() {
           refreshState={refreshState}
           onRefresh={handleRefresh}
         />
+        <DutyLine view={filters.view} pendency={pendency.data} />
 
         <InspectionTable
           caption={STRINGS.nav.inspection_list}

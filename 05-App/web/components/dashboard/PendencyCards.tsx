@@ -65,14 +65,16 @@ function buildCards(summary: PendencySummary): CardData[] {
 }
 
 /** R3: scope only (states/districtAuthority/constituency) plus pendency, so
- *  the card's count and the list it links to always agree on population. T6
- *  adds `view` to this same spread. */
+ *  the card's count and the list it links to always agree on population.
+ *  T6 adds `view`, so a card clicked under a role lens opens the list in
+ *  that same lens rather than resetting to Ministry. */
 function cardHref(kind: PendencyKind, filters: FilterState): string {
   return inspectionListHref({
     ...EMPTY_FILTERS,
     states: filters.states,
     districtAuthority: filters.districtAuthority,
     constituency: filters.constituency,
+    view: filters.view,
     pendency: kind,
   });
 }

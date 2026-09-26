@@ -1,9 +1,10 @@
 .group {
   display: inline-flex;
+  max-width: 100%;
   border: 1px solid var(--control-border);
   border-radius: var(--radius-control);
   background: var(--surface);
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .segment {

@@ -8,6 +8,7 @@
   border: 1px solid var(--hairline);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
+  min-width: 0;
 }
 
 .group {
@@ -15,6 +16,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-4) var(--space-6);
+  min-width: 0;
 }
 
 .group:last-of-type {
@@ -32,6 +34,13 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  /* T6: the "View as" lens has four options, wider than any field this
+     panel showed before. min-width:0 here, on .panel and on .group above,
+     lets a field actually shrink to fit its wrapped row on a narrow
+     viewport instead of forcing the whole page to scroll sideways --
+     Segmented.module.css's own .group then scrolls that control
+     internally once it no longer fits. */
+  min-width: 0;
 }
 
 .fieldIcon {

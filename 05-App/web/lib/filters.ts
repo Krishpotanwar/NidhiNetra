@@ -20,6 +20,16 @@ export const ALL = "__all__";
 /** Matches the API's own bound on q (models.py works_query). */
 export const MAX_QUERY_LENGTH = 120;
 
+/** T6: the "View as" role lens (D6 -- a role lens is a preset scope plus one
+ *  duty sentence, never a new page or nav tab). Default "ministry": the
+ *  whole nation, no scope narrowing. */
+export const VIEWS = ["ministry", "state", "district", "mp"] as const;
+export type View = (typeof VIEWS)[number];
+
+export function isView(value: string): value is View {
+  return (VIEWS as readonly string[]).includes(value);
+}
+
 export interface FilterState {
   states: string[];
   year: string;
@@ -27,13 +37,16 @@ export interface FilterState {
   flag: string;
   /** ALL or one of PENDENCY_KINDS below (T4's three MoSPI pendency kinds). */
   pendency: string;
-  /** ALL or a district_authority value from /api/works/facets. T5 has no
-   *  picker for this yet (T6 adds one); it still round-trips through the
-   *  address bar and scopes fetchPendency/fetchWorksPage when set. */
+  /** ALL or a district_authority value from /api/works/facets. Set by T6's
+   *  "District Authority" lens picker; round-trips through the address bar
+   *  and scopes fetchPendency/fetchWorksPage when set. */
   districtAuthority: string;
-  /** ALL or a constituency value from /api/works/facets. Same T6 note as
+  /** ALL or a constituency value from /api/works/facets. Set by T6's
+   *  "Member of Parliament" lens picker; same round-trip as
    *  districtAuthority above. */
   constituency: string;
+  /** T6: which role's dashboard preset is showing. */
+  view: View;
 }
 
 export const EMPTY_FILTERS: FilterState = {
@@ -44,7 +57,18 @@ export const EMPTY_FILTERS: FilterState = {
   pendency: ALL,
   districtAuthority: ALL,
   constituency: ALL,
+  view: "ministry",
 };
+
+/**
+ * Switching the role lens presets a fresh scope (T6 brief): the state list,
+ * District Authority or constituency chosen under the previous lens belonged
+ * to a different role and would otherwise linger as a filter that is no
+ * longer visible under the new picker.
+ */
+export function withView(f: FilterState, next: View): FilterState {
+  return { ...f, view: next, states: [], districtAuthority: ALL, constituency: ALL };
+}
 
 export function isFilterActive(f: FilterState): boolean {
   return (
@@ -160,7 +184,12 @@ export function filtersToQuery(f: FilterState, q?: string | null, vendorId?: str
  *  vendorId is a link-in facet (arriving from a Fund Flow "View linked
  *  works" link), the same pattern Fund Flow's own agency/vendor deep links
  *  already use -- carried through the address bar, with no FilterPanel
- *  chip of its own. */
+ *  chip of its own. `view` rides along the same way: it is never sent to
+ *  the API (filtersToQuery does not carry it, so fetchWorksPage/fetchPendency
+ *  never see it), only round-tripped so a link built under one role lens
+ *  (a PendencyCards card, "View the full inspection list") opens the list in
+ *  that same lens. Omitted when it is the default, matching every other
+ *  sentinel-valued param here. */
 export function listSearchParams(
   f: FilterState,
   q: string | null,
@@ -168,6 +197,7 @@ export function listSearchParams(
   vendorId?: string | null,
 ): URLSearchParams {
   const params = filtersToQuery(f, q, vendorId);
+  if (f.view !== EMPTY_FILTERS.view) params.set("view", f.view);
   if (page > 1) params.set("page", String(page));
   return params;
 }
@@ -199,11 +229,13 @@ export function readListParams(
   const pendency = isPendencyKind(rawPendency) ? rawPendency : ALL;
   const districtAuthority = params.get("district_authority")?.trim() || ALL;
   const constituency = params.get("constituency")?.trim() || ALL;
+  const rawView = params.get("view")?.trim() ?? "";
+  const view = isView(rawView) ? rawView : "ministry";
   const q = (params.get("q") ?? "").trim().slice(0, MAX_QUERY_LENGTH);
   const parsedPage = Number.parseInt(params.get("page") ?? "1", 10);
   const page = Number.isFinite(parsedPage) && parsedPage >= 1 ? parsedPage : 1;
   const vendorId = params.get("vendor_id")?.trim() || null;
-  return { filters: { states, year, category, flag, pendency, districtAuthority, constituency }, q, page, vendorId };
+  return { filters: { states, year, category, flag, pendency, districtAuthority, constituency, view }, q, page, vendorId };
 }
 
 export interface SelectOption {

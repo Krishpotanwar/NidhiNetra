@@ -29,7 +29,8 @@
       "2026-09-19: Fund Flow Sankey rebuild. Changed fund_flow.subtitle to 'Trace concentrated MP, agency and vendor relationships in the MPLADS record.', and fund_flow.search_label and .search_placeholder to 'Search vendors': the search matches vendor names only, so 'or agency' claimed something it never did. Added fund_flow.toolbar_count, .members_pill, .view_all, .show_fewer, .works_count, .flow_table_caption, .flow_table_from, .flow_table_to, .flow_table_amount, .flow_table_works and .flow_table_flagged for the redesigned toolbar, cluster header, vendor list, vendor boxes and the chart's text table. fund_flow.concentration_filter_description, .cluster_median_note and .clusters_note are no longer shown; they stay in the contract because nothing checks for unused keys.",
       "2026-09-23: added duplicate_review for Phase 1 Stage C's review queue and the detail panel's shared-description section. Modelled on entity_alias_review, reusing its exact actions 'These are the same' / 'These are different'. This queue is scoped to Finder 1/3's identical batches only (works sharing one portal description word for word within a constituency); no near-copy pair is shown here yet, so nothing about a shared word or a partial match is claimed. 'Duplicate' does not appear anywhere in the block, per the same house rule entity_alias_review follows. threshold_note names MPLADS Guidelines 2023 clause 4.4.2 for the batches that cross it, mirroring the wording already used in the pipeline's own duplicate_candidates.schema.json.",
       "2026-09-26 (T2): duplicate_review.context_threshold restated as the clause's per-work rule plus the group's facts.",
-      "2026-09-26 (T5): added pendency for the Dashboard's three MoSPI pendency cards, the Inspection List's Timeline filter and the detail panel's timelines-against-the-guidelines section, citing PIB release 2153066 and MPLADS Guidelines 2023 paras 3.2.4/3.2.12. Two of the task brief's exact sentences read 'the captured expenditure record' / 'was captured on {date}'; lint.banned_derived bans 'captured' (added earlier for agency-concentration language, 'controls, dominates, captured, cornered, monopolises'), and the word-boundary lint has no way to tell that sense apart from this one. Reworded both to 'the expenditure record' (no_payment_context, the modifier was removable without changing the meaning) and 'is dated {date}' (caveat, which needed a replacement verb) rather than relax the banned-word list for a collision with unrelated copy."
+      "2026-09-26 (T5): added pendency for the Dashboard's three MoSPI pendency cards, the Inspection List's Timeline filter and the detail panel's timelines-against-the-guidelines section, citing PIB release 2153066 and MPLADS Guidelines 2023 paras 3.2.4/3.2.12. Two of the task brief's exact sentences read 'the captured expenditure record' / 'was captured on {date}'; lint.banned_derived bans 'captured' (added earlier for agency-concentration language, 'controls, dominates, captured, cornered, monopolises'), and the word-boundary lint has no way to tell that sense apart from this one. Reworded both to 'the expenditure record' (no_payment_context, the modifier was removable without changing the meaning) and 'is dated {date}' (caveat, which needed a replacement verb) rather than relax the banned-word list for a collision with unrelated copy.",
+      "2026-09-26 (T6): added lens for the 'View as' role lenses (Ministry/State Nodal Authority/District Authority/Member of Parliament, D6) -- view_label, the four role labels, all_district_authorities, choose_constituency and one duty_* sentence per lens, each citing its MPLADS Guidelines 2023 clause. All four task-brief sentences passed lint unchanged; none needed rewording."
     ]
   },
   "_measure": {
@@ -945,6 +946,20 @@
     "legend_quota": "Inside the quota",
     "legend_flagged": "Flagged, past the cutoff",
     "legend_rest": "Not currently flagged"
+  },
+  "lens": {
+    "_note": "T6: the 'View as' role lenses (D6, PRD dashboards for Ministry/State Nodal Authority/District Authority/MP). Each duty_* sentence takes every number from GET /api/pendency for the current scope (ruling R5) -- never works-page meta, which moves with the flag/category filters and would make the sentence and the scope disagree.",
+    "view_label": "View as",
+    "ministry": "Ministry",
+    "state": "State Nodal Authority",
+    "district": "District Authority",
+    "mp": "Member of Parliament",
+    "all_district_authorities": "All District Authorities",
+    "choose_constituency": "Choose a constituency",
+    "duty_ministry": "Each District Authority owes its own 10 percent, rounded up. Across the {da_n} authorities in view that is {quota_sum} inspections this year (clause 4.5.2).",
+    "duty_state": "Third-party inspection, clause 4.4.2: all {n25} works of Rs 25 lakh or more and half of the {n15} works between Rs 15 and 25 lakh, {required} in all. State officials also inspect at least 1 percent of works by value in each district (clause 4.4.1).",
+    "duty_district": "Clause 4.5.2: this District Authority inspects at least {quota} of its {n} works under implementation this year. The list below is ordered for that.",
+    "duty_mp": "{late} of this constituency's {n} works under implementation were sanctioned more than 45 days after recommendation, and {open} are open more than a year after sanction."
   },
   "view_options": {
     "row_treatment": "Row treatment",
