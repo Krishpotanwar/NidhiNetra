@@ -1,6 +1,9 @@
 import { fetchEnvelope, fetchEnvelopeWithMeta } from "./api-client";
 
-export type DuplicateFinder = "identical_batch" | "district_identical_batch";
+export type DuplicateFinder =
+  | "identical_batch"
+  | "district_identical_batch"
+  | "judged_same_asset_same_place";
 export type DuplicateReviewStatus = "pending" | "confirmed_same" | "rejected_different";
 export type DuplicateDecision = Exclude<DuplicateReviewStatus, "pending">;
 
@@ -31,6 +34,10 @@ export interface DuplicateCandidateRecord {
   scope: string;
   threshold_crossing_batch: boolean;
   text: string;
+  text_b?: string;
+  quote_a?: string;
+  quote_b?: string;
+  work_relation?: "duplicate_candidate" | "split_or_phase_candidate";
   work_ids: string[];
   status: DuplicateReviewStatus;
   current_review: DuplicateCurrentReview | null;
@@ -46,6 +53,9 @@ export interface DuplicateCandidatePage {
   pageSize: number;
   total: number;
   totalPages: number;
+  judgeAbstentionRate: number | null;
+  judgeQuoteRejectionRate: number | null;
+  judgePairsTotal: number | null;
 }
 
 /** The work-detail endpoint's summary of the batches one work belongs to (nidhinetra_pipeline's
@@ -55,6 +65,10 @@ export interface DuplicateContextEntry {
   finder: DuplicateFinder;
   threshold_crossing_batch: boolean;
   text: string;
+  text_b?: string;
+  quote_a?: string;
+  quote_b?: string;
+  work_relation?: "duplicate_candidate" | "split_or_phase_candidate";
   work_count: number;
   other_work_ids: string[];
   status: DuplicateReviewStatus;
@@ -63,6 +77,11 @@ export interface DuplicateContextEntry {
 function metaNumber(meta: Record<string, unknown> | null, key: string, fallback: number): number {
   const value = meta?.[key];
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function metaNullableNumber(meta: Record<string, unknown> | null, key: string): number | null {
+  const value = meta?.[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 export async function fetchDuplicateCandidates(
@@ -85,6 +104,9 @@ export async function fetchDuplicateCandidates(
     pageSize: metaNumber(result.meta, "page_size", pageSize),
     total: metaNumber(result.meta, "total", result.data.length),
     totalPages: metaNumber(result.meta, "total_pages", result.data.length > 0 ? 1 : 0),
+    judgeAbstentionRate: metaNullableNumber(result.meta, "judge_abstention_rate"),
+    judgeQuoteRejectionRate: metaNullableNumber(result.meta, "judge_quote_rejection_rate"),
+    judgePairsTotal: metaNullableNumber(result.meta, "judge_pairs_total"),
   };
 }
 

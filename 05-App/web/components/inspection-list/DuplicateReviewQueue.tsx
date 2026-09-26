@@ -3,7 +3,7 @@
 import { useCallback, useId, useState } from "react";
 import Link from "next/link";
 import { renderTemplate, STRINGS } from "@/lib/strings";
-import { displayName, formatIndianInt } from "@/lib/format";
+import { displayName, formatIndianInt, formatPercent } from "@/lib/format";
 import {
   fetchDuplicateCandidates,
   reviewDuplicateCandidate,
@@ -69,6 +69,15 @@ export function DuplicateReviewQueue() {
               {s.title}
             </h2>
             <p className={styles.body}>{s.body}</p>
+            {result && result.judgePairsTotal !== null && (
+              <p className={styles.body}>
+                {renderTemplate(s.judge_rates_note, {
+                  total: formatIndianInt(result.judgePairsTotal),
+                  abstained_percent: formatPercent(result.judgeAbstentionRate ?? 0),
+                  rejected_percent: formatPercent(result.judgeQuoteRejectionRate ?? 0),
+                })}
+              </p>
+            )}
           </div>
 
           <div className={styles.controls}>
@@ -220,9 +229,13 @@ function DuplicateRow({
     <tr className={styles.row}>
       <td>
         <span className={styles.text}>{displayName(candidate.text)}</span>
+        {candidate.text_b && <span className={styles.text}>{displayName(candidate.text_b)}</span>}
         <span className={styles.scope}>{displayName(candidate.scope)}</span>
         {candidate.threshold_crossing_batch && (
           <p className={styles.thresholdNote}>{s.threshold_note}</p>
+        )}
+        {candidate.finder === "judged_same_asset_same_place" && (
+          <p className={styles.thresholdNote}>{s.judged_badge}</p>
         )}
       </td>
       <td>

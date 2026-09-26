@@ -16,6 +16,22 @@ const candidate = {
   evidence_works: [],
 };
 
+const judgedCandidate = {
+  candidate_id: 20,
+  finder: "judged_same_asset_same_place" as const,
+  scope: "GURDASPUR",
+  threshold_crossing_batch: false,
+  text: "Shed at Kheda Chowk",
+  text_b: "Shed near Kheda Chowk village",
+  quote_a: "Kheda Chowk",
+  quote_b: "Kheda Chowk",
+  work_relation: "duplicate_candidate" as const,
+  work_ids: ["W10", "W11"],
+  status: "pending" as const,
+  current_review: null,
+  evidence_works: [],
+};
+
 function response(data: unknown, meta: Record<string, unknown> | null = null, status = 200): Response {
   return {
     ok: status >= 200 && status < 300,
@@ -192,5 +208,33 @@ describe("DuplicateReviewQueue", () => {
     expect(String(fetchMock.mock.calls[3][0])).toContain("page=1");
     expect(await screen.findByText("Earlier road text")).toBeInTheDocument();
     expect(screen.queryByText("No works are waiting for review.")).not.toBeInTheDocument();
+  });
+
+  test("shows the judged badge, both descriptions, and the judge's rates for a near-copy candidate", async () => {
+    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockResolvedValueOnce(
+      response([judgedCandidate], {
+        page: 1,
+        page_size: 25,
+        total: 1,
+        total_pages: 1,
+        judge_abstention_rate: 5.8,
+        judge_quote_rejection_rate: 6.3,
+        judge_pairs_total: 39093,
+      }),
+    );
+
+    render(<DuplicateReviewQueue />);
+
+    await screen.findByText("Shed at Kheda Chowk");
+    expect(screen.getByText("Shed near Kheda Chowk village")).toBeInTheDocument();
+    expect(
+      screen.getByText("Near-identical descriptions, read by a model, quotes checked by code"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Of 39,093 near-identical description pairs a model read, 6% were left unclear and 6% had a quoted word rejected by code.",
+      ),
+    ).toBeInTheDocument();
   });
 });

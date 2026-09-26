@@ -335,11 +335,20 @@ function DuplicateContextSection({ workId }: { workId: string }) {
       {entries.map((entry) => (
         <div key={entry.candidate_id} className={styles.contribution}>
           <p className={styles.contributionHead}>{displayName(entry.text)}</p>
+          {entry.text_b && <p className={styles.contributionHead}>{displayName(entry.text_b)}</p>}
           <p className={styles.reason}>
             {renderTemplate(duplicateStrings.context_count, { count: entry.work_count - 1 })}
           </p>
           {entry.threshold_crossing_batch && (
             <p className={styles.note}>{duplicateStrings.context_threshold}</p>
+          )}
+          {entry.quote_a && entry.quote_b && (
+            <p className={styles.note}>
+              {renderTemplate(duplicateStrings.judged_quotes, {
+                quote_a: entry.quote_a,
+                quote_b: entry.quote_b,
+              })}
+            </p>
           )}
           <ul className={styles.evidenceList}>
             {entry.other_work_ids.map((otherId) => (

@@ -309,3 +309,43 @@ test("shows no early-warning line when the row is not in the watch tenth", () =>
 
   expect(screen.queryByText(earlyWarning.detail)).not.toBeInTheDocument();
 });
+
+test("shows both descriptions and the quoted spans for a near-copy shared-description entry", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        error: null,
+        meta: null,
+        data: {
+          duplicate_context: [
+            {
+              candidate_id: 20,
+              finder: "judged_same_asset_same_place",
+              threshold_crossing_batch: false,
+              text: "Shed at Kheda Chowk",
+              text_b: "Shed near Kheda Chowk village",
+              quote_a: "Kheda Chowk",
+              quote_b: "Kheda Chowk",
+              work_relation: "duplicate_candidate",
+              work_count: 2,
+              other_work_ids: ["MPLADS-FX-0099"],
+              status: "pending",
+            },
+          ],
+        },
+      }),
+    })),
+  );
+
+  render(<DetailPanel row={row()} onClose={() => {}} quotaN={10} />);
+
+  expect(await screen.findByText("Shed at Kheda Chowk")).toBeInTheDocument();
+  expect(screen.getByText("Shed near Kheda Chowk village")).toBeInTheDocument();
+  expect(
+    screen.getByText('The words a model quoted from each description: “Kheda Chowk” and “Kheda Chowk”.'),
+  ).toBeInTheDocument();
+});
