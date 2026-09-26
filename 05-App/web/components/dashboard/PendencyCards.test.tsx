@@ -100,6 +100,23 @@ describe("PendencyCards", () => {
     );
   });
 
+  it("never invents a median when none exists (review finding a)", () => {
+    const withoutMedian = summary({
+      kinds: {
+        late_sanction: { count: 33204, sanctioned_inr: 18106900000, median_days_to_sanction: null },
+        open_past_one_year: { count: 10856, sanctioned_inr: 5962400000 },
+        no_payment_90_days: { count: 17441, sanctioned_inr: 9068700000 },
+      },
+    });
+    render(<PendencyCards summary={withoutMedian} status="ready" onRetry={() => {}} filters={EMPTY_FILTERS} />);
+
+    expect(screen.getByText(copy.late_sanction_context_no_median)).toBeInTheDocument();
+    expect(screen.queryByText(/Median/)).not.toBeInTheDocument();
+    // Word-boundary, not a plain substring match: no_payment_context/label
+    // legitimately contain "90 days", which a bare /0 days/ would also catch.
+    expect(screen.queryByText(/\b0 days\b/)).not.toBeInTheDocument();
+  });
+
   it("shows the caveat under the row, with the snapshot's as-of date", () => {
     render(<PendencyCards summary={summary()} status="ready" onRetry={() => {}} filters={EMPTY_FILTERS} />);
 

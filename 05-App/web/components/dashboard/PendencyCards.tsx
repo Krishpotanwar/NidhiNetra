@@ -36,16 +36,17 @@ function buildCards(summary: PendencySummary): CardData[] {
       label: copy.late_sanction_label,
       count: kinds.late_sanction.count,
       sanctionedInr: kinds.late_sanction.sanctioned_inr,
-      context: renderTemplate(copy.late_sanction_context, {
-        // ponytail: median_days_to_sanction is null only when nothing in the
-        // current scope has both dates recorded -- never true nationally or
-        // per-state on the committed snapshot (global-context.md: median 90).
-        // T5 ships no District Authority/constituency picker yet (T6), so a
-        // scope narrow enough to hit this is not reachable from the UI today.
-        // Falls back to 0 rather than a new copy variant for an edge case
-        // that cannot currently render; revisit if T6's pickers reach it.
-        days: kinds.late_sanction.median_days_to_sanction ?? 0,
-      }),
+      // median_days_to_sanction is null only when nothing in the current
+      // scope has both dates recorded -- reachable once T6's District
+      // Authority/constituency pickers narrow the scope that far. Never
+      // invent a day-count for it (review finding a): render the same
+      // 45-day rule with no median clause at all instead.
+      context:
+        kinds.late_sanction.median_days_to_sanction === null
+          ? copy.late_sanction_context_no_median
+          : renderTemplate(copy.late_sanction_context, {
+              days: kinds.late_sanction.median_days_to_sanction,
+            }),
     },
     {
       kind: "open_past_one_year",
