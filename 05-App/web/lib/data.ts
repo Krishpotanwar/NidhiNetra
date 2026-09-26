@@ -7,9 +7,9 @@
  * a real 44,810 (Logbook, 2026-09-04). API_BASE is overridable via
  * NEXT_PUBLIC_API_BASE_URL; see lib/api-client.ts.
  */
-import type { Facets, InspectionRow, InspectionsReport, NormalizedRecord } from "./types";
+import type { Facets, InspectionRow, InspectionsReport, NormalizedRecord, PendencySummary } from "./types";
 import { ApiUnreachableError, fetchEnvelope, fetchEnvelopeWithMeta } from "./api-client";
-import { filtersToQuery, type FilterState } from "./filters";
+import { filtersToQuery, scopeQuery, type FilterState } from "./filters";
 import { displayName } from "./format";
 
 export { ApiUnreachableError };
@@ -88,6 +88,19 @@ export async function fetchWorksPage(request: WorksPageRequest, signal?: AbortSi
 
 export function fetchFacets(signal?: AbortSignal): Promise<Facets> {
   return fetchEnvelope<Facets>("/api/works/facets", { signal });
+}
+
+/**
+ * GET /api/pendency. Scope-only (R3): state, district_authority and
+ * constituency, via the same scopeQuery() fetchWorksPage's own query is
+ * built from -- never year, category, flag, pendency, q or vendor_id. A
+ * PendencyCards count is a statement about a scope, not a filtered list, so
+ * sending more than the scope would make the card and its "View these
+ * works" link disagree about what "these works" means.
+ */
+export function fetchPendency(filters: FilterState, signal?: AbortSignal): Promise<PendencySummary> {
+  const qs = scopeQuery(filters).toString();
+  return fetchEnvelope<PendencySummary>(`/api/pendency${qs ? `?${qs}` : ""}`, { signal });
 }
 
 export function fetchSummary(signal?: AbortSignal): Promise<ApiSummary> {

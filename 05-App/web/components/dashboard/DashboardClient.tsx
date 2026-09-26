@@ -6,6 +6,7 @@ import { ArrowRight } from "@phosphor-icons/react";
 import { STRINGS } from "@/lib/strings";
 import {
   fetchFacets,
+  fetchPendency,
   fetchSummary,
   fetchWorksPage,
   getSummaryFigures,
@@ -18,6 +19,7 @@ import { useApiResource } from "@/lib/use-api-resource";
 import { useRowTreatment } from "@/lib/preferences";
 import type { InspectionRow } from "@/lib/types";
 import { KpiCards } from "./KpiCards";
+import { PendencyCards } from "./PendencyCards";
 import { QuotaCard, QuotaCardSkeleton } from "./QuotaCard";
 import { FilterPanel, type PreviewState } from "@/components/filters/FilterPanel";
 import { SummaryLine } from "@/components/inspection-list/SummaryLine";
@@ -39,6 +41,7 @@ export function DashboardClient() {
 
   const loadSummary = useCallback((signal: AbortSignal) => fetchSummary(signal), []);
   const loadFacets = useCallback((signal: AbortSignal) => fetchFacets(signal), []);
+  const loadPendency = useCallback((signal: AbortSignal) => fetchPendency(filters, signal), [filters]);
   const request = useMemo(
     () => ({ filters, q: null, page: 1, pageSize: DASHBOARD_ROWS }),
     [filters],
@@ -47,6 +50,7 @@ export function DashboardClient() {
 
   const summary = useApiResource(loadSummary);
   const facets = useApiResource(loadFacets);
+  const pendency = useApiResource(loadPendency);
   const works = useApiResource(loadWorks);
 
   const figures = summary.data ? getSummaryFigures(summary.data) : null;
@@ -59,6 +63,7 @@ export function DashboardClient() {
       .then(() => {
         summary.reload();
         facets.reload();
+        pendency.reload();
         works.reload();
         setRefreshState("idle");
       })
@@ -68,7 +73,7 @@ export function DashboardClient() {
         if (!(err instanceof ApiUnreachableError)) console.error("Unexpected error refreshing", err);
         setRefreshState("failed");
       });
-  }, [refreshState, summary, facets, works]);
+  }, [refreshState, summary, facets, pendency, works]);
 
   const dataState: TableDataState =
     preview === "loading" ? "loading" : preview === "empty" ? "empty" : !page
@@ -83,6 +88,7 @@ export function DashboardClient() {
     <>
       <div className="page">
         <KpiCards figures={figures} status={summary.status} onRetry={summary.reload} />
+        <PendencyCards summary={pendency.data} status={pendency.status} onRetry={pendency.reload} filters={filters} />
 
         <div className={styles.stack}>
           {page && page.total > 0 ? (

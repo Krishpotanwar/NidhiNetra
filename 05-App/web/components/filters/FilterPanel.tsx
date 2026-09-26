@@ -2,9 +2,9 @@
 
 import { useId, type ReactNode } from "react";
 import type { Icon } from "@phosphor-icons/react";
-import { CalendarBlank, Database, Eye, Flag, MapPin, SquaresFour } from "@phosphor-icons/react";
+import { CalendarBlank, Clock, Database, Eye, Flag, MapPin, SquaresFour } from "@phosphor-icons/react";
 import { STRINGS } from "@/lib/strings";
-import { EMPTY_FILTERS, flagLabel, isFilterActive, optionsFromFacet, type FilterState } from "@/lib/filters";
+import { EMPTY_FILTERS, flagLabel, isFilterActive, optionsFromFacet, pendencyOptions, type FilterState } from "@/lib/filters";
 import type { Facets } from "@/lib/types";
 import { rowTreatment, usePresenterMode, useRowTreatment } from "@/lib/preferences";
 import { SelectControl } from "./SelectControl";
@@ -42,6 +42,7 @@ export function FilterPanel({ value, onChange, facets, previewState, onPreviewSt
   const yearId = useId();
   const categoryId = useId();
   const flagId = useId();
+  const pendencyId = useId();
   const treatmentId = useId();
   const previewId = useId();
 
@@ -79,6 +80,14 @@ export function FilterPanel({ value, onChange, facets, previewState, onPreviewSt
             value={value.flag}
             options={optionsFromFacet(facets?.flags, filters.all_flags, flagLabel)}
             onValueChange={(flag) => onChange({ ...value, flag })}
+          />
+        </Field>
+        <Field glyph={Clock} label={STRINGS.pendency.filter_label} labelId={pendencyId}>
+          <SelectControl
+            labelId={pendencyId}
+            value={value.pendency}
+            options={pendencyOptions()}
+            onValueChange={(pendency) => onChange({ ...value, pendency })}
           />
         </Field>
         {/* Only once something is actually filtered: a permanent "clear" next

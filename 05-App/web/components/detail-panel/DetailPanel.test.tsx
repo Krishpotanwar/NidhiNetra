@@ -4,7 +4,7 @@
 import type { ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { STRINGS } from "@/lib/strings";
+import { STRINGS, renderTemplate } from "@/lib/strings";
 import { displayName, formatDate } from "@/lib/format";
 import type { InspectionRow } from "@/lib/types";
 import { DetailPanel } from "./DetailPanel";
@@ -46,6 +46,8 @@ function row(overrides: Partial<InspectionRow> = {}): InspectionRow {
     why_flagged: {},
     peer_group: null,
     displayRank: 3,
+    days_to_sanction: 7,
+    days_since_sanction: 30,
     ...overrides,
   };
 }
@@ -146,4 +148,101 @@ test("shows a portal activity with capitals exactly as published", () => {
   expect(screen.getByText(fields.activity).nextElementSibling).toHaveTextContent(
     "Fitting of Sitting RCC Benches in Public Places",
   );
+});
+
+// T5: "Timelines against the guidelines" -- the three MoSPI pendency facts
+// for this one work, each an independent branch (R4/D4).
+const pendency = STRINGS.pendency;
+
+test("states the measured days to sanction when both dates are present", () => {
+  render(<DetailPanel row={row({ days_to_sanction: 50 })} onClose={() => {}} quotaN={10} />);
+
+  expect(
+    screen.getByText(renderTemplate(pendency.detail_days_to_sanction, { days: 50 })),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(pendency.detail_dates_missing)).not.toBeInTheDocument();
+});
+
+test("says the recommendation or sanction date is not published when days_to_sanction is null", () => {
+  render(
+    <DetailPanel
+      row={row({ days_to_sanction: null, recommendation_date: null })}
+      onClose={() => {}}
+      quotaN={10}
+    />,
+  );
+
+  expect(screen.getByText(pendency.detail_dates_missing)).toBeInTheDocument();
+  expect(
+    screen.queryByText(renderTemplate(pendency.detail_days_to_sanction, { days: 50 })),
+  ).not.toBeInTheDocument();
+});
+
+test("flags a work open past one year when under implementation and sanctioned over 365 days ago", () => {
+  render(
+    <DetailPanel
+      row={row({ completion_status: "In Progress", days_since_sanction: 400 })}
+      onClose={() => {}}
+      quotaN={10}
+    />,
+  );
+
+  expect(screen.getByText(renderTemplate(pendency.detail_open, { days: 400 }))).toBeInTheDocument();
+});
+
+test("does not flag open past one year at 365 days or under", () => {
+  render(
+    <DetailPanel
+      row={row({ completion_status: "In Progress", days_since_sanction: 365 })}
+      onClose={() => {}}
+      quotaN={10}
+    />,
+  );
+
+  expect(screen.queryByText(renderTemplate(pendency.detail_open, { days: 365 }))).not.toBeInTheDocument();
+});
+
+test("does not flag open past one year for a work no longer under implementation", () => {
+  render(
+    <DetailPanel
+      row={row({ completion_status: "Completed", days_since_sanction: 400 })}
+      onClose={() => {}}
+      quotaN={10}
+    />,
+  );
+
+  expect(screen.queryByText(renderTemplate(pendency.detail_open, { days: 400 }))).not.toBeInTheDocument();
+});
+
+test("shows payments recorded when expenditure is above zero", () => {
+  render(<DetailPanel row={row({ expenditure_amount_inr: 250000 })} onClose={() => {}} quotaN={10} />);
+
+  expect(screen.getByText(pendency.detail_payment_seen)).toBeInTheDocument();
+});
+
+test("shows no payment recorded when spend is zero more than 90 days after sanction", () => {
+  render(
+    <DetailPanel
+      row={row({ expenditure_amount_inr: 0, days_since_sanction: 120 })}
+      onClose={() => {}}
+      quotaN={10}
+    />,
+  );
+
+  expect(screen.getByText(renderTemplate(pendency.detail_no_payment, { days: 120 }))).toBeInTheDocument();
+});
+
+test("never claims payments for a zero-spend work within 90 days of sanction (R4)", () => {
+  render(
+    <DetailPanel
+      row={row({ expenditure_amount_inr: 0, days_since_sanction: 30 })}
+      onClose={() => {}}
+      quotaN={10}
+    />,
+  );
+
+  expect(screen.queryByText(pendency.detail_payment_seen)).not.toBeInTheDocument();
+  expect(
+    screen.queryByText(renderTemplate(pendency.detail_no_payment, { days: 30 })),
+  ).not.toBeInTheDocument();
 });

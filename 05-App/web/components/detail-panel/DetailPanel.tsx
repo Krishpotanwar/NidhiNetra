@@ -28,6 +28,40 @@ import styles from "./DetailPanel.module.css";
 
 const strings = STRINGS.detail_panel;
 const missing = STRINGS.missing_fields;
+const pendencyStrings = STRINGS.pendency;
+
+/**
+ * T5: "Timelines against the guidelines" -- the three MoSPI monthly
+ * pendency checks (T4), as facts about this one work rather than counts
+ * over a population. Each condition is independent (D4): a work can be open
+ * past one year, have unpublished dates, and show a payment line, all at
+ * once, or none of them.
+ */
+function pendencyLines(row: InspectionRow): string[] {
+  const lines: string[] = [];
+
+  lines.push(
+    row.days_to_sanction !== null
+      ? renderTemplate(pendencyStrings.detail_days_to_sanction, { days: row.days_to_sanction })
+      : pendencyStrings.detail_dates_missing,
+  );
+
+  const underImplementation = row.completion_status === "Sanctioned" || row.completion_status === "In Progress";
+  if (underImplementation && row.days_since_sanction !== null && row.days_since_sanction > 365) {
+    lines.push(renderTemplate(pendencyStrings.detail_open, { days: row.days_since_sanction }));
+  }
+
+  if (row.expenditure_amount_inr > 0) {
+    lines.push(pendencyStrings.detail_payment_seen);
+  } else if (row.days_since_sanction !== null && row.days_since_sanction > 90) {
+    // R4: expenditure_amount_inr is 0 here (the branch above already claims
+    // anything positive) -- never a payment line for a zero-spend work
+    // still inside the 90-day window.
+    lines.push(renderTemplate(pendencyStrings.detail_no_payment, { days: row.days_since_sanction }));
+  }
+
+  return lines;
+}
 
 interface DetailPanelProps {
   row: InspectionRow | null;
@@ -213,6 +247,15 @@ function PanelBody({ row, onClose, quotaN }: { row: InspectionRow; onClose: () =
         ) : (
           row.flags.length > 0 && <p className={styles.note}>{STRINGS.peer_group.missing}</p>
         )}
+
+        <section className={styles.section}>
+          <h3 className={`t-label ${styles.sectionTitle}`}>{pendencyStrings.detail_title}</h3>
+          {pendencyLines(row).map((line) => (
+            <p key={line} className={styles.reason}>
+              {line}
+            </p>
+          ))}
+        </section>
 
         <section className={styles.section}>
           <h3 className={`t-label ${styles.sectionTitle}`}>{strings.record_title}</h3>
