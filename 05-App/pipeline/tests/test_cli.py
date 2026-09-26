@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import os
+from collections import Counter
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
@@ -815,6 +816,43 @@ def test_judge_run_stores_the_answers_and_prints_the_report(
     report = json.loads(capsys.readouterr().out)
     assert (report["requests"], report["pairs"], report["judged"]) == (1, 2, 2)
     assert report["cost_usd"] == pytest.approx((100_000 * 0.04 + 20_000 * 0.17) / 1e6, abs=1e-4)
+
+
+def test_judge_report_prints_when_some_answers_were_rejected(
+    monkeypatch, snapshot_dir, tmp_path, capsys
+):
+    """Regression, full run 2026-09-26: dataclasses.asdict() rebuilds a Counter field by calling
+    Counter(generator_of_(key, value)_pairs), which Counter's own constructor reads as elements to
+    tally, not a mapping to copy, so the printed report ended up with tuple keys and
+    json.dumps crashed. The judge's answers were already saved (flush() runs before this print);
+    only the report crashed."""
+    _write_candidates(snapshot_dir)
+    monkeypatch.setenv("HF_TOKEN", "hf_x")
+    fake_report = cli.runner.Report(
+        requests=2,
+        pairs=30,
+        judged=28,
+        abstained=1,
+        rejected=Counter({"place_quotes_differ": 2}),
+        no_answer=0,
+        prompt_tokens=100,
+        completion_tokens=200,
+        cost_usd=0.01,
+    )
+    monkeypatch.setattr(cli.runner, "run_judge", lambda items, **kwargs: fake_report)
+
+    code = cli.judge(
+        snapshot_dir=snapshot_dir,
+        out_dir=tmp_path / "judgments",
+        run=True,
+        max_usd=1.0,
+        transport=_provider,
+    )
+
+    assert code == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["rejected"] == {"place_quotes_differ": 2}
+    assert (report["requests"], report["pairs"], report["judged"]) == (2, 30, 28)
 
 
 def test_judge_run_passes_its_settings_to_the_runner(monkeypatch, snapshot_dir, tmp_path):

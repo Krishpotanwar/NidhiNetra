@@ -54,7 +54,6 @@ import os
 import shutil
 import sys
 import tempfile
-from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -426,7 +425,12 @@ def judge(
     except (OSError, ValueError, DuplicateCandidateValidationError, runner.JudgeError) as exc:
         logger.error("The judge did not finish: %s", exc)
         return 1
-    print(json.dumps({**asdict(report), "cost_usd": round(report.cost_usd, 4)}, indent=2))
+    report_dict = {
+        **vars(report),
+        "rejected": dict(report.rejected),
+        "cost_usd": round(report.cost_usd, 4),
+    }
+    print(json.dumps(report_dict, indent=2))
     return 0
 
 
