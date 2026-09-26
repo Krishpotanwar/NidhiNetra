@@ -47,6 +47,7 @@ import os
 import sys
 import tempfile
 from dataclasses import asdict
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .build_snapshot import (
@@ -181,6 +182,26 @@ def build(*, raw_dir: Path | None = None, snapshot_dir: Path | None = None) -> i
     return 0
 
 
+def _archive_existing_tile(final_path: Path, raw_dir: Path) -> None:
+    """Moves a tile a pull is about to replace into raw_dir/archive/<UTC
+    stamp of its own mtime>/ instead of letting the rename below destroy it
+    -- the 2026-09-04 captures are irreplaceable audit evidence. A name
+    already sitting in that archive directory (two old tiles landing on the
+    same UTC second) is never overwritten either: this falls back to a
+    numeric `.1`, `.2`, ... suffix. Nothing this function touches is ever
+    deleted.
+    """
+    stamp = datetime.fromtimestamp(final_path.stat().st_mtime, tz=UTC).strftime("%Y%m%dT%H%M%SZ")
+    archive_dir = raw_dir / "archive" / stamp
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    dest = archive_dir / final_path.name
+    suffix = 0
+    while dest.exists():
+        suffix += 1
+        dest = archive_dir / f"{final_path.name}.{suffix}"
+    os.replace(final_path, dest)
+
+
 def _write_tiles_atomically(payloads: dict[str, dict], raw_dir: Path) -> None:
     """Stages every tile to a temp file in raw_dir first and renames them
     into place only once every one of them has round-tripped cleanly -- the
@@ -189,6 +210,10 @@ def _write_tiles_atomically(payloads: dict[str, dict], raw_dir: Path) -> None:
     third file) could leave two tiles from a fresh pull sitting next to one
     stale tile from the last pull, and the adapter has no way to know its
     three inputs came from different pulls.
+
+    Before a rename would replace an existing tile, that old file is
+    archived first (see _archive_existing_tile) rather than silently
+    destroyed, so a live pull can never erase a previous capture.
     """
     raw_dir.mkdir(parents=True, exist_ok=True)
     staged: list[tuple[Path, Path]] = []
@@ -212,6 +237,8 @@ def _write_tiles_atomically(payloads: dict[str, dict], raw_dir: Path) -> None:
         raise
 
     for tmp_path, final_path in staged:
+        if final_path.exists():
+            _archive_existing_tile(final_path, raw_dir)
         os.rename(tmp_path, final_path)
 
 
@@ -229,12 +256,14 @@ def pull_live(*, raw_dir: Path | None = None, client: MpladsClient | None = None
 
     Meant to be run once, by a human, from an ordinary (non-datacenter)
     network -- a home or office connection, the kind the 2026-09-04 pull
-    used -- a few minutes before a demo, never during it. See
-    04 Prototype/Checkpoints.md CP6: every attempt from an automated/cloud
-    environment has tarpitted regardless of session, headers, or
-    browser-TLS-fingerprint impersonation (tested directly, 2026-09-05), so
-    this cannot and will not succeed from CI or a sandbox like this one --
-    that is a network-origin fact, not a bug in this function.
+    used, and the kind this VM itself sits on: the portal answered from
+    here too on 2026-09-26 -- a few minutes before a demo, never during
+    it. See 04 Prototype/Checkpoints.md CP6: every attempt from an
+    automated/cloud environment has tarpitted regardless of session,
+    headers, or browser-TLS-fingerprint impersonation (tested directly,
+    2026-09-05), so this still cannot and will not succeed from CI or a
+    genuine datacenter sandbox -- that is a network-origin fact, not a bug
+    in this function.
 
     A failure here (including the tarpit above) leaves raw_dir completely
     untouched: nothing is written until every tile has round-tripped

@@ -25,6 +25,7 @@ untouched.
 from __future__ import annotations
 
 import json
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -394,6 +395,70 @@ def test_pull_live_overwrites_a_previous_pulls_stale_tiles_on_success(raw_dir):
     assert exit_code == 0
     written = json.loads((raw_dir / cli.mplads_adapter.SANCTIONED_FILE).read_text())
     assert written == fresh
+
+
+def test_pull_live_archives_the_previous_capture_byte_for_byte(raw_dir):
+    """T9: the 2026-09-04 captures are irreplaceable audit evidence, so a
+    live pull must never destroy the tile it replaces. The old bytes must
+    still exist, untouched, under raw_dir/archive/<stamp>/ after a second
+    pull writes fresh content over the final path.
+    """
+    old_payload = {"Works Sanctioned": json.dumps([{"WORK_RECOMMENDATION_DTL_ID": "old"}])}
+    first_client = _FakeMpladsClient(_tile_payloads(**{"Works Sanctioned": old_payload}))
+    assert cli.pull_live(raw_dir=raw_dir, client=first_client) == 0
+    old_bytes = (raw_dir / cli.mplads_adapter.SANCTIONED_FILE).read_bytes()
+
+    new_payload = {"Works Sanctioned": json.dumps([{"WORK_RECOMMENDATION_DTL_ID": "new"}])}
+    second_client = _FakeMpladsClient(_tile_payloads(**{"Works Sanctioned": new_payload}))
+    assert cli.pull_live(raw_dir=raw_dir, client=second_client) == 0
+
+    written = json.loads((raw_dir / cli.mplads_adapter.SANCTIONED_FILE).read_text())
+    assert written == new_payload
+
+    archived = list((raw_dir / "archive").glob(f"*/{cli.mplads_adapter.SANCTIONED_FILE}"))
+    assert len(archived) == 1, "the old sanctioned tile must be archived exactly once"
+    assert archived[0].read_bytes() == old_bytes, "archived copy must match the old file exactly"
+
+
+def test_pull_live_archive_name_collision_gets_a_numeric_suffix(raw_dir):
+    """Nothing in the archive is ever overwritten. If a name is already
+    sitting at raw_dir/archive/<stamp>/<file> (two old tiles landing on the
+    same UTC-second stamp), the next one to archive there gets `.1`.
+    """
+    old_path = raw_dir / cli.mplads_adapter.SANCTIONED_FILE
+    old_text = json.dumps({"Works Sanctioned": "stale"})
+    old_path.write_text(old_text, encoding="utf-8")
+    stamp_time = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC).timestamp()
+    os.utime(old_path, (stamp_time, stamp_time))
+
+    archive_dir = raw_dir / "archive" / "20260101T120000Z"
+    archive_dir.mkdir(parents=True)
+    collision = archive_dir / cli.mplads_adapter.SANCTIONED_FILE
+    collision.write_bytes(b"pre-existing archived capture")
+
+    fresh = {"Works Sanctioned": json.dumps([{"WORK_RECOMMENDATION_DTL_ID": "fresh"}])}
+    fake_client = _FakeMpladsClient(_tile_payloads(**{"Works Sanctioned": fresh}))
+
+    exit_code = cli.pull_live(raw_dir=raw_dir, client=fake_client)
+
+    assert exit_code == 0
+    assert collision.read_bytes() == b"pre-existing archived capture", (
+        "the pre-existing archived file must never be overwritten"
+    )
+    suffixed = archive_dir / f"{cli.mplads_adapter.SANCTIONED_FILE}.1"
+    assert suffixed.read_text(encoding="utf-8") == old_text
+
+
+def test_pull_live_first_ever_write_creates_no_archive_dir(raw_dir):
+    """No previous capture exists yet, so there is nothing to archive --
+    raw_dir/archive/ must not even be created.
+    """
+    fake_client = _FakeMpladsClient(_tile_payloads())
+
+    exit_code = cli.pull_live(raw_dir=raw_dir, client=fake_client)
+
+    assert exit_code == 0
+    assert not (raw_dir / "archive").exists()
 
 
 def test_pull_live_output_is_readable_by_the_real_adapter(raw_dir):
