@@ -146,6 +146,19 @@ def get_pendency(
         at_or_above_25_lakh = int(third_party_row["a"])
         between_15_and_25_lakh = int(third_party_row["b"])
 
+        # T8B: how many of the early-warning watch tenth sit inside this same
+        # scope -- scope-only, like the rest of this endpoint (R3), never
+        # narrowed by a pendency/flag/category filter. Null when the artifact
+        # is unavailable, matching every other figure here that depends on a
+        # snapshot fact that might not exist yet.
+        early_warning_artifact = snapshot.read_early_warning()
+        if early_warning_artifact is None:
+            early_warning_n: int | None = None
+        else:
+            ew_where = f"{where} AND list_contains(?::VARCHAR[], works.work_id)"
+            ew_params = [*params, early_warning_artifact["watch"]]
+            early_warning_n, _ = _count_and_amount(con, ew_where, ew_params)
+
         groups: list[dict[str, Any]] | None = None
         if group_by is not None:
             column = _GROUP_COLUMNS[group_by]
@@ -189,6 +202,7 @@ def get_pendency(
             "population_n": population_n,
             "population_inr": population_inr,
             "kinds": kinds,
+            "early_warning_n": early_warning_n,
             "district_authority_n": district_authority_n,
             "quota_sum": quota_sum,
             "third_party": {

@@ -138,9 +138,19 @@ def _where(query: WorksQuery) -> tuple[str, list[Any]]:
         as_of = snapshot.data_as_of_date()
         if as_of is None:
             raise HTTPException(status_code=503, detail=_AS_OF_MISSING_DETAIL)
-        clause, clause_params = pendency_clause(query.pendency, as_of)
-        clauses.append(f"({clause})")
-        params.extend(clause_params)
+        if query.pendency == "early_warning":
+            # R6: special-cased here, before policy.pendency_clause, which
+            # stays guideline-only and raises ValueError on this kind.
+            artifact = snapshot.read_early_warning()
+            if artifact is None:
+                clauses.append("FALSE")
+            else:
+                clauses.append("list_contains(?::VARCHAR[], works.work_id)")
+                params.append(artifact["watch"])
+        else:
+            clause, clause_params = pendency_clause(query.pendency, as_of)
+            clauses.append(f"({clause})")
+            params.extend(clause_params)
     if query.q:
         # strpos rather than LIKE: an officer who types "%" or "_" means those
         # characters, not "match anything".
@@ -172,15 +182,20 @@ def _ordered_population(con: duckdb.DuckDBPyConnection, query: WorksQuery) -> li
 
 
 def _decorate(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Adds days_to_sanction and days_since_sanction to each row, in Python
-    from the ISO date strings already selected -- no SQL change (T4). Both
-    are None wherever a date is missing; days_since_sanction is also None
-    whenever the snapshot has no as_of yet (D2), which is a softer failure
-    than the pendency filter and endpoint's 503: a work's own detail is
-    still worth showing even without that one derived figure.
+    """Adds days_to_sanction, days_since_sanction and early_warning to each
+    row, in Python from data already fetched -- no SQL change (T4/T8B). The
+    two day counts are None wherever a date is missing; days_since_sanction
+    is also None whenever the snapshot has no as_of yet (D2), which is a
+    softer failure than the pendency filter and endpoint's 503: a work's own
+    detail is still worth showing even without that one derived figure.
+    early_warning is simply False (never None) when the artifact is
+    unavailable -- membership in a watch list that does not exist is an
+    honest no, not a missing fact.
     """
     as_of = snapshot.data_as_of_date()
     as_of_date = date.fromisoformat(as_of) if as_of else None
+    artifact = snapshot.read_early_warning()
+    watch_set = set(artifact["watch"]) if artifact else set()
     for row in rows:
         recommendation = row.get("recommendation_date")
         sanction = row.get("sanction_date")
@@ -194,6 +209,7 @@ def _decorate(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             if sanction and as_of_date is not None
             else None
         )
+        row["early_warning"] = row["work_id"] in watch_set
     return rows
 
 

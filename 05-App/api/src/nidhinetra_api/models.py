@@ -37,8 +37,11 @@ WorksScope = Literal["all", "under_implementation"]
 # Kept in sync with policy.PENDENCY_KINDS by hand (like WorksScope above,
 # which is its own Literal rather than built from policy.UNDER_IMPLEMENTATION):
 # a Literal's values must be static, and pendency_clause() is what actually
-# enforces the set at runtime (ValueError on anything else, R6).
-PendencyKind = Literal["late_sanction", "open_past_one_year", "no_payment_90_days"]
+# enforces the set at runtime (ValueError on anything else, R6). "early_warning"
+# (T8B) is the one value here pendency_clause does not know: works._where
+# special-cases it before ever calling that function (R6), so it needs to
+# clear this Literal but never appears in policy.PENDENCY_KINDS.
+PendencyKind = Literal["late_sanction", "open_past_one_year", "no_payment_90_days", "early_warning"]
 
 
 class WorksQuery(BaseModel):

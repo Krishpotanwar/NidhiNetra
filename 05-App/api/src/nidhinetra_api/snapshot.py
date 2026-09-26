@@ -96,6 +96,45 @@ def data_as_of_date(snapshot_dir: Path | None = None) -> str | None:
     return manifest["data_as_of"][:10]
 
 
+def _early_warning_path(snapshot_dir: Path | None) -> Path:
+    return (snapshot_dir or SNAPSHOT_DIR) / "early_warning.json"
+
+
+# T8B: (path, st_mtime_ns, st_size) -> the parsed early_warning.json. Same
+# pattern as routers/graph.py's _ANALYSIS_CACHE: a rewritten artifact changes
+# mtime/size, so a stale parse is never served, and clearing before inserting
+# keeps exactly one entry rather than one per snapshot generation this
+# process has ever read.
+_EARLY_WARNING_CACHE: dict[tuple[str, int, int], dict[str, Any]] = {}
+
+
+def read_early_warning(snapshot_dir: Path | None = None) -> dict[str, Any] | None:
+    """Task 8's early-warning artifact, or None when it should not be
+    served: the file does not exist yet, its data_as_of does not match the
+    current manifest's (D8 -- a refresh that moves as_of forward makes the
+    old artifact's ranking stale before the pipeline re-runs it), or its own
+    status is not "shipped" (the ship gate in early_warning.build did not
+    clear, so there is no watch list worth showing).
+
+    Only the parsed JSON is cached, by file mtime; the data_as_of/status
+    check is cheap and re-run against the *current* manifest on every call,
+    since a snapshot refresh can move that target without early_warning.json
+    itself changing.
+    """
+    path = _early_warning_path(snapshot_dir)
+    if not path.exists():
+        return None
+    stat = path.stat()
+    key = (str(path), stat.st_mtime_ns, stat.st_size)
+    if key not in _EARLY_WARNING_CACHE:
+        _EARLY_WARNING_CACHE.clear()
+        _EARLY_WARNING_CACHE[key] = json.loads(path.read_text(encoding="utf-8"))
+    artifact = _EARLY_WARNING_CACHE[key]
+    is_fresh = artifact.get("data_as_of") == data_as_of_date(snapshot_dir)
+    is_shipped = artifact.get("status") == "shipped"
+    return artifact if is_fresh and is_shipped else None
+
+
 def bootstrap_if_needed(snapshot_dir: Path | None = None) -> dict[str, Any]:
     """Called once from main.py's startup hook. Builds the snapshot only if
     manifest.json doesn't exist yet, so `make api` works standalone without
@@ -142,6 +181,7 @@ __all__ = [
     "SNAPSHOT_DIR",
     "bootstrap_if_needed",
     "data_as_of_date",
+    "read_early_warning",
     "read_manifest",
     "rebuild",
     "refresh_guard",
