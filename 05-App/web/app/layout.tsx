@@ -6,6 +6,7 @@ import { AppHeader } from "@/components/shell/AppHeader";
 import { AppFooter } from "@/components/shell/AppFooter";
 import { LocaleRoot } from "@/components/shell/LocaleRoot";
 import { PresenterUrlSync } from "@/components/shell/PresenterControls";
+import { Str } from "@/components/shell/Str";
 import { STRINGS } from "@/lib/strings";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -42,13 +43,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} ${sourceSerif.variable} ${notoDevanagari.variable}`}
     >
       <body>
-        <a href="#main" className="skip-link">
-          {STRINGS.brand.skip_link}
-        </a>
         <Suspense fallback={null}>
           <PresenterUrlSync />
         </Suspense>
         <LocaleRoot>
+          {/* T11B: moved inside LocaleRoot and rendered through <Str>, so the
+              Hindi overlay can reach it -- <Str> only re-reads STRINGS when
+              LocaleRoot's key={locale} remounts its subtree (see Str.tsx),
+              which a sibling outside LocaleRoot never gets. PresenterUrlSync
+              above renders null, so this stays the first focusable element. */}
+          <a href="#main" className="skip-link">
+            <Str k="brand.skip_link" />
+          </a>
           <AppHeader />
           <main id="main" tabIndex={-1}>
             {children}

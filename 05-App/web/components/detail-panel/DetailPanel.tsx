@@ -4,7 +4,7 @@ import { Fragment, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowRight, X } from "@phosphor-icons/react";
-import { renderTemplate, STRINGS } from "@/lib/strings";
+import { renderTemplate, STRINGS, translateReason } from "@/lib/strings";
 import { fetchWorkDuplicateContext } from "@/lib/duplicates";
 import { useApiResource } from "@/lib/use-api-resource";
 import {
@@ -231,7 +231,8 @@ function PanelBody({ row, onClose, quotaN }: { row: InspectionRow; onClose: () =
                 // Rounded before the plural test: the sentence has to agree
                 // with the number actually shown.
                 const weight = Math.round(contribution.weight);
-                const reason = contribution.flag ? row.why_flagged[contribution.flag] : null;
+                const rawReason = contribution.flag ? row.why_flagged[contribution.flag] : null;
+                const reason = rawReason ? translateReason(rawReason) : null;
                 return (
                   <div key={contribution.flag ?? "ensemble"} className={styles.contribution}>
                     <p className={styles.contributionHead}>

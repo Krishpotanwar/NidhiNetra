@@ -4,7 +4,7 @@
 import type { ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { STRINGS, renderTemplate } from "@/lib/strings";
+import { STRINGS, renderTemplate, setLocale } from "@/lib/strings";
 import { displayName, formatDate } from "@/lib/format";
 import type { InspectionRow } from "@/lib/types";
 import { DetailPanel } from "./DetailPanel";
@@ -113,6 +113,27 @@ test("the fund-flow link follows the Implementing agency, not the District Autho
     "href",
     `/fund-flow?agency=${encodeURIComponent("KRIDL DHARWAD")}`,
   );
+});
+
+test("translates a why_flagged reason line into Hindi once the locale is Hindi (T11B)", () => {
+  const flagged = row({
+    flags: ["cost_outlier"],
+    // The reference example from Execution Plan 3.2 (also strings.json's
+    // _measure.note), so it matches why_flagged.cost_outlier.default
+    // exactly: multiple=3.2, category="road".
+    why_flagged: { cost_outlier: "Cost is 3.2x the median for road works in this state." },
+    peer_group: { label: "Road works in Karnataka", n: 40 },
+  });
+  setLocale("hi");
+  try {
+    render(<DetailPanel row={flagged} onClose={() => {}} quotaN={10} />);
+    expect(screen.getByText("लागत इस राज्य में road कार्यों की माध्यिका से 3.2x है।")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Cost is 3.2x the median for road works in this state."),
+    ).not.toBeInTheDocument();
+  } finally {
+    setLocale("en");
+  }
 });
 
 test("shows the portal's own description under the title", () => {

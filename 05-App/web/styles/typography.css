@@ -37,6 +37,14 @@
   color: var(--ink-muted);
 }
 
+/* T11B: the eyebrow's tracking and uppercasing are Latin-script conventions
+   (there is no upper/lower case in Devanagari, and added letter-spacing
+   between conjunct characters reads as uneven gaps, not emphasis). */
+.t-eyebrow:lang(hi) {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 /* Column headers, field labels, KPI labels. */
 .t-colhead,
 .t-label {

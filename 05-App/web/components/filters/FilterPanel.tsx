@@ -29,13 +29,24 @@ const filters = STRINGS.filters;
 const view = STRINGS.view_options;
 const lens = STRINGS.lens;
 
-/** T6: the "View as" role lens options, in the brief's own order. */
-const LENS_OPTIONS: { value: FilterState["view"]; label: string }[] = [
-  { value: "ministry", label: lens.ministry },
-  { value: "state", label: lens.state },
-  { value: "district", label: lens.district },
-  { value: "mp", label: lens.mp },
-];
+/**
+ * T6: the "View as" role lens options, in the brief's own order.
+ *
+ * A function, not a module-level constant (T11B R24): STRINGS.lens's values
+ * are overwritten in place when the Hindi overlay runs (lib/strings.ts
+ * setLocale), and a constant built once at module load would freeze the
+ * English labels into this array forever, immune to that overlay -- the
+ * same bug NavTabs.tsx's getTabs() was written to avoid. Called at render
+ * time below, so a remount after a locale change reads the live values.
+ */
+function getLensOptions(): { value: FilterState["view"]; label: string }[] {
+  return [
+    { value: "ministry", label: lens.ministry },
+    { value: "state", label: lens.state },
+    { value: "district", label: lens.district },
+    { value: "mp", label: lens.mp },
+  ];
+}
 
 interface FilterPanelProps {
   value: FilterState;
@@ -87,7 +98,7 @@ export function FilterPanel({
             labelId={lensId}
             value={value.view}
             onChange={(next) => onChange(withView(value, next))}
-            options={LENS_OPTIONS}
+            options={getLensOptions()}
           />
         </Field>
         {value.view === "state" && (

@@ -10,7 +10,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { InspectionCapture } from "./InspectionCapture";
-import { STRINGS } from "@/lib/strings";
+import { STRINGS, setLocale } from "@/lib/strings";
 
 const strings = STRINGS.inspection_capture;
 
@@ -187,6 +187,21 @@ test("shows the generic error message on a bare network failure", async () => {
   await user.click(screen.getByRole("button", { name: strings.submit }));
 
   await waitFor(() => expect(screen.getByText(strings.error_generic)).toBeInTheDocument());
+});
+
+test("outcome option labels track the Hindi overlay at render time (T11B R24: no frozen module-scope copy)", async () => {
+  setLocale("hi");
+  try {
+    const user = userEvent.setup();
+    render(<InspectionCapture workId="W1" />);
+    await user.click(screen.getByRole("button", { name: strings.cta }));
+
+    expect(
+      screen.getByRole("option", { name: STRINGS.inspection_capture.outcome_options.work_present_and_matches }),
+    ).toBeInTheDocument();
+  } finally {
+    setLocale("en");
+  }
 });
 
 test("the date picker defaults to today and cannot pick a later day (F-10)", async () => {

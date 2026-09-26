@@ -7,11 +7,19 @@ import { officerInitials } from "@/lib/preferences";
 
 const strings = STRINGS.inspection_capture;
 
-// Object.entries preserves insertion order for string keys, and
-// contracts/strings.json's outcome_options is written in the same order as
+// A function, not a module-level constant (T11B R24): Object.entries copies
+// each label's STRING VALUE out of STRINGS at the moment it runs, so a
+// module-level call would freeze the English labels forever, immune to the
+// Hindi overlay (lib/strings.ts setLocale) -- the same bug FilterPanel.tsx's
+// LENS_OPTIONS had. Called at render time below, so a remount after a
+// locale change reads the live values. Object.entries still preserves
+// insertion order for string keys, and contracts/strings.json's
+// outcome_options is written in the same order as
 // contracts/inspection_outcome.schema.json's enum -- see the 2026-09-05
 // amendment_log entry on why those two lists must never drift apart.
-const OUTCOME_ENTRIES = Object.entries(strings.outcome_options);
+function getOutcomeEntries(): [string, string][] {
+  return Object.entries(strings.outcome_options);
+}
 
 interface InspectionCaptureProps {
   workId: string;
@@ -51,7 +59,7 @@ function todayIsoDate(): string {
  */
 export function InspectionCapture({ workId }: InspectionCaptureProps) {
   const [phase, setPhase] = useState<Phase>("closed");
-  const [outcome, setOutcome] = useState(OUTCOME_ENTRIES[0][0]);
+  const [outcome, setOutcome] = useState(getOutcomeEntries()[0][0]);
   const [inspectedOn, setInspectedOn] = useState(todayIsoDate);
   const [notes, setNotes] = useState("");
   // Lazy initializer, not an effect: react-hooks/set-state-in-effect
@@ -72,7 +80,7 @@ export function InspectionCapture({ workId }: InspectionCaptureProps) {
 
   function reset() {
     setPhase("closed");
-    setOutcome(OUTCOME_ENTRIES[0][0]);
+    setOutcome(getOutcomeEntries()[0][0]);
     setInspectedOn(todayIsoDate());
     setNotes("");
     setErrorMessage("");
@@ -146,7 +154,7 @@ export function InspectionCapture({ workId }: InspectionCaptureProps) {
           disabled={submitting}
           style={controlStyle}
         >
-          {OUTCOME_ENTRIES.map(([key, label]) => (
+          {getOutcomeEntries().map(([key, label]) => (
             <option key={key} value={key}>
               {label}
             </option>

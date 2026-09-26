@@ -74,3 +74,80 @@ export function renderTemplate(template: string, params: Record<string, string |
     return String(params[key]);
   });
 }
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+interface ReasonTemplate {
+  regex: RegExp;
+  params: string[];
+  flag: string;
+  variant: string;
+}
+
+let reasonTemplates: ReasonTemplate[] | null = null;
+
+/**
+ * One compiled matcher per why_flagged variant, built once from the frozen
+ * English snapshot (never the live, possibly-overlaid STRINGS, and never
+ * strings.hi.json -- a rendered reason from the API is always English; see
+ * pipeline/src/nidhinetra_pipeline/risk/explain.py, which has no Hindi
+ * rendering path). Each `{param}` becomes a non-greedy capturing group,
+ * anchored so a sentence must match the template's exact shape end to end.
+ */
+function buildReasonTemplates(): ReasonTemplate[] {
+  const englishFlags = (ENGLISH_STRINGS as unknown as { why_flagged: Tree }).why_flagged;
+  const templates: ReasonTemplate[] = [];
+  for (const flag of Object.keys(englishFlags)) {
+    if (flag.startsWith("_")) continue;
+    const variants = (englishFlags[flag] as Tree).variants as Tree | undefined;
+    if (!variants) continue;
+    for (const variant of Object.keys(variants)) {
+      const text = (variants[variant] as Tree).text;
+      if (typeof text !== "string") continue;
+      const parts = text.split(/\{(\w+)\}/);
+      const params: string[] = [];
+      let source = "";
+      parts.forEach((part, index) => {
+        if (index % 2 === 1) {
+          params.push(part);
+          source += "(.+?)";
+        } else {
+          source += escapeRegExp(part);
+        }
+      });
+      templates.push({ regex: new RegExp(`^${source}$`), params, flag, variant });
+    }
+  }
+  return templates;
+}
+
+/**
+ * Translates a why_flagged reason the API already rendered in English into
+ * the current locale, by matching it back to the frozen English template it
+ * came from and re-rendering that same template slot from the live
+ * STRINGS.why_flagged -- which setLocale has already overlaid with Hindi,
+ * or left as English, so this function never needs to check the current
+ * locale itself: under "en" it reconstructs the same English sentence: a
+ * safe no-op. A sentence that matches no known template (a future template
+ * this function has not seen, or text that is not a why_flagged reason at
+ * all) is returned unchanged.
+ */
+export function translateReason(sentence: string): string {
+  const templates = reasonTemplates ?? (reasonTemplates = buildReasonTemplates());
+  for (const template of templates) {
+    const match = template.regex.exec(sentence);
+    if (!match) continue;
+    const liveVariants = (
+      (STRINGS as unknown as { why_flagged: Tree }).why_flagged[template.flag] as Tree
+    ).variants as Tree;
+    const liveText = (liveVariants[template.variant] as Tree).text as string;
+    const params: Record<string, string> = {};
+    template.params.forEach((name, i) => {
+      params[name] = match[i + 1];
+    });
+    return renderTemplate(liveText, params);
+  }
+  return sentence;
+}

@@ -2,7 +2,7 @@
 
 import { Fragment, useRef } from "react";
 import { ArrowUp } from "@phosphor-icons/react";
-import { renderTemplate, STRINGS } from "@/lib/strings";
+import { renderTemplate, STRINGS, translateReason } from "@/lib/strings";
 import {
   daysStale,
   displayName,
@@ -169,7 +169,7 @@ function Row({
   onMoveFocus: (from: HTMLElement, step: 1 | -1) => void;
 }) {
   const band = riskBand(row.risk_score, row.flags);
-  const reason = Object.values(row.why_flagged).join(" ");
+  const reason = Object.values(row.why_flagged).map(translateReason).join(" ");
   const stalled = row.flags.includes("stalled_work");
 
   return (

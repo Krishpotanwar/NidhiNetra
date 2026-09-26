@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
-import { STRINGS } from "@/lib/strings";
+import { afterEach, describe, expect, it } from "vitest";
+import { STRINGS, setLocale } from "@/lib/strings";
 import { EMPTY_FILTERS, type FilterState } from "@/lib/filters";
 import type { Facets } from "@/lib/types";
 import { FilterPanel, type PreviewState } from "./FilterPanel";
@@ -143,5 +143,22 @@ describe("FilterPanel: the early-warning Timeline option (T8B)", () => {
     expect(screen.getByRole("combobox", { name: pendencyCopy.filter_label })).toHaveTextContent(
       earlyWarningCopy.filter,
     );
+  });
+});
+
+describe("FilterPanel: lens labels track the Hindi overlay at render time (T11B R24)", () => {
+  afterEach(() => {
+    setLocale("en");
+  });
+
+  it("shows the Hindi lens labels when the locale is already Hindi at mount, not the English labels frozen at module load", () => {
+    setLocale("hi");
+    render(<Harness />);
+
+    const group = screen.getByRole("radiogroup", { name: lens.view_label });
+    expect(within(group).getByRole("radio", { name: lens.ministry })).toBeInTheDocument();
+    expect(within(group).getByRole("radio", { name: lens.state })).toBeInTheDocument();
+    expect(within(group).getByRole("radio", { name: lens.district })).toBeInTheDocument();
+    expect(within(group).getByRole("radio", { name: lens.mp })).toBeInTheDocument();
   });
 });
