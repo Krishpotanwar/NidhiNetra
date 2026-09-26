@@ -7,6 +7,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 from nidhinetra_api import db
@@ -69,7 +70,15 @@ def test_pending_queue_has_house_envelope_and_pagination(duplicates_client: Test
     assert set(body) == {"success", "data", "error", "meta"}
     assert body["success"] is True
     assert [row["scope"] for row in body["data"]] == ["C3"]
-    assert body["meta"] == {"page": 2, "page_size": 2, "total": 3, "total_pages": 2}
+    assert body["meta"] == {
+        "page": 2,
+        "page_size": 2,
+        "total": 3,
+        "total_pages": 2,
+        "judge_abstention_rate": None,
+        "judge_quote_rejection_rate": None,
+        "judge_pairs_total": None,
+    }
 
 
 def test_status_filters_use_only_the_current_review(duplicates_client: TestClient) -> None:
@@ -248,3 +257,94 @@ def test_sync_upserts_only_identical_batches_and_missing_artifact_is_safe(
     assert total == 1
     assert rows[0]["scope"] == "C1"
     assert rows[0]["threshold_crossing_batch"] is True
+
+
+def _judgments_frame(rows: list[dict[str, object]]) -> pd.DataFrame:
+    return pd.DataFrame(rows)
+
+
+def test_sync_judged_candidates_upserts_and_is_safe_when_either_file_is_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    snapshot_dir = tmp_path / "snapshot"
+    judgments_dir = tmp_path / "judgments"
+    snapshot_dir.mkdir()
+    judgments_dir.mkdir()
+    monkeypatch.setattr(duplicates.db, "SNAPSHOT_DIR", snapshot_dir)
+    monkeypatch.setattr(duplicates.db, "JUDGMENTS_DIR", judgments_dir)
+
+    assert duplicates.sync_judged_candidates_from_judgments() == 0
+
+    artifact = {
+        "groups": {
+            "g1": {
+                "scope": "C1",
+                "text_fingerprint": "1111111111111111",
+                "text": "Shed at Kheda Chowk",
+                "work_ids": ["MPLADS-FX-0001"],
+                "work_count": 1,
+                "amount_total_inr": 500000.0,
+                "sanction_date_first": "2024-07-01",
+            },
+            "g2": {
+                "scope": "C1",
+                "text_fingerprint": "2222222222222222",
+                "text": "Shed near Kheda Chowk",
+                "work_ids": ["MPLADS-FX-0002"],
+                "work_count": 1,
+                "amount_total_inr": 520000.0,
+                "sanction_date_first": "2024-07-20",
+            },
+        }
+    }
+    (snapshot_dir / "duplicate_candidates.json").write_text(json.dumps(artifact), encoding="utf-8")
+    _judgments_frame(
+        [
+            {
+                "scope": "C1",
+                "fingerprint_a": "1111111111111111",
+                "fingerprint_b": "2222222222222222",
+                "status": "judged",
+                "relation": "same_asset_same_place",
+                "place_a": "Kheda Chowk",
+                "place_b": "Kheda Chowk",
+            }
+        ]
+    ).to_parquet(judgments_dir / "text_pair_judgments.parquet", index=False)
+
+    assert duplicates.sync_judged_candidates_from_judgments() == 1
+    rows, total = duplicate_store.list_candidates(status="pending")
+    assert total == 1
+    assert rows[0]["finder"] == "judged_same_asset_same_place"
+    assert rows[0]["work_relation"] == "duplicate_candidate"
+
+
+def test_list_duplicates_reports_the_judges_rates(
+    duplicates_client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    judgments_dir = tmp_path / "judgments"
+    judgments_dir.mkdir()
+    monkeypatch.setattr(duplicates.db, "JUDGMENTS_DIR", judgments_dir)
+    _judgments_frame(
+        [{"status": "judged", "relation": "not_enough_detail"}] * 3
+        + [{"status": "rejected", "relation": None}] * 2
+        + [{"status": "judged", "relation": "unrelated"}] * 5
+    ).to_parquet(judgments_dir / "text_pair_judgments.parquet", index=False)
+
+    body = duplicates_client.get("/api/duplicates").json()
+
+    assert body["meta"]["judge_abstention_rate"] == 30.0
+    assert body["meta"]["judge_quote_rejection_rate"] == 20.0
+    assert body["meta"]["judge_pairs_total"] == 10
+
+
+def test_list_duplicates_rates_are_null_without_a_judgments_file(
+    duplicates_client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(duplicates.db, "JUDGMENTS_DIR", tmp_path / "no-judgments-here")
+
+    body = duplicates_client.get("/api/duplicates").json()
+
+    assert body["meta"]["judge_abstention_rate"] is None
+    assert body["meta"]["judge_quote_rejection_rate"] is None
+    assert body["meta"]["judge_pairs_total"] is None

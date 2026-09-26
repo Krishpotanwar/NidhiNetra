@@ -27,6 +27,7 @@ import duckdb
 # api/src/nidhinetra_api/db.py -> parents[3] is "05-App/"
 _APP_ROOT = Path(__file__).resolve().parents[3]
 SNAPSHOT_DIR = _APP_ROOT / "data" / "snapshot"
+JUDGMENTS_DIR = _APP_ROOT / "data" / "judgments"
 
 # scored.parquet columns build_snapshot.py wrote as JSON text (see that
 # module's _JSON_ENCODED_SCORED_COLUMNS docstring for why flags,

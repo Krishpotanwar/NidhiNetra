@@ -47,6 +47,17 @@ def bootstrapped_snapshot(tmp_path_factory) -> dict[str, Any]:
       rung 1 went live, running `pytest api/` destroyed a real snapshot and
       replaced it with 20 demo rows, which is a genuinely bad thing for a
       test suite to do to a working install.
+    - `db.JUDGMENTS_DIR` at a tmp path with no file in it, for the same
+      reason (T12B.5): main.py's lifespan now also calls
+      duplicates.sync_judged_candidates_from_judgments() on every startup,
+      and without this every test that starts the app via the `client`
+      fixture would read the real, committed 39k-row
+      data/judgments/text_pair_judgments.parquet against this fixture
+      snapshot's own tiny duplicate_candidates.json -- mismatched scopes
+      and fingerprints, and a KeyError in build_judged_candidates. An empty
+      tmp dir makes the sync a safe no-op by default; tests that want a
+      judgments file monkeypatch this constant themselves (see
+      test_duplicates.py).
     """
     snapshot_dir = tmp_path_factory.mktemp("snapshot")
     manifest = build_snapshot(
@@ -61,6 +72,7 @@ def bootstrapped_snapshot(tmp_path_factory) -> dict[str, Any]:
     # operator's real acquisition cache and replace this session's 20-row
     # fixture snapshot with 79,068 live records mid-suite.
     api_snapshot.RAW_DIR = snapshot_dir / "no-cache-here"
+    db.JUDGMENTS_DIR = tmp_path_factory.mktemp("judgments")
     return manifest
 
 

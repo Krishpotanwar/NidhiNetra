@@ -59,6 +59,7 @@ async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
     )
     entity_aliases.sync_alias_candidates_from_snapshot()
     duplicates.sync_duplicate_candidates_from_snapshot()
+    duplicates.sync_judged_candidates_from_judgments()
     yield
 
 

@@ -13,6 +13,9 @@ from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
+from nidhinetra_pipeline.duplicates.judged_candidates import build_judged_candidates
+from nidhinetra_pipeline.duplicates.judged_candidates import judge_rates as compute_judge_rates
+from nidhinetra_pipeline.judge import store as judge_store
 from nidhinetra_pipeline.outcomes import duplicate_store
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -87,6 +90,55 @@ def sync_duplicate_candidates_from_snapshot(snapshot_dir: Path | None = None) ->
     return duplicate_store.upsert_candidates(candidates)
 
 
+def sync_judged_candidates_from_judgments(
+    snapshot_dir: Path | None = None,
+    judgments_dir: Path | None = None,
+) -> int:
+    """Stage D-lite: upsert judged, discriminating-fact same_asset_same_place pairs as work-level
+    review candidates (nidhinetra_pipeline.duplicates.judged_candidates).
+
+    Widens Stage C's Decision 1 (docs/superpowers/plans/2026-09-22-phase-1-stage-c-review-store.md),
+    which deferred near-copy pairs until "Stage D has narrowed them by judge answer" -- Stage B's
+    completed judge run is exactly that narrowing, for same_asset_same_place. Safe when either file
+    is missing (a snapshot or a judgments run that predates this pass). Does not re-validate the
+    artifact against duplicate_candidates.schema.json, matching sync_duplicate_candidates_from_
+    snapshot's own precedent: the artifact was already validated when Stage A's builder wrote it.
+    """
+    duplicate_store.init_db()
+    candidates_path = (snapshot_dir or db.SNAPSHOT_DIR) / "duplicate_candidates.json"
+    judgments_path = (judgments_dir or db.JUDGMENTS_DIR) / judge_store.FILENAME
+    if not candidates_path.exists() or not judgments_path.exists():
+        logger.warning(
+            "Snapshot has no %s or no %s; the judged near-copy queue is empty until both exist.",
+            candidates_path.name,
+            judgments_path.name,
+        )
+        return 0
+    artifact = json.loads(candidates_path.read_text(encoding="utf-8"))
+    judgments = judge_store.read_judgments(judgments_path)
+    candidates = build_judged_candidates(artifact, judgments)
+    return duplicate_store.upsert_candidates(candidates)
+
+
+def _judge_rates_meta(judgments_dir: Path | None = None) -> dict[str, float | int | None]:
+    """The two rates the spec allows reporting for the judge's own run, plus the population they
+    are of. None until a judgments file exists; read fresh every call (the file is ~1.6 MB, a
+    pandas read is milliseconds -- see the Stage D-lite plan's Decision D7)."""
+    path = (judgments_dir or db.JUDGMENTS_DIR) / judge_store.FILENAME
+    if not path.exists():
+        return {
+            "judge_abstention_rate": None,
+            "judge_quote_rejection_rate": None,
+            "judge_pairs_total": None,
+        }
+    rates = compute_judge_rates(judge_store.read_judgments(path))
+    return {
+        "judge_abstention_rate": rates["abstention_rate"],
+        "judge_quote_rejection_rate": rates["quote_rejection_rate"],
+        "judge_pairs_total": rates["pairs_total"],
+    }
+
+
 def _evidence_by_id(work_ids: list[str]) -> dict[str, dict[str, Any]]:
     if not work_ids:
         return {}
@@ -124,6 +176,7 @@ def list_duplicates(query: DuplicateQuery = Depends(duplicate_query)) -> Envelop
             "page_size": query.page_size,
             "total": total,
             "total_pages": -(-total // query.page_size) if total else 0,
+            **_judge_rates_meta(),
         },
     )
 
@@ -152,4 +205,5 @@ __all__ = [
     "DuplicateReviewRequest",
     "router",
     "sync_duplicate_candidates_from_snapshot",
+    "sync_judged_candidates_from_judgments",
 ]
