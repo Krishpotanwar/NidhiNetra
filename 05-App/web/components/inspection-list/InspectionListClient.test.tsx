@@ -7,7 +7,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { STRINGS } from "@/lib/strings";
+import { renderTemplate, STRINGS } from "@/lib/strings";
 import { InspectionListClient } from "./InspectionListClient";
 
 const nav = vi.hoisted(() => ({ params: new URLSearchParams() }));
@@ -91,6 +91,11 @@ const ROW = {
   days_since_sanction: 200,
 };
 
+// T7 fix round 1: rung 5 is the hand-curated seed dataset (lib/data.ts
+// isDemoDataset -- true only when every row's source_rung is 5), mirrored
+// from ROW with nothing else changed so the only variable is source_rung.
+const DEMO_ROW = { ...ROW, work_id: "W2", source_rung: 5 };
+
 const requestedUrls: string[] = [];
 
 function mockApi(rows: unknown[]) {
@@ -100,6 +105,7 @@ function mockApi(rows: unknown[]) {
     if (url.includes("/api/works/facets")) return envelope(FACETS, null);
     if (url.includes("/api/pendency")) return envelope(PENDENCY, null);
     if (url.includes("/api/stats/summary")) return envelope(SUMMARY, null);
+    if (url.includes("/api/early-warning")) return envelope(null, null);
     if (url.includes("/api/duplicates")) {
       return envelope({ rows: [], page: 1, pageSize: 25, total: 0, totalPages: 0 }, null);
     }
@@ -214,4 +220,37 @@ test("R22: no filters active means no Clear all filters button in the table's ow
   const scope = emptyStateWithin();
   await scope.findByText(STRINGS.data_states.empty_after_filter.title);
   expect(scope.queryByRole("button", { name: STRINGS.data_states.empty_after_filter.action })).not.toBeInTheDocument();
+});
+
+// T7 fix round 1 (Important): SummaryLine's demo-dataset banner is
+// data-print="hide" (screen only), and .print-only's own asOf line renders
+// regardless of isDemoDataset -- a print of rung-5 seed data carried no
+// indication it was demo data. ".print-only" is a plain global class (not a
+// CSS module one, see globals.css), so it survives hashing and scopes these
+// assertions away from SummaryLine's own on-screen copy of the same text.
+function printOnlyHeader() {
+  return within(document.querySelector(".print-only") as HTMLElement);
+}
+
+test("the print-only header keeps the demo-dataset label for rung-5 seed rows", async () => {
+  mockApi([DEMO_ROW]);
+  render(<InspectionListClient />);
+  await screen.findByRole("button", { name: /Road work, Test Constituency/ });
+
+  const demo = STRINGS.data_states.showing_cached_data.demo_dataset_variant;
+  const header = printOnlyHeader();
+  expect(header.getByText(demo.label)).toBeInTheDocument();
+  expect(header.getByText(demo.detail)).toBeInTheDocument();
+  // "Data as of {date}" stays as is -- the fix adds the demo label, it does
+  // not replace the date line the way SummaryLine's own either/or does.
+  expect(header.getByText(renderTemplate(STRINGS.print.as_of, { date: "4 Sep 2026" }))).toBeInTheDocument();
+});
+
+test("the print-only header has no demo-dataset label for real data", async () => {
+  mockApi([ROW]);
+  render(<InspectionListClient />);
+  await screen.findByRole("button", { name: /Road work, Test Constituency/ });
+
+  const demo = STRINGS.data_states.showing_cached_data.demo_dataset_variant;
+  expect(printOnlyHeader().queryByText(demo.label)).not.toBeInTheDocument();
 });

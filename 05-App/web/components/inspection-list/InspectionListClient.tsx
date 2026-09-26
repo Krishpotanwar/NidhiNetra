@@ -124,6 +124,13 @@ export function InspectionListClient() {
   // an officer needs on a printed page with no nav, filters or detail panel.
   const dutyPendency = isLensScoped(filters) ? pendency.data : null;
   const asOf = summary.data?.data_as_of ?? null;
+  // T7 fix round 1 (Important): SummaryLine's demo-dataset banner is
+  // data-print="hide" (screen only, see below), so without this the printed
+  // page carried no indication rung-5 seed data isn't live MPLADS data.
+  // Computed once and reused at both call sites -- SummaryLine's own
+  // `demoDataset` prop below reads this same value.
+  const demoDataset = isDemoDataset(result?.rows ?? []);
+  const demo = STRINGS.data_states.showing_cached_data.demo_dataset_variant;
 
   return (
     <>
@@ -131,6 +138,11 @@ export function InspectionListClient() {
         <div className="print-only">
           <DutyLine view={filters.view} pendency={dutyPendency} />
           {asOf && <p>{renderTemplate(STRINGS.print.as_of, { date: formatDate(asOf.slice(0, 10)) })}</p>}
+          {demoDataset && (
+            <p>
+              <strong>{demo.label}</strong> {demo.detail}
+            </p>
+          )}
           <p>{STRINGS.framing.standing_note}</p>
         </div>
 
@@ -162,7 +174,7 @@ export function InspectionListClient() {
             onClearSearch={() => navigate(filters, "", 1)}
             dataAsOf={summary.data?.data_as_of ?? null}
             recordCount={summary.data?.total_works_all_statuses ?? null}
-            demoDataset={isDemoDataset(result?.rows ?? [])}
+            demoDataset={demoDataset}
             refreshState={refreshState}
             onRefresh={handleRefresh}
           />
