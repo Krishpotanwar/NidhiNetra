@@ -44,6 +44,7 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import sys
 import tempfile
 from dataclasses import asdict
@@ -183,9 +184,11 @@ def build(*, raw_dir: Path | None = None, snapshot_dir: Path | None = None) -> i
 
 
 def _archive_existing_tile(final_path: Path, raw_dir: Path) -> None:
-    """Moves a tile a pull is about to replace into raw_dir/archive/<UTC
-    stamp of its own mtime>/ instead of letting the rename below destroy it
-    -- the 2026-09-04 captures are irreplaceable audit evidence. A name
+    """Copies (never moves) a tile a pull is about to replace into
+    raw_dir/archive/<UTC stamp of its own mtime>/ -- the 2026-09-04 captures
+    are irreplaceable audit evidence. This must be a copy, not a move: see
+    _write_tiles_atomically for why the swap itself has to stay a single
+    atomic os.rename with no archiving step interleaved into it. A name
     already sitting in that archive directory (two old tiles landing on the
     same UTC second) is never overwritten either: this falls back to a
     numeric `.1`, `.2`, ... suffix. Nothing this function touches is ever
@@ -199,7 +202,7 @@ def _archive_existing_tile(final_path: Path, raw_dir: Path) -> None:
     while dest.exists():
         suffix += 1
         dest = archive_dir / f"{final_path.name}.{suffix}"
-    os.replace(final_path, dest)
+    shutil.copy2(final_path, dest)
 
 
 def _write_tiles_atomically(payloads: dict[str, dict], raw_dir: Path) -> None:
@@ -211,9 +214,22 @@ def _write_tiles_atomically(payloads: dict[str, dict], raw_dir: Path) -> None:
     stale tile from the last pull, and the adapter has no way to know its
     three inputs came from different pulls.
 
-    Before a rename would replace an existing tile, that old file is
-    archived first (see _archive_existing_tile) rather than silently
-    destroyed, so a live pull can never erase a previous capture.
+    Archiving runs as its own phase, for every staged tile, entirely before
+    any rename -- never one tile's archive-then-rename at a time. Each old
+    file is *copied* (see _archive_existing_tile) to raw_dir/archive/ while
+    still sitting untouched at its final path; only once every tile that
+    needed archiving has one are any renames attempted, and each of those
+    stays the single atomic os.rename(tmp, final) syscall it always was.
+    That ordering is load-bearing (T9 review, round 1): archiving via
+    move-then-rename, one tile at a time, meant a process death between the
+    two calls for tile i left tile i completely missing from raw_dir --
+    worse than the pre-existing worst case this function exists to prevent.
+    With copy-first/rename-after, a tile's old bytes are never gone before
+    its swap, and the swap itself can never leave a tile absent: a tile is
+    always either its old content, its new content, or (mid-archive-phase,
+    transiently) both an old file and its archive copy. If any archive copy
+    fails, nothing is renamed and the staged .tmp files are cleaned up the
+    same way an invalid round-trip above already is.
     """
     raw_dir.mkdir(parents=True, exist_ok=True)
     staged: list[tuple[Path, Path]] = []
@@ -231,14 +247,16 @@ def _write_tiles_atomically(payloads: dict[str, dict], raw_dir: Path) -> None:
             if reloaded != payload:
                 raise OSError(f"{filename} did not round-trip cleanly, refusing to swap")
             staged.append((tmp_path, final_path))
+
+        for _tmp_path, final_path in staged:
+            if final_path.exists():
+                _archive_existing_tile(final_path, raw_dir)
     except Exception:
         for tmp_path, _final_path in staged:
             tmp_path.unlink(missing_ok=True)
         raise
 
     for tmp_path, final_path in staged:
-        if final_path.exists():
-            _archive_existing_tile(final_path, raw_dir)
         os.rename(tmp_path, final_path)
 
 

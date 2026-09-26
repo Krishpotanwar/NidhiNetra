@@ -461,6 +461,62 @@ def test_pull_live_first_ever_write_creates_no_archive_dir(raw_dir):
     assert not (raw_dir / "archive").exists()
 
 
+def test_pull_live_process_death_mid_rename_leaves_no_tile_missing(monkeypatch, raw_dir):
+    """T9 fix, round 1: archiving must never be interleaved with the renames
+    (one tile's archive-then-rename at a time). If it were, a process death
+    between archiving tile i and renaming it into place would leave tile i
+    completely missing from raw_dir -- worse than the pre-existing worst
+    case (a stale-but-present file). Simulates that death by making the
+    *second* call to os.rename raise, after all three tiles already have
+    old content on disk.
+    """
+    filenames = [
+        cli.mplads_adapter.SANCTIONED_FILE,
+        cli.mplads_adapter.COMPLETED_FILE,
+        cli.mplads_adapter.EXPENDITURE_FILE,
+    ]
+    old_bytes = {}
+    for name in filenames:
+        content = f"old-{name}".encode()
+        (raw_dir / name).write_bytes(content)
+        old_bytes[name] = content
+
+    fresh = {"Works Sanctioned": json.dumps([{"WORK_RECOMMENDATION_DTL_ID": "fresh"}])}
+    fake_client = _FakeMpladsClient(_tile_payloads(**{"Works Sanctioned": fresh}))
+
+    real_rename = os.rename
+    calls: list[tuple] = []
+
+    def flaky_rename(src, dst):
+        calls.append((src, dst))
+        if len(calls) == 2:
+            raise OSError("simulated process death between archive and rename")
+        return real_rename(src, dst)
+
+    monkeypatch.setattr(cli.os, "rename", flaky_rename)
+
+    exit_code = cli.pull_live(raw_dir=raw_dir, client=fake_client)
+
+    assert exit_code == 1
+    for name in filenames:
+        assert (raw_dir / name).exists(), f"{name} must never be completely absent"
+
+    # Tile 1 (sanctioned, renamed first, before the simulated failure): new content.
+    written = json.loads((raw_dir / cli.mplads_adapter.SANCTIONED_FILE).read_text())
+    assert written == fresh
+
+    # Tile 2 (completed): its rename is the one that failed -- old content survives.
+    assert (raw_dir / cli.mplads_adapter.COMPLETED_FILE).read_bytes() == old_bytes[
+        cli.mplads_adapter.COMPLETED_FILE
+    ]
+
+    # Every tile that had old content was archived before any rename ran.
+    for name in filenames:
+        archived = list((raw_dir / "archive").glob(f"*/{name}"))
+        assert len(archived) == 1, f"{name} must have exactly one archived copy"
+        assert archived[0].read_bytes() == old_bytes[name]
+
+
 def test_pull_live_output_is_readable_by_the_real_adapter(raw_dir):
     """End-to-end within pull_live()'s own scope: what it writes has to be
     exactly what ingest/mplads_adapter.py's load_and_adapt() already knows
