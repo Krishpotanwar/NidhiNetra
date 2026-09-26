@@ -25,9 +25,12 @@ Two things this module adds on top of that:
 
 from __future__ import annotations
 
+import contextlib
 from datetime import date
+from pathlib import Path
 from typing import Any, Literal
 
+import duckdb
 import pandas as pd
 
 from .candidates import canonical_description_v1
@@ -126,6 +129,47 @@ def build_judged_candidates(
     return candidates
 
 
+# The only judgments columns build_judged_candidates reads (see that function above): the
+# place-quote filter needs status/relation/place_a, the fingerprint join needs
+# scope/fingerprint_a/fingerprint_b, and place_b is carried through as quote_b. The judgments
+# file's full 16-column schema (model_id, run_timestamp, ...) is provenance for the judge run
+# itself, not needed to derive a candidate.
+_CANDIDATE_JUDGMENT_COLUMNS = (
+    "scope",
+    "fingerprint_a",
+    "fingerprint_b",
+    "status",
+    "relation",
+    "place_a",
+    "place_b",
+)
+
+
+def read_candidate_judgments(path: Path) -> pd.DataFrame:
+    """The judgments build_judged_candidates needs: only _CANDIDATE_JUDGMENT_COLUMNS, pre-filtered
+    to its own same_asset_same_place & judged mask (build_judged_candidates re-applies the
+    identical predicate, harmlessly, to an already-filtered frame).
+
+    Reads via DuckDB, not this module's own pandas -- specifically never through
+    nidhinetra_pipeline.judge.store.read_judgments's pd.read_parquet (T12B.5 fix round 1).
+    Measured cause: pandas' parquet engine (pyarrow) pays a large one-time initialization cost
+    the first time a process calls pd.read_parquet at all -- ~100+ MB, independent of how narrow
+    the query is (confirmed empirically: an identical second read cost ~18 MB more; a third read
+    of 30x more data cost ~24 MB more). nidhinetra_api must never pay that on its sync path or,
+    worse, on a live GET /api/duplicates request. DuckDB has no such fixed tax for a ~1.6 MB
+    file. The returned DataFrame is built with pandas' own constructor from plain query-result
+    tuples, not read_parquet, so pyarrow is never touched by this function either.
+    """
+    columns_sql = ", ".join(_CANDIDATE_JUDGMENT_COLUMNS)
+    sql = (
+        f"SELECT {columns_sql} FROM read_parquet('{path.as_posix()}') "  # noqa: S608
+        "WHERE status = 'judged' AND relation = 'same_asset_same_place'"
+    )
+    with contextlib.closing(duckdb.connect(":memory:")) as connection:
+        rows = connection.execute(sql).fetchall()
+    return pd.DataFrame(rows, columns=_CANDIDATE_JUDGMENT_COLUMNS)
+
+
 def judge_rates(judgments: pd.DataFrame) -> dict[str, float]:
     """The two rates the spec allows reporting: abstention and quote-rejection, both of every
     pair asked -- never of judged pairs only, and never an agreement or accuracy figure (there is
@@ -152,4 +196,5 @@ __all__ = [
     "build_judged_candidates",
     "is_discriminating",
     "judge_rates",
+    "read_candidate_judgments",
 ]

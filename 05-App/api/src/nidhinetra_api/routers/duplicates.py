@@ -13,10 +13,11 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import duckdb
-import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException
-from nidhinetra_pipeline.duplicates.judged_candidates import build_judged_candidates
-from nidhinetra_pipeline.duplicates.judged_candidates import judge_rates as compute_judge_rates
+from nidhinetra_pipeline.duplicates.judged_candidates import (
+    build_judged_candidates,
+    read_candidate_judgments,
+)
 from nidhinetra_pipeline.judge import store as judge_store
 from nidhinetra_pipeline.outcomes import duplicate_store
 from pydantic import BaseModel, ConfigDict, Field
@@ -111,48 +112,6 @@ def sync_duplicate_candidates_from_snapshot(
     return duplicate_store.upsert_candidates(candidates)
 
 
-# The only judgments columns build_judged_candidates reads (see that function): the place-quote
-# filter needs status/relation/place_a, the fingerprint join needs scope/fingerprint_a/
-# fingerprint_b, and place_b is carried through as quote_b. judge_store.read_judgments's full
-# 16-column schema (model_id, run_timestamp, ...) is provenance for the judge run itself, not
-# needed to derive a candidate, so the sync reads only these seven (T12B.5 perf fix).
-_CANDIDATE_JUDGMENT_COLUMNS = (
-    "scope",
-    "fingerprint_a",
-    "fingerprint_b",
-    "status",
-    "relation",
-    "place_a",
-    "place_b",
-)
-
-
-def _read_judgments_for_candidates(path: Path) -> pd.DataFrame:
-    """The judgments, pre-filtered to build_judged_candidates's own first line (its
-    same_asset_same_place & judged mask) and pre-narrowed to _CANDIDATE_JUDGMENT_COLUMNS.
-
-    Reads via DuckDB rather than judge_store.read_judgments's pandas+pyarrow reader (T12B.5 perf
-    fix, controller ruling R28). Measured cause: pandas' parquet engine (pyarrow) pays a large
-    one-time initialization cost the first time a process calls pd.read_parquet at all --
-    ~100+ MB, independent of how few columns/rows are actually selected (confirmed empirically: a
-    second, identical, already-filtered read cost only ~18 MB more). DuckDB is already a warm,
-    mandatory dependency of this API (see db.py's module docstring: Parquet is the committed
-    artifact, DuckDB is a disposable in-memory engine rebuilt from it) with its own, much lighter
-    native parquet reader, so this reuses that engine instead of paying pyarrow's tax for one
-    ~1.6 MB file. Builds a plain pandas DataFrame from the query results (pandas' own DataFrame
-    constructor, not read_parquet, so this never touches pyarrow) with the exact shape
-    build_judged_candidates expects.
-    """
-    columns_sql = ", ".join(_CANDIDATE_JUDGMENT_COLUMNS)
-    sql = (
-        f"SELECT {columns_sql} FROM read_parquet('{path.as_posix()}') "  # noqa: S608
-        "WHERE status = 'judged' AND relation = 'same_asset_same_place'"
-    )
-    with contextlib.closing(duckdb.connect(":memory:")) as connection:
-        rows = db.rows_as_dicts(connection, sql)
-    return pd.DataFrame(rows, columns=_CANDIDATE_JUDGMENT_COLUMNS)
-
-
 def sync_judged_candidates_from_judgments(
     snapshot_dir: Path | None = None,
     judgments_dir: Path | None = None,
@@ -169,8 +128,9 @@ def sync_judged_candidates_from_judgments(
     artifact against duplicate_candidates.schema.json, matching sync_duplicate_candidates_from_
     snapshot's own precedent: the artifact was already validated when Stage A's builder wrote it.
     Pass an already-parsed `artifact` (main.py's lifespan does) to skip loading it again. Reads
-    the judgments through _read_judgments_for_candidates rather than judge_store's full-schema
-    pandas+pyarrow reader (T12B.5 perf fix; see that function's docstring for why).
+    the judgments through nidhinetra_pipeline.duplicates.judged_candidates.read_candidate_
+    judgments -- DuckDB, never pandas/pyarrow (see that function's docstring for why; this API
+    package must not depend on pandas at all, T12B.5 fix round 1).
     """
     duplicate_store.init_db()
     judgments_path = (judgments_dir or db.JUDGMENTS_DIR) / judge_store.FILENAME
@@ -183,7 +143,7 @@ def sync_judged_candidates_from_judgments(
             judgments_path.name,
         )
         return 0
-    judgments = _read_judgments_for_candidates(judgments_path)
+    judgments = read_candidate_judgments(judgments_path)
     candidates = build_judged_candidates(artifact, judgments)
     return duplicate_store.upsert_candidates(candidates)
 
@@ -191,7 +151,16 @@ def sync_judged_candidates_from_judgments(
 def _judge_rates_meta(judgments_dir: Path | None = None) -> dict[str, float | int | None]:
     """The two rates the spec allows reporting for the judge's own run, plus the population they
     are of. None until a judgments file exists; read fresh every call (the file is ~1.6 MB, a
-    pandas read is milliseconds -- see the Stage D-lite plan's Decision D7)."""
+    DuckDB aggregate is milliseconds -- see the Stage D-lite plan's Decision D7).
+
+    This runs on every GET /api/duplicates request, so it must never be the thing that first
+    triggers pandas' pyarrow engine: that one-time initialization cost (~100+ MB, measured) must
+    never land on a live request (T12B.5 fix round 1, Critical -- the R28 startup fix moved it
+    off startup, but left it here, on the very next thing to run). One DuckDB aggregate query
+    computes all three numbers in a single pass; the semantics mirror
+    judged_candidates.judge_rates exactly (both rates are of ALL pairs asked, judged and
+    rejected, never of judged pairs only) without needing a pandas DataFrame at all.
+    """
     path = (judgments_dir or db.JUDGMENTS_DIR) / judge_store.FILENAME
     if not path.exists():
         return {
@@ -199,11 +168,23 @@ def _judge_rates_meta(judgments_dir: Path | None = None) -> dict[str, float | in
             "judge_quote_rejection_rate": None,
             "judge_pairs_total": None,
         }
-    rates = compute_judge_rates(judge_store.read_judgments(path))
+    with contextlib.closing(duckdb.connect(":memory:")) as connection:
+        total, rejected, abstained = connection.execute(
+            "SELECT count(*), "
+            "count(*) FILTER (WHERE status = 'rejected'), "
+            "count(*) FILTER (WHERE status = 'judged' AND relation = 'not_enough_detail') "
+            f"FROM read_parquet('{path.as_posix()}')"  # noqa: S608
+        ).fetchone()
+    if total == 0:
+        return {
+            "judge_abstention_rate": 0.0,
+            "judge_quote_rejection_rate": 0.0,
+            "judge_pairs_total": 0,
+        }
     return {
-        "judge_abstention_rate": rates["abstention_rate"],
-        "judge_quote_rejection_rate": rates["quote_rejection_rate"],
-        "judge_pairs_total": rates["pairs_total"],
+        "judge_abstention_rate": round(100 * abstained / total, 1),
+        "judge_quote_rejection_rate": round(100 * rejected / total, 1),
+        "judge_pairs_total": total,
     }
 
 

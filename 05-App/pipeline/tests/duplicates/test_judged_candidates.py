@@ -12,6 +12,7 @@ from nidhinetra_pipeline.duplicates.judged_candidates import (
     build_judged_candidates,
     is_discriminating,
     judge_rates,
+    read_candidate_judgments,
 )
 
 
@@ -207,6 +208,43 @@ def test_judge_rates_is_zero_on_an_empty_frame():
         "quote_rejection_rate": 0.0,
         "pairs_total": 0,
     }
+
+
+def test_read_candidate_judgments_selects_columns_and_filters_rows(tmp_path):
+    """T12B.5 fix round 1: reads via DuckDB, selecting only the seven columns
+    build_judged_candidates needs and only judged/same_asset_same_place rows, dropping everything
+    else -- both the extra provenance columns (model_id, run_timestamp) and the non-matching rows
+    (rejected, or judged but a different relation)."""
+    rows = [
+        {**_judgment_row("C1", FP_A, FP_B), "model_id": "gpt-x", "run_timestamp": "2026-01-01"},
+        {
+            **_judgment_row("C1", FP_A, FP_B, status="rejected", relation=None),
+            "model_id": "gpt-x",
+            "run_timestamp": "2026-01-01",
+        },
+        {
+            **_judgment_row("C1", FP_A, FP_B, relation="unrelated"),
+            "model_id": "gpt-x",
+            "run_timestamp": "2026-01-01",
+        },
+    ]
+    path = tmp_path / "text_pair_judgments.parquet"
+    pd.DataFrame(rows).to_parquet(path, index=False)
+
+    result = read_candidate_judgments(path)
+
+    assert list(result.columns) == [
+        "scope",
+        "fingerprint_a",
+        "fingerprint_b",
+        "status",
+        "relation",
+        "place_a",
+        "place_b",
+    ]
+    assert len(result) == 1
+    kept = result.iloc[0]
+    assert (kept["status"], kept["relation"]) == ("judged", "same_asset_same_place")
 
 
 def test_frozen_constants_are_pinned():

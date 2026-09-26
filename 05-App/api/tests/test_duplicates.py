@@ -339,6 +339,37 @@ def test_list_duplicates_reports_the_judges_rates(
     assert body["meta"]["judge_pairs_total"] == 10
 
 
+def test_list_duplicates_rates_never_call_pandas_read_parquet(
+    duplicates_client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """T12B.5 fix round 1 (Critical): the R28 fix moved pyarrow's one-time engine-init cost off
+    the startup path, but _judge_rates_meta ran on every GET /api/duplicates and still called
+    judge_store.read_judgments -> pandas.read_parquet -- so the very first real request, not
+    startup, would pay it instead (unverified by the R28 RSS check, which only hit /health). The
+    rates must come from a DuckDB aggregate; pandas.read_parquet must never be called here."""
+    judgments_dir = tmp_path / "judgments"
+    judgments_dir.mkdir()
+    monkeypatch.setattr(duplicates.db, "JUDGMENTS_DIR", judgments_dir)
+    _judgments_frame(
+        [{"status": "judged", "relation": "not_enough_detail"}] * 3
+        + [{"status": "rejected", "relation": None}] * 2
+        + [{"status": "judged", "relation": "unrelated"}] * 5
+    ).to_parquet(judgments_dir / "text_pair_judgments.parquet", index=False)
+
+    def _forbidden(*args: object, **kwargs: object) -> None:
+        raise AssertionError("pandas.read_parquet must not be called on the request path")
+
+    monkeypatch.setattr(pd, "read_parquet", _forbidden)
+
+    response = duplicates_client.get("/api/duplicates")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["meta"]["judge_abstention_rate"] == 30.0
+    assert body["meta"]["judge_quote_rejection_rate"] == 20.0
+    assert body["meta"]["judge_pairs_total"] == 10
+
+
 def test_list_duplicates_rates_are_null_without_a_judgments_file(
     duplicates_client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

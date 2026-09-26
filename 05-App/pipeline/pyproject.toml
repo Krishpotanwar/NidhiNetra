@@ -13,6 +13,13 @@ dependencies = [
     # (see 05-App/api/README scope note). Needed for DataFrame.to_parquet /
     # pd.read_parquet -- pandas has no parquet engine of its own.
     "pyarrow>=17.0",
+    # Added by T12B.5 fix round 1 for judged_candidates.read_candidate_judgments: reads the
+    # judgments parquet without pandas' pyarrow engine, whose one-time initialization cost
+    # (~100+ MB, measured) must never land on nidhinetra_api's startup or its GET /api/duplicates
+    # request path. Already a mandatory declared dependency of nidhinetra-api (see that package's
+    # pyproject.toml and db.py's module docstring); this declares it for the pipeline module that
+    # now imports it directly, too.
+    "duckdb>=1.0",
 ]
 
 [project.optional-dependencies]
