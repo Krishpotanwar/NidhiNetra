@@ -8,6 +8,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { renderTemplate, STRINGS } from "@/lib/strings";
+import { formatIndianInt } from "@/lib/format";
 import { InspectionListClient } from "./InspectionListClient";
 
 const nav = vi.hoisted(() => ({ params: new URLSearchParams() }));
@@ -98,7 +99,7 @@ const DEMO_ROW = { ...ROW, work_id: "W2", source_rung: 5 };
 
 const requestedUrls: string[] = [];
 
-function mockApi(rows: unknown[]) {
+function mockApi(rows: unknown[], worksMeta: Record<string, unknown> | null = null) {
   (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(async (input: RequestInfo | URL) => {
     const url = String(input);
     requestedUrls.push(url);
@@ -109,7 +110,7 @@ function mockApi(rows: unknown[]) {
     if (url.includes("/api/duplicates")) {
       return envelope({ rows: [], page: 1, pageSize: 25, total: 0, totalPages: 0 }, null);
     }
-    if (url.includes("/api/works")) return envelope(rows, null);
+    if (url.includes("/api/works")) return envelope(rows, worksMeta);
     throw new Error(`unexpected request ${url}`);
   });
 }
@@ -253,4 +254,35 @@ test("the print-only header has no demo-dataset label for real data", async () =
 
   const demo = STRINGS.data_states.showing_cached_data.demo_dataset_variant;
   expect(printOnlyHeader().queryByText(demo.label)).not.toBeInTheDocument();
+});
+
+// Final review M2: the duty sentence names the role's scope, not a Timeline/flag/category/year
+// filter or search narrowing it further, so a filtered printout carried a sentence about a
+// different (larger) population than the list actually printed below it. The fix reuses
+// SummaryLine's own filtered-population sentence and figures inside .print-only.
+test("the print-only header carries the actual filtered count under a non-scope filter", async () => {
+  nav.params = new URLSearchParams("pendency=late_sanction");
+  mockApi([ROW], { total: 1, quota_n: 1, total_pages: 1, page: 1, page_size: 50 });
+  render(<InspectionListClient />);
+  await screen.findByRole("button", { name: /Road work, Test Constituency/ });
+
+  expect(
+    printOnlyHeader().getByText(
+      renderTemplate(STRINGS.table.filtered_summary_short, {
+        total_n: formatIndianInt(1),
+        cutoff_rank: formatIndianInt(1),
+      }),
+    ),
+  ).toBeInTheDocument();
+});
+
+test("the print-only header has no filtered-count sentence when the filter matches nothing", async () => {
+  nav.params = new URLSearchParams("pendency=late_sanction");
+  mockApi([], { total: 0, quota_n: 0, total_pages: 0, page: 1, page_size: 50 });
+  render(<InspectionListClient />);
+  await screen.findByText(STRINGS.data_states.empty_after_filter.title);
+
+  expect(
+    printOnlyHeader().queryByText(renderTemplate(STRINGS.table.filtered_summary_short, { total_n: "0", cutoff_rank: "0" })),
+  ).not.toBeInTheDocument();
 });

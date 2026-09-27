@@ -8,9 +8,9 @@ An inspection-targeting tool for MPLADS (Members of Parliament Local Area Develo
 
 ## The problem, concretely
 
-- **79,068** MPLADS works are on record; **44,810** of them are under implementation right now, across **36** states and union territories and **535** constituencies.
+- **79,068** MPLADS works are on record; **44,810** of them are under implementation as of 4 September 2026 (committed snapshot), across **36** states and union territories and **535** constituencies.
 - District Authorities must inspect **10%** of that population every year (MPLADS guidelines clause 4.5.2). With a population this size, "which ones" is the entire problem: nobody can inspect all of them, and nothing ranks them today.
-- **16,190** works currently carry at least one risk flag, worth ₹1,058.94 crore in sanctioned value, a small fraction of which the quota will actually reach this year.
+- **16,190** works carry at least one risk flag as of 4 September 2026 (committed snapshot), worth ₹1,058.94 crore in sanctioned value, a small fraction of which the quota will actually reach this year.
 
 NidhiNetra turns "inspect 10%, chosen how?" into a ranked, explainable, server-computed queue.
 
@@ -42,7 +42,7 @@ Recorded inspection outcomes are compared against the ranked list with a **Wilso
 
 | Layer | Technology |
 |---|---|
-| Frontend framework | Next.js 16.3.4 (App Router, Turbopack), React 19.2, TypeScript |
+| Frontend framework | Next.js 16.3.6 (App Router, Turbopack), React 19.2, TypeScript |
 | Frontend styling | CSS Modules over a hand-built token system (`05-App/web/styles/tokens.css`); no CSS framework |
 | Frontend motion & UI primitives | Motion (`motion/react`), Radix UI (Select, Popover, Dialog, Tooltip), Phosphor Icons |
 | Frontend testing | Vitest, Testing Library |

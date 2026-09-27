@@ -37,7 +37,8 @@
       "2026-09-26 (T8 Part B): added early_warning.filter/.detail/.method_title/.method, surfacing Part A's offline model (data/snapshot/early_warning.json) as a Timeline filter option, a detail-panel line and a Reports method paragraph. All four task-brief sentences passed lint unchanged; none needed rewording.",
       "2026-09-26 (T11 Part A): added language.hindi_label/.english_label/.toggle_aria for the Hindi/English toggle button (GIGW 3.0), and lint.banned_hi for contracts/strings.hi.json, the new Hindi overlay file (D9). strings.hi.json itself seeds only nav and brand (Part A's scope); Part B does the full translation. All three language.* strings and the strings.hi.json seed passed lint unchanged.",
       "2026-09-26 (T10): added detail_panel.record_fields.work_stage, .completion_date and .has_public_document, and detail_panel.document_yes/.document_no. The Sanctioned tile publishes the portal's own progress stage and a document-attachment flag, and the Completed tile publishes a completion date joined on the same work id; the pipeline dropped all three. Missing values reuse missing_fields.generic and missing_fields.date rather than a new string. has_public_document renders as document_yes/document_no, never a raw boolean. The committed snapshot has none of the three columns yet, so they show as not recorded until the December T13 rebuild.",
-      "2026-09-27 (T12B.7): duplicate_review filter keys added."
+      "2026-09-27 (T12B.7): duplicate_review filter keys added.",
+      "2026-09-27 (final review): pendency.lede narrowed; card 1 counts works sanctioned late, while the Ministry's review counts works still awaiting sanction, which the public record does not list."
     ]
   },
   "_measure": {
@@ -472,7 +473,7 @@
     "reviewer_note": "Review decisions use the self-reported initials kept on this device.",
     "saved": "Review decision saved.",
     "empty_title": "No works are waiting for review.",
-    "empty_body": "New candidates appear when a data snapshot contains works sharing an identical description.",
+    "empty_body": "New candidates appear when a data snapshot contains works sharing an identical or near-identical description.",
     "error_title": "Could not load works for review.",
     "error_body": "The inspection list is still available. Retry the review queue.",
     "save_error": "Could not save this review decision. Try again.",
@@ -481,7 +482,7 @@
     "next_page": "Next page",
     "page_summary": "Page {page} of {total_pages}",
     "context_title": "Works with the same or similar description",
-    "context_count": "Shares this description with {count} other work(s).",
+    "context_count": "Shares an identical or near-identical description with {count} other work(s).",
     "context_threshold": "Every work in this group is under Rs 15 lakh and together they total Rs 25 lakh or more. Clause 4.4.2 of the MPLADS Guidelines 2023 makes third-party inspection compulsory for a single work of Rs 25 lakh or more.",
     "judged_badge": "Near-identical descriptions, read by a model, quotes checked by code",
     "judged_quotes": "The words a model quoted from each description: “{quote_a}” and “{quote_b}”.",
@@ -494,7 +495,7 @@
   "pendency": {
     "_note": "MPLADS Guidelines 2023 paras 3.2.4 (sanction within 45 days of recommendation) and 3.2.12 (works generally completed within one year of sanction); the monthly review across all three checks is MoSPI's own, per PIB release 2153066 (06 Aug 2025). Mirrors policy.py's SANCTION_DAYS_LIMIT, COMPLETION_DAYS_LIMIT and NO_PAYMENT_DAYS -- the same authorities, one place each side.",
     "title": "Timelines against the guidelines",
-    "lede": "The three pendency checks the Ministry reviews every month, for every work under implementation as of {date}.",
+    "lede": "Three timeline measures based on the Ministry's monthly pendency review, for the works under implementation in view, as of {date}.",
     "late_sanction_label": "Sanctioned after 45 days",
     "late_sanction_context": "Sanctioned more than 45 days after the MP's recommendation (para 3.2.4 counts from receipt). Median {days} days.",
     "late_sanction_context_no_median": "Sanctioned more than 45 days after the MP's recommendation (para 3.2.4 counts from receipt).",

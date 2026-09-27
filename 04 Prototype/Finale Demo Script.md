@@ -12,18 +12,18 @@ it never predicts one work.
 | # | Time | Screen / click | Say |
 |---|---|---|---|
 | 1 | 0:00 | Dashboard loads | "44,810 works under implementation, Rs 2,496.73 crore, as of 4 September 2026. Every number on this screen comes from that one snapshot." |
-| 2 | 0:45 | Point at the three pendency cards | "The Ministry reviews three timelines every month. 33,204 of 44,810 works, 74.1 percent, were sanctioned more than 45 days after the MP's recommendation, median 90 days. 10,856 are open past one year. 17,441 show no payment after 90 days. We never combine these into one count; each is its own check." |
+| 2 | 0:45 | Point at the three pendency cards | "Three timeline measures from the Ministry's monthly pendency review, for works under implementation. Card 1 counts works sanctioned late; the Ministry's monthly review counts works still awaiting sanction, which the public record does not list. 33,204 of 44,810 works, 74.1 percent, were sanctioned more than 45 days after the MP's recommendation, median 90 days. 10,856 are open past one year. 17,441 show no payment after 90 days in the captured expenditure record, which may be incomplete, so a missing payment is a prompt to check. We never combine these into one count; each is its own check." |
 | 3 | 1:45 | Annual inspection quota bar | "The list's own 10 percent line falls at rank 4,481 of 44,810." |
 | 4 | 2:15 | Open Inspection List, View as: Ministry (default) | "Each District Authority owes its own 10 percent, rounded up. Across 729 authorities that is 4,820 inspections this year." |
-| 5 | 2:45 | View as: State Nodal Authority | "A state sees its third-party duty: 986 works of Rs 25 lakh or more, plus half of 1,739 between Rs 15 and 25 lakh, 1,856 in all." |
+| 5 | 2:45 | View as: State Nodal Authority | "With no state chosen, this shows every state and UT together: 986 works of Rs 25 lakh or more, plus half of 1,739 between Rs 15 and 25 lakh, 1,856 in all. Pick a state to see its own share." |
 | 6 | 3:30 | View as: District Authority, choose Jaunpur | "Jaunpur holds 813 works under implementation; its own 10 percent is 82. The list below is ordered for that." |
 | 7 | 4:15 | Click Print this list | "One click, and a District Authority has a paper list for the field, ranked, with today's snapshot date on it." |
 | 8 | 4:45 | View as: Member of Parliament, choose a constituency | "The same duty sentence, for that MP's own constituency: how many of their works were sanctioned late, how many are open past a year." |
 | 9 | 5:30 | Back to Ministry. Timeline filter, choose "At risk of running late" | "3,396 works sanctioned in the last year are on this watch list." |
 | 10 | 6:00 | Open a flagged row's detail panel | "Early warning: among the tenth of recent works that a model trained on earlier sanctions ranks most at risk of staying open past one year. It orders; it says nothing certain about this one work." |
-| 11 | 6:45 | Close that panel. Clear the Timeline filter. Scroll to the duplicate review queue | "An open model read 39,093 near-identical description pairs, about $1.43 in total, and code checked every quoted word it used. 1,265 work-level candidates came out of that: 1,103 possible duplicates, 162 possible splits or phases. 5.8 percent were left unclear, 6.3 percent had a quoted word the code rejected." |
+| 11 | 6:45 | Close that panel. Clear the Timeline filter. Scroll to the duplicate review queue | "An open model read 39,093 near-identical description pairs, about $1.43 in total, and code checked every quoted word it used. 1,265 work-level candidates came out of that: 1,103 possible duplicates, 162 possible splits or phases. About 6 percent were left unclear, about 6 percent had a quoted word the code rejected." |
 | 12 | 7:45 | Show: Near-identical, read by a model. Open work 293635's detail panel (fallback: search 293635 in the header) | "This work carries both quoted spans side by side, for the officer to check, not a verdict. It also shows why: Stage on the portal, Completed on and Documents on the public dashboard are wired end to end but carry no values in this snapshot, so they read not recorded. The pre-finale data refresh populates them." |
-| 13 | 8:45 | Header toggle to Hindi | "One toggle switches every interface string, English or Hindi, per GIGW 3.0. The numbers themselves stay exactly as published, in the same digits." |
+| 13 | 8:45 | Header toggle to Hindi | "This toggle switches the interface text to Hindi. GIGW 3.0 asks central government sites for Hindi and English. Data values, dates and amounts stay exactly as published, in the same digits." |
 | 14 | 9:15 | Reports page, early-warning method line | "Trained on 5,292 sanctioned works, checked on a later 8,738. Held-out ROC-AUC 0.692. Its top tenth held about twice the average share of works still open on that later set." |
 | 15 | 9:50 | Close | "Flags are recommendations to inspect, not findings." |
 
@@ -63,7 +63,7 @@ built-in state for exactly this, not a demo trick.
 - 33,204 of 44,810 works under implementation (74.1%) were sanctioned more than 45 days after
   the MP's recommendation; median 90 days.
 - 10,856 works are open past one year (Rs 596.24 cr); 17,441 show no payment after 90 days
-  (Rs 906.87 cr).
+  in the captured expenditure record, which may be incomplete (Rs 906.87 cr).
 - Three separate MoSPI checks, each shown on its own, never combined into one count.
 
 **Role lenses**
@@ -71,8 +71,9 @@ built-in state for exactly this, not a demo trick.
   Authority and Member of Parliament; no new nav tab.
 - A District Authority sees its own 10 percent, rounded up (4,820 nationally across 729
   authorities), and can print that exact list.
-- A State Nodal Authority sees its third-party duty: 986 works of Rs 25 lakh or more plus half
-  of 1,739 between Rs 15 and 25 lakh, 1,856 in all.
+- With no state chosen, a State Nodal Authority sees the national third-party duty: 986 works
+  of Rs 25 lakh or more plus half of 1,739 between Rs 15 and 25 lakh, 1,856 in all; picking a
+  state narrows this to its own share.
 
 **Early warning**
 - A logistic regression trained on 5,292 sanctioned works, checked on a later 8,738; held-out
@@ -88,8 +89,8 @@ built-in state for exactly this, not a demo trick.
   to check.
 
 **Hindi interface**
-- One header toggle switches every interface string, meeting GIGW 3.0's Hindi and English
-  requirement.
+- One header toggle switches the interface text to Hindi; GIGW 3.0 asks central government
+  sites for Hindi and English.
 - Data values stay exactly as published; numerals stay in the international form (Constitution
   Art. 343(1)).
 - Reasons and the early-warning line are translated too, not only labels.
@@ -103,12 +104,13 @@ built-in state for exactly this, not a demo trick.
 3. **The top 3 logistic-regression coefficients** behind a work's early warning. The model
    already fits them; store them alongside the metrics in `early_warning.json` and show them
    next to the detail line.
-4. **A Hindi print view** (if T11). The print-only header already exists; carry the Hindi
-   overlay into it.
+4. **A Hindi print view is already done.** The print-only header and reasons already render
+   the overlaid Hindi strings; nothing left to build here.
 5. **One jury-requested filter.** Whatever they ask for, added to `FilterPanel.tsx`'s existing
    `SelectControl` pattern.
-6. **The T13 live pull on stage**, if the venue network allows. `POST /api/refresh` is already
-   wired to the "Refresh now" button.
+6. **The T13 live pull on stage**, if the venue network allows, run from the laptop:
+   `cli pull-live` (T13). The "Refresh now" button (`POST /api/refresh`) only rebuilds from the
+   cached capture; do not click it before T13's rebuild lands.
 
 ## Assets
 

@@ -14,7 +14,7 @@ import {
   triggerRefresh,
 } from "@/lib/data";
 import { EMPTY_FILTERS, isLensScoped, listSearchParams, readListParams, type FilterState } from "@/lib/filters";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatIndianInt } from "@/lib/format";
 import { useApiResource } from "@/lib/use-api-resource";
 import { useRowTreatment } from "@/lib/preferences";
 import type { InspectionRow } from "@/lib/types";
@@ -137,6 +137,19 @@ export function InspectionListClient() {
       <div className={`page ${styles.stack}`}>
         <div className="print-only">
           <DutyLine view={filters.view} pendency={dutyPendency} />
+          {/* Final review M2: the duty sentence above names the role's scope, not the
+              Timeline/flag/category/year filters or search that can further narrow this
+              printout -- reuses SummaryLine's own population sentence and figures, the
+              one place the actual filtered count is already computed, rather than a new
+              filter-description string. */}
+          {result && result.total > 0 && (
+            <p>
+              {renderTemplate(STRINGS.table.filtered_summary_short, {
+                total_n: formatIndianInt(result.total),
+                cutoff_rank: formatIndianInt(result.quotaN),
+              })}
+            </p>
+          )}
           {asOf && <p>{renderTemplate(STRINGS.print.as_of, { date: formatDate(asOf.slice(0, 10)) })}</p>}
           {demoDataset && (
             <p>
