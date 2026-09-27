@@ -451,6 +451,7 @@ Steps:
 ### Task 13 (T13): Finale data refresh (P1; run once 7 to 10 days before the finale; needs T9)
 - [ ] `cli pull-live` from this VM. On failure, stop and keep the old data.
 - [ ] Then, in order: `cli build`, `cli duplicates --write`, `cli early-warning --write`, `make validate`, all gates.
+- [ ] Judged pairs after the rebuild (final review I1): the committed judgments were made against the old `duplicate_candidates.json`. Start the API against a scratch copy (§2) and read the startup log's skipped judged-pair count. If it is not zero, choose one of two paths. Either re-judge only the new pairs with `cli judge --run --max-usd 1` (needs a fresh HF token, H3), or accept the smaller judged set. Either way, take the new count from `GET /api/duplicates?kind=judged` → `meta.total` for the script and README.
 - [ ] `uv run --package nidhinetra-pipeline python scripts/deck_figures.py > $S/figures.txt` and `scripts/delay_model.py`.
 - [ ] Update every figure in `README.md` and the T14 script from those outputs, never by hand. Commit data and docs: `chore(data): snapshot as of <date> (T13)`.
 - [ ] Optional Rajya Sabha probe (the dashboard's Rajya button sends combo `"0,0,0,1"`): fetch only the Sanctioned tile to `$S`, count the rows, and check whether `WORK_RECOMMENDATION_DTL_ID` intersects the Lok Sabha ids. Report only; merging houses changes every population figure, so it becomes a new task.
