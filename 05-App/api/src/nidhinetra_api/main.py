@@ -64,8 +64,21 @@ async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
     # drops it before `yield`: this generator stays suspended there for the server's entire
     # lifetime, so anything still referenced at this point would otherwise never be freed.
     candidates_artifact = duplicates.load_duplicate_candidates_artifact()
-    duplicates.sync_duplicate_candidates_from_snapshot(artifact=candidates_artifact)
-    duplicates.sync_judged_candidates_from_judgments(artifact=candidates_artifact)
+    # Final review I1 / deferred minor #39: each sync derives a review queue from files that can
+    # disagree after a rebuild (T13) or be malformed; either one raising here must never take the
+    # whole API down with it -- /health and every other router still have to come up.
+    try:
+        duplicates.sync_duplicate_candidates_from_snapshot(artifact=candidates_artifact)
+    except Exception:
+        logger.exception(
+            "sync_duplicate_candidates_from_snapshot failed; duplicate queue may be stale"
+        )
+    try:
+        duplicates.sync_judged_candidates_from_judgments(artifact=candidates_artifact)
+    except Exception:
+        logger.exception(
+            "sync_judged_candidates_from_judgments failed; judged near-copy queue may be stale"
+        )
     del candidates_artifact
     yield
 

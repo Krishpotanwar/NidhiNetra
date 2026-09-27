@@ -11,7 +11,10 @@ from __future__ import annotations
 
 import math
 from collections import Counter
+from datetime import date
 from typing import Any
+
+from nidhinetra_api import snapshot as api_snapshot
 
 UNDER_IMPLEMENTATION = ("Sanctioned", "In Progress")
 SEARCH_FIELDS = (
@@ -49,6 +52,27 @@ def test_scope_under_implementation_keeps_only_the_quota_population(client, work
 def test_scope_defaults_to_all_so_existing_callers_are_unchanged(client, works_fixture):
     assert _get(client, {"page_size": 200})["meta"]["total"] == len(works_fixture)
     assert _get(client, {"scope": "all", "page_size": 200})["meta"]["total"] == len(works_fixture)
+
+
+def test_pendency_filter_excludes_completed_works_even_under_scope_all(client, works_fixture):
+    """D1: a pendency filter is defined only over works under implementation. Without the
+    population clause, scope=all let a Completed/Recommended work's stale sanction_date count as
+    open_past_one_year too (final review M6). The web always sends scope=under_implementation, so
+    this guards the raw query parameter, not a reachable UI state."""
+    as_of = date.fromisoformat(api_snapshot.data_as_of_date())
+    old_non_population_rows = [
+        r
+        for r in works_fixture
+        if r["completion_status"] not in UNDER_IMPLEMENTATION
+        and r["sanction_date"]
+        and (as_of - date.fromisoformat(r["sanction_date"])).days > 365
+    ]
+    assert old_non_population_rows  # otherwise this test is vacuous
+
+    body = _get(client, {"scope": "all", "pendency": "open_past_one_year", "page_size": 200})
+
+    assert body["meta"]["total"] > 0
+    assert all(r["completion_status"] in UNDER_IMPLEMENTATION for r in body["data"])
 
 
 def test_unknown_scope_is_a_422(client):

@@ -427,3 +427,26 @@ def test_lifespan_parses_duplicate_candidates_json_once_for_both_syncs(
         pass
 
     assert len(calls) == 1
+
+
+@pytest.mark.parametrize(
+    "failing_sync",
+    ["sync_duplicate_candidates_from_snapshot", "sync_judged_candidates_from_judgments"],
+)
+def test_lifespan_survives_either_duplicate_sync_raising(
+    failing_sync: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Final review I1 / deferred minor #39: T13's rebuild can leave the judgments file naming a
+    group the fresh duplicate_candidates.json no longer has, or either file can be malformed.
+    Either sync raising must not stop the app from starting and serving /health."""
+
+    def _raise(**_kwargs: object) -> int:
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(duplicates, failing_sync, _raise)
+
+    with TestClient(app) as test_client:
+        response = test_client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}

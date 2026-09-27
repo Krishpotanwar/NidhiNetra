@@ -26,6 +26,7 @@ Two things this module adds on top of that:
 from __future__ import annotations
 
 import contextlib
+import logging
 from datetime import date
 from pathlib import Path
 from typing import Any, Literal
@@ -34,6 +35,8 @@ import duckdb
 import pandas as pd
 
 from .candidates import canonical_description_v1
+
+logger = logging.getLogger(__name__)
 
 DERIVATION_VERSION = "work_candidate_derivation_v1"
 STORE_FINDER = "judged_same_asset_same_place"
@@ -99,13 +102,19 @@ def build_judged_candidates(
         (judgments["status"] == "judged") & (judgments["relation"] == "same_asset_same_place")
     ]
     candidates = []
+    skipped = 0
     for row in same_asset_same_place.itertuples():
         if not is_discriminating(row.place_a):
             continue
         fingerprint_a, fingerprint_b = row.fingerprint_a, row.fingerprint_b
         quote_a, quote_b = row.place_a, row.place_b
-        group_a = groups_by_scope_fp[(row.scope, fingerprint_a)]
-        group_b = groups_by_scope_fp[(row.scope, fingerprint_b)]
+        group_a = groups_by_scope_fp.get((row.scope, fingerprint_a))
+        group_b = groups_by_scope_fp.get((row.scope, fingerprint_b))
+        if group_a is None or group_b is None:
+            # A rebuild (T13) can drop a group the TF-IDF pass no longer emits; the judged row
+            # itself stays on file for whenever a future rebuild brings the group back.
+            skipped += 1
+            continue
         if fingerprint_a > fingerprint_b:
             fingerprint_a, fingerprint_b = fingerprint_b, fingerprint_a
             quote_a, quote_b = quote_b, quote_a
@@ -125,6 +134,12 @@ def build_judged_candidates(
                 "work_relation": _work_relation(group_a, group_b),
                 "work_ids": sorted(set(group_a["work_ids"]) | set(group_b["work_ids"])),
             }
+        )
+    if skipped:
+        logger.warning(
+            "Skipped %d judged pair(s) whose group is missing from the current "
+            "duplicate_candidates.json artifact",
+            skipped,
         )
     return candidates
 

@@ -113,7 +113,16 @@ def _where(query: WorksQuery) -> tuple[str, list[Any]]:
     """
     clauses: list[str] = []
     params: list[Any] = []
-    if query.scope == "under_implementation":
+    # D1 / final review M6: the three guideline pendency kinds (policy.pendency_clause) are only
+    # defined over works under implementation. Without this, scope=all let a Completed or
+    # Recommended work's stale dates count as open_past_one_year or no_payment_90_days; the web
+    # always sends scope=under_implementation, so this only closes a gap in the raw query
+    # parameter, harmless to repeat when both hold. early_warning is excluded on purpose (R6):
+    # its watch list is its own fixed population and a Completed member is meant to still match
+    # (test_early_warning_api.test_pendency_early_warning_filters_to_the_watch_list's
+    # WATCH_COMPLETED case).
+    pendency_needs_population = query.pendency and query.pendency != "early_warning"
+    if query.scope == "under_implementation" or pendency_needs_population:
         clause, clause_params = _population_clause()
         clauses.append(clause)
         params.extend(clause_params)

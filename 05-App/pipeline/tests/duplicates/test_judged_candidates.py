@@ -247,6 +247,22 @@ def test_read_candidate_judgments_selects_columns_and_filters_rows(tmp_path):
     assert (kept["status"], kept["relation"]) == ("judged", "same_asset_same_place")
 
 
+def test_missing_group_is_skipped_and_logged(caplog):
+    """Final review I1: T13's rebuild can drop a group that a stale judgment still names (the
+    TF-IDF weights shift and it no longer clears the near-copy threshold). Reproduces the
+    report's KeyError('SAGAR', ...) case -- the pair must be skipped, not raise, and the skip
+    count logged so a rebuild's checklist can see it."""
+    groups = {"g1": _group("C1", FP_A, "Shed at Kheda Chowk", ["W1"])}
+    judgments = pd.DataFrame([_judgment_row("C1", FP_A, FP_B)])  # FP_B has no group
+
+    with caplog.at_level("WARNING"):
+        result = build_judged_candidates(_artifact(groups), judgments)
+
+    assert result == []
+    assert "1" in caplog.text
+    assert "skip" in caplog.text.lower()
+
+
 def test_frozen_constants_are_pinned():
     assert DERIVATION_VERSION == "work_candidate_derivation_v1"
     assert STORE_FINDER == "judged_same_asset_same_place"
