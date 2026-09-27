@@ -317,21 +317,53 @@ def _validate_current_status(status: str | None) -> None:
         )
 
 
+# T12B.7: the review queue's "kind" filter, grouping finders into two coarser buckets. The judged
+# finder name mirrors nidhinetra_pipeline.duplicates.judged_candidates.STORE_FINDER as a literal,
+# not an import: that module pulls in duckdb/pandas, which this sqlite-only module should not
+# depend on, the same reasoning the API router's own local _SYNCED_FINDERS follows.
+_KIND_FINDERS: dict[str, tuple[str, ...]] = {
+    "identical": ("identical_batch", "district_identical_batch"),
+    "judged": ("judged_same_asset_same_place",),
+}
+
+
+def _validate_kind(kind: str | None) -> None:
+    if kind is not None and kind not in _KIND_FINDERS:
+        raise ValueError(
+            f"{kind!r} is not a valid duplicate kind. Valid values: {sorted(_KIND_FINDERS)}"
+        )
+
+
 def list_candidates(
     *,
     status: str | None = None,
+    kind: str | None = None,
     page: int = 1,
     page_size: int = 50,
     db_path: Path | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
-    """Return a deterministic candidate page and its filtered total."""
+    """Return a deterministic candidate page and its filtered total.
+
+    `kind` narrows by finder (T12B.7): "identical" for the two synced-batch finders, "judged" for
+    the Stage D-lite near-copy finder. None (the default) applies no finder clause, matching every
+    kind -- unchanged behaviour for every caller that predates this filter.
+    """
     _validate_current_status(status)
+    _validate_kind(kind)
     if page < 1 or page_size < 1:
         raise ValueError("page and page_size must be positive")
     path = _db_path(db_path)
     init_db(path)
-    where = " WHERE current_status = ?" if status is not None else ""
-    params: tuple[Any, ...] = (status,) if status is not None else ()
+    conditions: list[str] = []
+    params: list[Any] = []
+    if status is not None:
+        conditions.append("current_status = ?")
+        params.append(status)
+    if kind is not None:
+        finders = _KIND_FINDERS[kind]
+        conditions.append(f"finder IN ({', '.join('?' for _ in finders)})")
+        params.extend(finders)
+    where = f" WHERE {' AND '.join(conditions)}" if conditions else ""
     offset = (page - 1) * page_size
     with contextlib.closing(_connect(path)) as connection:
         total = connection.execute(

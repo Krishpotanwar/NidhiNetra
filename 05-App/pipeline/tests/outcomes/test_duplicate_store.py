@@ -204,6 +204,33 @@ def test_status_filter_and_pagination_use_current_review_only(db_path: Path) -> 
     assert [row["scope"] for row in rejected] == ["C2"]
 
 
+def test_kind_filter_selects_by_finder_and_rejects_unknown_kind(db_path: Path) -> None:
+    duplicate_store.upsert_candidates(
+        [
+            _candidate("C1", "1111111111111111", finder="identical_batch"),
+            _candidate("C2", "2222222222222222", finder="district_identical_batch"),
+            _candidate("C3", "3333333333333333", finder="judged_same_asset_same_place"),
+        ],
+        db_path=db_path,
+    )
+
+    judged, judged_total = duplicate_store.list_candidates(kind="judged", db_path=db_path)
+    identical, identical_total = duplicate_store.list_candidates(kind="identical", db_path=db_path)
+    unfiltered, unfiltered_total = duplicate_store.list_candidates(db_path=db_path)
+    explicit_none, explicit_none_total = duplicate_store.list_candidates(kind=None, db_path=db_path)
+
+    assert judged_total == 1
+    assert [row["scope"] for row in judged] == ["C3"]
+    assert identical_total == 2
+    assert {row["scope"] for row in identical} == {"C1", "C2"}
+    assert unfiltered_total == 3
+    assert explicit_none_total == unfiltered_total
+    assert explicit_none == unfiltered
+
+    with pytest.raises(ValueError):
+        duplicate_store.list_candidates(kind="bogus", db_path=db_path)
+
+
 def test_candidates_for_work_finds_every_batch_that_includes_it(db_path: Path) -> None:
     duplicate_store.upsert_candidates(
         [

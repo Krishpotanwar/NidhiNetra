@@ -9,6 +9,7 @@ import {
   reviewDuplicateCandidate,
   type DuplicateCandidate,
   type DuplicateDecision,
+  type DuplicateKindFilter,
 } from "@/lib/duplicates";
 import { officerInitials, rowTreatment, useOfficerInitials, useRowTreatment } from "@/lib/preferences";
 import { useApiResource } from "@/lib/use-api-resource";
@@ -19,22 +20,44 @@ import styles from "./DuplicateReviewQueue.module.css";
 const s = STRINGS.duplicate_review;
 const PAGE_SIZE = 25;
 
+/** The "Show" filter's UI value: "all" means the request omits kind entirely. A function, not a
+ * module-level constant (T11B R24 precedent, FilterPanel.tsx's getLensOptions): s's leaves are
+ * overwritten in place when the Hindi overlay runs (lib/strings.ts setLocale), and an array built
+ * once at module load would freeze the English labels into it forever. Called at render time. */
+type KindOption = "all" | DuplicateKindFilter;
+
+function kindOptions(): { value: KindOption; label: string }[] {
+  return [
+    { value: "all", label: s.filter_all },
+    { value: "identical", label: s.filter_identical },
+    { value: "judged", label: s.filter_judged },
+  ];
+}
+
 export function DuplicateReviewQueue() {
   const [page, setPage] = useState(1);
+  const [kind, setKind] = useState<KindOption>("all");
   const [submittingId, setSubmittingId] = useState<number | null>(null);
   const [failedId, setFailedId] = useState<number | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const reviewer = useOfficerInitials();
   const treatment = useRowTreatment();
   const reviewerId = useId();
+  const kindId = useId();
   const treatmentId = useId();
 
   const load = useCallback(
-    (signal: AbortSignal) => fetchDuplicateCandidates(page, PAGE_SIZE, signal),
-    [page],
+    (signal: AbortSignal) =>
+      fetchDuplicateCandidates(page, PAGE_SIZE, signal, kind === "all" ? undefined : kind),
+    [page, kind],
   );
   const queue = useApiResource(load);
   const result = queue.data;
+
+  function changeKind(next: KindOption) {
+    setKind(next);
+    setPage(1);
+  }
 
   async function record(candidate: DuplicateCandidate, decision: DuplicateDecision) {
     setSubmittingId(candidate.candidate_id);
@@ -81,6 +104,13 @@ export function DuplicateReviewQueue() {
           </div>
 
           <div className={styles.controls}>
+            <div className={styles.control}>
+              <span id={kindId} className="t-label">
+                {s.filter_label}
+              </span>
+              <Segmented labelId={kindId} value={kind} onChange={changeKind} options={kindOptions()} />
+            </div>
+
             <div className={styles.control}>
               <label htmlFor={reviewerId} className="t-label">
                 {STRINGS.inspection_capture.inspector_id_label}

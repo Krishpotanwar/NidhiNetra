@@ -117,6 +117,36 @@ paths:
             between_15_and_25_lakh, required_n), groups (null unless group_by is set).
         "503": { description: The snapshot has no as-of date yet }
 
+  /api/duplicates:
+    get:
+      summary: Phase 1 Stage C/D-lite review queue for duplicate-work candidates
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed_same, rejected_different]
+            default: pending
+        - name: kind
+          in: query
+          description: >
+            T12B.7: narrows by finder. identical covers identical_batch and
+            district_identical_batch; judged covers judged_same_asset_same_place, a model-read
+            near-copy pair. Omitted matches every kind.
+          schema: { type: string, enum: [identical, judged] }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: >
+            Ordered by candidate_id ascending, always. meta.total is the status-and-kind-filtered
+            total.
+        "422": { description: Unknown status or kind }
+
   /api/refresh:
     post:
       summary: Manual "refresh now" trigger

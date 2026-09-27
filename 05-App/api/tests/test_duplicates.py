@@ -198,7 +198,7 @@ def test_review_validation_errors_use_house_envelope(
 
 @pytest.mark.parametrize(
     "params",
-    [{"status": "duplicate"}, {"page": 0}, {"page_size": 201}],
+    [{"status": "duplicate"}, {"page": 0}, {"page_size": 201}, {"kind": "bogus"}],
 )
 def test_list_query_validation_is_422(
     duplicates_client: TestClient, params: dict[str, object]
@@ -206,6 +206,30 @@ def test_list_query_validation_is_422(
     response = duplicates_client.get("/api/duplicates", params=params)
     assert response.status_code == 422
     assert response.json()["success"] is False
+
+
+def test_kind_filter_narrows_to_judged_rows_and_leaves_no_kind_unchanged(
+    duplicates_client: TestClient,
+) -> None:
+    _seed(
+        [
+            _candidate("C1", "1111111111111111", ["MPLADS-FX-0001", "MPLADS-FX-0002"]),
+            _candidate(
+                "C2",
+                "2222222222222222",
+                ["MPLADS-FX-0003", "MPLADS-FX-0004"],
+                finder="judged_same_asset_same_place",
+            ),
+        ]
+    )
+
+    judged = duplicates_client.get("/api/duplicates", params={"kind": "judged"}).json()
+    unfiltered = duplicates_client.get("/api/duplicates").json()
+
+    assert [row["scope"] for row in judged["data"]] == ["C2"]
+    assert judged["meta"]["total"] == 1
+    assert [row["scope"] for row in unfiltered["data"]] == ["C1", "C2"]
+    assert unfiltered["meta"]["total"] == 2
 
 
 def test_sync_upserts_only_identical_batches_and_missing_artifact_is_safe(

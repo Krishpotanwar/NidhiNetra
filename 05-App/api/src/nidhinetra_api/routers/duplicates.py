@@ -205,6 +205,7 @@ def _evidence_by_id(work_ids: list[str]) -> dict[str, dict[str, Any]]:
 def list_duplicates(query: DuplicateQuery = Depends(duplicate_query)) -> Envelope:  # noqa: B008
     candidates, total = duplicate_store.list_candidates(
         status=query.status,
+        kind=query.kind,
         page=query.page,
         page_size=query.page_size,
     )

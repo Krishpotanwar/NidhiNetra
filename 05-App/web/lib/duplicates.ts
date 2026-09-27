@@ -84,16 +84,22 @@ function metaNullableNumber(meta: Record<string, unknown> | null, key: string): 
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+/** The review queue's "kind" filter (T12B.7): narrows by finder. Omitted (or "all" at the call
+ * site) matches every kind, so the query string never carries a "kind" key at all. */
+export type DuplicateKindFilter = "identical" | "judged";
+
 export async function fetchDuplicateCandidates(
   page: number,
   pageSize: number,
   signal?: AbortSignal,
+  kind?: DuplicateKindFilter,
 ): Promise<DuplicateCandidatePage> {
   const query = new URLSearchParams({
     status: "pending",
     page: String(page),
     page_size: String(pageSize),
   });
+  if (kind) query.set("kind", kind);
   const result = await fetchEnvelopeWithMeta<DuplicateCandidate[]>(
     `/api/duplicates?${query.toString()}`,
     { signal },

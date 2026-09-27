@@ -210,6 +210,30 @@ describe("DuplicateReviewQueue", () => {
     expect(screen.queryByText("No works are waiting for review.")).not.toBeInTheDocument();
   });
 
+  test("choosing the judged filter refetches with kind=judged and resets to page 1; the default request omits kind", async () => {
+    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
+    fetchMock
+      .mockResolvedValueOnce(queueResponse([candidate], 26, 1, 2))
+      .mockResolvedValueOnce(queueResponse([{ ...candidate, candidate_id: 9 }], 26, 2, 2))
+      .mockResolvedValueOnce(queueResponse([judgedCandidate]));
+
+    const user = userEvent.setup();
+    render(<DuplicateReviewQueue />);
+    await screen.findByText("Pcc Road, near Ram House");
+    expect(String(fetchMock.mock.calls[0][0])).not.toContain("kind=");
+
+    await user.click(screen.getByRole("button", { name: "Next page" }));
+    await waitFor(() => expect(String(fetchMock.mock.calls[1][0])).toContain("page=2"));
+
+    await user.click(screen.getByRole("radio", { name: "Near-identical, read by a model" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    const filteredCall = String(fetchMock.mock.calls[2][0]);
+    expect(filteredCall).toContain("kind=judged");
+    expect(filteredCall).toContain("page=1");
+    await screen.findByText("Shed at Kheda Chowk");
+  });
+
   test("shows the judged badge, both descriptions, and the judge's rates for a near-copy candidate", async () => {
     const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
     fetchMock.mockResolvedValueOnce(

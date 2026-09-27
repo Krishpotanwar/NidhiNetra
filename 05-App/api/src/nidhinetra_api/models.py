@@ -168,26 +168,34 @@ def alias_query(
 
 DuplicateStatus = Literal["pending", "confirmed_same", "rejected_different"]
 
+# T12B.7: narrows the review queue by finder -- "identical" (identical_batch,
+# district_identical_batch) or "judged" (judged_same_asset_same_place). None (the default) matches
+# every kind. Kept in sync with duplicate_store._KIND_FINDERS by hand, like PendencyKind above.
+DuplicateKind = Literal["identical", "judged"]
+
 
 class DuplicateQuery(BaseModel):
-    """Pagination and current-status filter for the Phase 1 Stage C review queue."""
+    """Pagination, current-status and kind filter for the Phase 1 Stage C review queue."""
 
     status: DuplicateStatus = "pending"
+    kind: DuplicateKind | None = None
     page: int = Field(default=1, ge=1)
     page_size: int = Field(default=50, ge=1, le=200)
 
 
 def duplicate_query(
     status: Annotated[DuplicateStatus, Query()] = "pending",
+    kind: Annotated[DuplicateKind | None, Query()] = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
 ) -> DuplicateQuery:
-    return DuplicateQuery(status=status, page=page, page_size=page_size)
+    return DuplicateQuery(status=status, kind=kind, page=page, page_size=page_size)
 
 
 __all__ = [
     "AliasQuery",
     "AliasStatus",
+    "DuplicateKind",
     "DuplicateQuery",
     "DuplicateStatus",
     "Envelope",
